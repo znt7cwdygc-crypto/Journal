@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CITY_COOKIE } from "@/lib/city-constants";
 
 const crawlerUserAgents = [
   "googlebot",
@@ -58,13 +57,6 @@ export function middleware(req: NextRequest) {
   if (skip) return NextResponse.next();
 
   if (isCrawler(req)) return NextResponse.next();
-
-  const city = req.cookies.get(CITY_COOKIE)?.value;
-  if (!city) {
-    const url = new URL("/select-city", req.url);
-    url.searchParams.set("next", `${nextUrl.pathname}${nextUrl.search}`);
-    return NextResponse.redirect(url);
-  }
 
   return NextResponse.next();
 }

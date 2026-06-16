@@ -1,10 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { ContentSort } from "@/components/content-sort";
+import { CityFilter } from "@/components/city-filter";
 import { ListingDirectoryCard } from "@/components/directory-card";
 import { serviceTopic } from "@/lib/topics";
-import { getSelectedCity, getCityMeta } from "@/lib/city";
-import Link from "next/link";
+import { CITY_OPTIONS, type CityValue } from "@/lib/city-constants";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -26,26 +26,47 @@ const sortOptions = [
   { key: "responses", label: "По откликам" }
 ];
 
-export default async function ServicesPage({ searchParams }: { searchParams?: { sort?: string; reported?: string } }) {
+function normalizeCity(value?: string): CityValue | "" {
+  return CITY_OPTIONS.some((city) => city.value === value) ? (value as CityValue) : "";
+}
+
+function cityWhere(cityValue: CityValue | "") {
+  const cityMeta = CITY_OPTIONS.find((city) => city.value === cityValue);
+  if (!cityMeta) return {};
+
+  const remote = [
+    { city: { equals: "Удаленно", mode: "insensitive" as const } },
+    { city: { equals: "remote", mode: "insensitive" as const } },
+    { city: { contains: "удален", mode: "insensitive" as const } },
+    { geoCode: { equals: "remote", mode: "insensitive" as const } },
+    { employmentType: "REMOTE" as const }
+  ];
+
+  if (cityMeta.value === "remote") return { OR: remote };
+
+  return {
+    OR: [
+      { city: { equals: cityMeta.label, mode: "insensitive" as const } },
+      { geoCode: { equals: cityMeta.geoCode, mode: "insensitive" as const } },
+      ...remote
+    ]
+  };
+}
+
+export default async function ServicesPage({ searchParams }: { searchParams?: { sort?: string; city?: string; reported?: string } }) {
   const session = await auth();
   const sort = searchParams?.sort || "new";
-  const currentPath = sort === "new" ? "/services" : `/services?sort=${encodeURIComponent(sort)}`;
-  const selectedCity = getSelectedCity();
-  const cityMeta = getCityMeta(selectedCity);
-  if (!cityMeta) return null;
+  const cityValue = normalizeCity(searchParams?.city);
+  const cityMeta = CITY_OPTIONS.find((city) => city.value === cityValue);
+  const currentPath = `/services${cityValue ? `?city=${encodeURIComponent(cityValue)}` : ""}`;
 
   const services = await prisma.listing.findMany({
     where: {
       type: "SERVICE",
       status: "PUBLISHED",
-      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       AND: [
-        {
-          OR: [
-            { city: { equals: cityMeta.label, mode: "insensitive" } },
-            { geoCode: { equals: cityMeta.geoCode, mode: "insensitive" } }
-          ]
-        }
+        { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+        ...(cityValue ? [cityWhere(cityValue)] : [])
       ]
     },
     orderBy: sort === "views" ? { viewCount: "desc" } : sort === "responses" ? { responseCount: "desc" } : { createdAt: "desc" },
@@ -64,8 +85,9 @@ export default async function ServicesPage({ searchParams }: { searchParams?: { 
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Услуги • {cityMeta.label}</h1>
-      <ContentSort basePath="/services" active={sort} options={sortOptions} />
+      <h1 className="text-2xl font-semibold">Услуги{cityMeta ? ` • ${cityMeta.label}` : ""}</h1>
+      <CityFilter basePath="/services" active={cityValue} sort={sort} />
+      <ContentSort basePath="/services" active={sort} options={sortOptions} params={{ city: cityValue || undefined }} />
       {searchParams?.reported && (
         <section className="rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800">
           Жалоба отправлена в модерацию.
@@ -73,11 +95,8 @@ export default async function ServicesPage({ searchParams }: { searchParams?: { 
       )}
       {services.length === 0 && (
         <section className="border border-zinc-200 bg-white p-5">
-          <h2 className="font-medium">Для города {cityMeta.label} услуг пока нет</h2>
-          <p className="mt-2 text-sm text-zinc-600">Можно сменить город или вернуться позже, когда появятся новые эксперты.</p>
-          <Link className="mt-3 inline-flex rounded-lg bg-hot px-3 py-2 text-sm font-medium text-white" href="/select-city?next=/services">
-            Выбрать город
-          </Link>
+          <h2 className="font-medium">{cityMeta ? `Для города ${cityMeta.label} услуг пока нет` : "Услуг пока нет"}</h2>
+          <p className="mt-2 text-sm text-zinc-600">Попробуйте другой город в фильтре или вернитесь позже, когда появятся новые эксперты.</p>
         </section>
       )}
       {Array.from(grouped.entries()).map(([section, items]) => (

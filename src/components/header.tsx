@@ -1,13 +1,9 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { logoutAction } from "@/app/actions";
-import { chooseCityAction } from "@/app/city-actions";
-import { CITY_OPTIONS, getCityMeta, getSelectedCity } from "@/lib/city";
 
 export async function Header() {
   const session = await auth();
-  const selectedCity = getSelectedCity();
-  const cityMeta = getCityMeta(selectedCity);
 
   return (
     <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
@@ -28,29 +24,6 @@ export async function Header() {
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          <form action={chooseCityAction} className="hidden items-center gap-1 md:flex">
-            <input type="hidden" name="next" value="/articles" />
-            <select
-              name="city"
-              defaultValue={selectedCity || "moscow"}
-              className="max-w-32 rounded-lg border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-700"
-              aria-label="Выбор города"
-            >
-              {CITY_OPTIONS.map((city) => (
-                <option key={city.value} value={city.value}>
-                  {city.label}
-                </option>
-              ))}
-            </select>
-            <button className="rounded-lg border border-zinc-200 px-2 py-1 text-xs text-zinc-700" type="submit">
-              OK
-            </button>
-          </form>
-          {cityMeta && <span className="hidden text-xs text-zinc-500 xl:inline">{cityMeta.label}</span>}
-          <Link className="rounded-lg border border-zinc-200 px-2 py-1.5 text-xs md:hidden" href="/select-city">
-            Город
-          </Link>
-
           {session?.user ? (
             <div className="flex items-center gap-1 text-xs sm:gap-2">
               <span className="hidden lg:inline text-zinc-600">{session.user.email}</span>
