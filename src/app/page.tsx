@@ -114,8 +114,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
-        <Link href={realMainArticle ? `/articles/${realMainArticle.id}` : "/articles"} className="media-card flex h-full min-h-0 flex-col">
+      <section className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
+        <Link href={realMainArticle ? `/articles/${realMainArticle.id}` : "/articles"} className={`media-card flex min-h-0 flex-col ${mainCoverImage ? "h-full" : "self-start"}`}>
           <p className="badge-topic mb-3">
             {mainArticleSection}
           </p>
@@ -127,7 +127,7 @@ export default async function HomePage() {
               fallback={null}
             />
           )}
-          <div className="flex flex-1 flex-col justify-between pt-4">
+          <div className={`flex flex-col pt-4 ${mainCoverImage ? "flex-1 justify-between" : "gap-5"}`}>
             <div>
               <h2 className="card-title">{mainArticle.title}</h2>
               <p className="body-copy mt-3 line-clamp-4">{previewText(mainArticle.summary, 260)}</p>

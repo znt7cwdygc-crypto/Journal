@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/access";
 import {
   createResumeAction,
@@ -13,8 +14,9 @@ import {
   updateProfileSettingsAction
 } from "@/app/actions";
 import { ArticleEditorForm } from "@/components/article-editor-form";
+import { CabinetPanelRouter } from "@/components/cabinet-panel-router";
 import { ListingQuizDisclosure } from "@/components/listing-quiz-disclosure";
-import { ModelResumeForm } from "@/components/model-resume-form";
+import { ResumeQuizDisclosure } from "@/components/resume-quiz-disclosure";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -72,7 +74,7 @@ export default async function CabinetPage({
   const user = await requireUser();
 
   const [dbUser, myArticles, myListings, myResume, draftArticle, followedAuthors, followedTopics, savedListings] = await Promise.all([
-    prisma.user.findUniqueOrThrow({
+    prisma.user.findUnique({
       where: { id: user.id },
       include: {
         followingAuthors: { include: { author: true }, orderBy: { createdAt: "desc" }, take: 6 },
@@ -87,6 +89,10 @@ export default async function CabinetPage({
     prisma.topicFollow.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 8 }),
     prisma.savedListing.findMany({ where: { userId: user.id }, include: { listing: true }, orderBy: { createdAt: "desc" }, take: 6 })
   ]);
+
+  if (!dbUser) {
+    redirect("/auth/signin");
+  }
 
   const editArticleId = typeof searchParams?.editArticle === "string" ? searchParams.editArticle : "";
   const selectedArticle = editArticleId
@@ -107,6 +113,7 @@ export default async function CabinetPage({
 
   return (
     <div className="space-y-4">
+      <CabinetPanelRouter />
       <section className="rounded-lg bg-white p-4 shadow-sm sm:p-5">
         <div className="flex items-center gap-3">
           {dbUser.image ? (
@@ -138,7 +145,7 @@ export default async function CabinetPage({
           </div>
         </div>
 
-        <div className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 text-sm font-semibold sm:mx-0 sm:flex-wrap sm:px-0">
+        <div className="mt-4 flex flex-wrap gap-2 text-sm font-semibold">
           <a className="shrink-0 rounded-lg bg-hot px-3 py-2 text-white shadow-sm shadow-red-200" href="/cabinet#blog">Написать</a>
           <a className="shrink-0 rounded-lg bg-zinc-900 px-3 py-2 text-white" href="#resume">Резюме</a>
           <a className="shrink-0 rounded-lg bg-zinc-100 px-3 py-2 text-zinc-700" href="#profile">Профиль</a>
@@ -154,7 +161,7 @@ export default async function CabinetPage({
         </section>
       )}
 
-      <details id="profile" className="group rounded-lg border border-zinc-200 bg-white shadow-sm">
+      <details id="profile" data-cabinet-panel className="group rounded-lg border border-zinc-200 bg-white shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
           <div>
             <h2 className="font-semibold">Профиль и режим</h2>
@@ -226,7 +233,7 @@ export default async function CabinetPage({
         </section>
       )}
 
-      <details id="blog" className="group rounded-lg bg-white shadow-sm" open>
+      <details id="blog" data-cabinet-panel className="group rounded-lg bg-white shadow-sm" open>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
           <div className="min-w-0">
             <h2 className="font-semibold">Статья</h2>
@@ -262,18 +269,7 @@ export default async function CabinetPage({
         </div>
       </details>
 
-      <details id="resume" className="group rounded-lg bg-white shadow-sm">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
-          <div>
-            <h2 className="font-semibold">Резюме модели</h2>
-            <p className="mt-1 text-xs text-zinc-500">{myResume ? "Резюме уже опубликовано, можно обновить" : "Квиз-анкета для каталога резюме"}</p>
-          </div>
-          <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-semibold text-white">{myResume ? "Обновить" : "Создать"}</span>
-        </summary>
-        <div className="border-t border-zinc-100 p-3">
-          <ModelResumeForm action={createResumeAction} resume={myResume} />
-        </div>
-      </details>
+      <ResumeQuizDisclosure action={createResumeAction} resume={myResume} />
 
       {providerMode && (
         <>
@@ -282,7 +278,7 @@ export default async function CabinetPage({
         </>
       )}
 
-      <details id="materials" className="group rounded-lg bg-white shadow-sm">
+      <details id="materials" data-cabinet-panel className="group rounded-lg bg-white shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
           <div>
             <h2 className="font-semibold">Мое</h2>

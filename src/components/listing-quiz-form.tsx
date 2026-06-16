@@ -3,7 +3,6 @@
 import { useMemo, useRef, useState } from "react";
 import { serviceQuizOptions, serviceQuizSteps } from "@/lib/quizzes/service-quiz";
 import { vacancyQuizOptions, vacancyQuizSteps } from "@/lib/quizzes/vacancy-quiz";
-import { QuizStepperScript } from "@/components/quiz-stepper-script";
 
 type ListingKind = "VACANCY" | "SERVICE";
 
@@ -54,7 +53,7 @@ function ChoiceGrid({
       {options.map((value) => (
         <label
           key={value}
-          className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:border-hot hover:bg-red-50 has-[:checked]:border-hot has-[:checked]:bg-red-50"
+          className="flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold leading-snug text-zinc-700 transition hover:border-hot hover:bg-red-50 has-[:checked]:border-hot has-[:checked]:bg-red-50 sm:min-h-11 sm:px-3 sm:py-2 sm:text-sm"
         >
           <input className="h-3.5 w-3.5 shrink-0 accent-hot" type="radio" name={name} value={value} defaultChecked={defaultValue === value} />
           <span>{value}</span>
@@ -70,7 +69,7 @@ function CheckGrid({ name, options, defaultValues = [] }: { name: string; option
       {options.map((value) => (
         <label
           key={value}
-          className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm font-semibold text-zinc-700 transition hover:border-hot hover:bg-red-50 has-[:checked]:border-hot has-[:checked]:bg-red-50"
+          className="flex min-h-9 cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold leading-snug text-zinc-700 transition hover:border-hot hover:bg-red-50 has-[:checked]:border-hot has-[:checked]:bg-red-50 sm:min-h-11 sm:px-3 sm:py-2 sm:text-sm"
         >
           <input className="h-3.5 w-3.5 shrink-0 accent-hot" type="checkbox" name={name} value={value} defaultChecked={defaultValues.includes(value)} />
           <span>{value}</span>
@@ -85,7 +84,7 @@ function TextInput({ className = "", ...props }: React.InputHTMLAttributes<HTMLI
 }
 
 function TextArea({ className = "", ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...props} className={`min-h-32 w-full rounded-lg border border-zinc-200 bg-white p-3 text-sm leading-6 ${className}`} />;
+  return <textarea {...props} className={`min-h-24 w-full rounded-lg border border-zinc-200 bg-white p-3 text-sm leading-6 sm:min-h-32 ${className}`} />;
 }
 
 function stringValue(values: ListingQuizFormProps["initialValues"], key: string, fallback = "") {
@@ -128,13 +127,12 @@ export function ListingQuizForm({ action, kind, initialValues, listingId, submit
     if (nextStep > step && !canLeaveCurrentStep()) return;
     setStep(Math.max(0, Math.min(steps.length - 1, nextStep)));
     window.setTimeout(() => {
-      quizRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+      quizRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
     }, 0);
   }
 
   return (
     <section ref={quizRef} className="quiz-shell" data-quiz-root data-quiz-step-current="0" data-quiz-steps={stepsPayload}>
-      <QuizStepperScript />
       <div className="quiz-header">
         <div className="flex items-start justify-between gap-3">
           <div>

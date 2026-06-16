@@ -23,20 +23,28 @@ const copy = {
   }
 };
 
+function closeSiblingPanels(current: HTMLDetailsElement) {
+  document.querySelectorAll<HTMLDetailsElement>("details[data-cabinet-panel]").forEach((details) => {
+    if (details !== current) details.open = false;
+  });
+}
+
 export function ListingQuizDisclosure({ action, kind }: ListingQuizDisclosureProps) {
   const detailsRef = useRef<HTMLDetailsElement | null>(null);
   const content = copy[kind];
 
   function handleToggle() {
-    if (!detailsRef.current?.open) return;
+    const details = detailsRef.current;
+    if (!details?.open) return;
 
+    closeSiblingPanels(details);
     window.setTimeout(() => {
-      detailsRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+      details.querySelector("[data-quiz-root]")?.scrollIntoView({ block: "start", behavior: "smooth" });
     }, 0);
   }
 
   return (
-    <details id={content.id} ref={detailsRef} onToggle={handleToggle} className="group rounded-lg bg-white shadow-sm">
+    <details id={content.id} ref={detailsRef} data-cabinet-panel onToggle={handleToggle} className="group rounded-lg bg-white shadow-sm">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
         <div>
           <h2 className="font-semibold">{content.title}</h2>

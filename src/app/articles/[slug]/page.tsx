@@ -174,7 +174,7 @@ export default async function ArticleDetailsPage({
     { label: "Просмотры", value: article.viewCount + 1, className: "bg-zinc-100 text-zinc-700" },
     { label: "Нравится", value: likes, className: "bg-red-50 text-hot" },
     { label: "Полезно", value: useful, className: "bg-teal-50 text-accent" },
-    { label: "Обсуждают", value: article.responseCount, className: "bg-sky-50 text-sky-700" },
+    { label: "Обсуждают", value: commentCount, className: "bg-sky-50 text-sky-700" },
     { label: "Репосты", value: article.repostCount, className: "bg-yellow-50 text-amber-800" }
   ];
 
@@ -348,7 +348,7 @@ export default async function ArticleDetailsPage({
           </div>
         </div>
         {session?.user && (
-          <form action={addArticleCommentAction} className="flex flex-col gap-2 border border-zinc-200 bg-zinc-50 p-3 md:flex-row">
+          <form key={`new-comment-${commentCount}`} action={addArticleCommentAction} className="flex flex-col gap-2 border border-zinc-200 bg-zinc-50 p-3 md:flex-row">
             <input type="hidden" name="articleId" value={article.id} />
             <input className="min-w-0 flex-1 rounded border border-zinc-200 px-3 py-2 text-sm" name="body" placeholder="Добавить комментарий" required minLength={2} />
             <button className="rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white" type="submit">Отправить</button>
@@ -378,7 +378,7 @@ export default async function ArticleDetailsPage({
               )}
             </div>
             {session?.user && (
-              <form action={addArticleCommentAction} className="mt-3 flex flex-col gap-2 md:flex-row">
+              <form key={`reply-${comment.id}-${comment.replies.length}`} action={addArticleCommentAction} className="mt-3 flex flex-col gap-2 md:flex-row">
                 <input type="hidden" name="articleId" value={article.id} />
                 <input type="hidden" name="parentId" value={comment.id} />
                 <input className="min-w-0 flex-1 rounded border border-zinc-200 px-3 py-2 text-xs" name="body" placeholder="Ответить" required minLength={2} />

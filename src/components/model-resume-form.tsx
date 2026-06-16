@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { QuizStepperScript } from "@/components/quiz-stepper-script";
 import { resumeQuizOptions, resumeQuizSteps } from "@/lib/quizzes/resume-quiz";
 
 type ResumeDraft = {
@@ -118,13 +117,12 @@ export function ModelResumeForm({ action, resume }: ModelResumeFormProps) {
   function goToStep(nextStep: number) {
     setStep(Math.max(0, Math.min(steps.length - 1, nextStep)));
     window.setTimeout(() => {
-      quizRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+      quizRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
     }, 0);
   }
 
   return (
     <section ref={quizRef} className="quiz-shell" data-quiz-root data-quiz-step-current="0" data-quiz-steps={stepsPayload}>
-      <QuizStepperScript />
       <div className="quiz-header">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
