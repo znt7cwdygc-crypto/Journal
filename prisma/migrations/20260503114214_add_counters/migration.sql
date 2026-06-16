@@ -1,0 +1,11 @@
+-- AlterTable
+ALTER TABLE "Article" ADD COLUMN     "responseCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "viewCount" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "Listing" ADD COLUMN     "responseCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "viewCount" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "Resume" ADD COLUMN     "responseCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "viewCount" INTEGER NOT NULL DEFAULT 0;

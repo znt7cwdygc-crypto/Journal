@@ -1,0 +1,88 @@
+# WebcamExpert MVP
+
+Готовый MVP платформы `WebcamExpert` на `Next.js 14 + Prisma + NextAuth v5`.
+
+## Реализовано
+
+- Роли и режимы пользователей:
+  - роли доступа: `USER`, `ADMIN`
+  - режим участия: `CONSUMER`, `PROVIDER`, `BOTH`
+  - тип профиля: `MODEL`, `OPERATOR`, `STUDIO`, `AGENCY`, `EXPERT`, `COACH`, `LAWYER`, `OTHER`
+- Авторизация:
+  - регистрация/вход через Credentials
+  - обязательный чекбокс `18+` при регистрации
+- Публичные разделы:
+  - статьи, вакансии, услуги, резюме
+- Личный кабинет:
+  - смена режима участия и типа профиля
+  - создание/обновление резюме (бесплатно)
+  - публикация личной статьи в блог (бесплатно)
+  - для `PROVIDER`/`BOTH`: подача статьи с экспертным GEO-слотом и оплатой `$50`
+  - для `PROVIDER`/`BOTH`: подача вакансии (`$70`) или услуги (`$50`)
+  - история оплат
+- Ручная оплата USDT:
+  - загрузка `txHash` и ссылки на скриншот
+  - статус платежа: `PENDING / VERIFIED / REJECTED`
+- Админ-панель (роль `ADMIN`):
+  - очередь платежей
+  - `Approve/Reject` в 1 клик
+  - при `Approve` автоматически:
+    - статья публикуется
+    - вакансия/услуга публикуется на 30 дней
+    - разблокировка контактов резюме на 24 часа
+- GEO-показ экспертного блока в статье:
+  - `exact GEO -> remote -> first active`
+- Лицензии/сроки:
+  - экспертный блок статьи: 4 месяца
+  - unlock контактов резюме: 24 часа
+- Фоновое обслуживание (cron endpoint):
+  - скрытие резюме, если пользователь не активен более 14 дней
+  - архив просроченных публикаций
+
+## Архитектура
+
+- `src/auth.ts` — NextAuth v5 конфиг
+- `src/app/actions.ts` — server actions (регистрация, контент, платежи, модерация)
+- `prisma/schema.prisma` — схема БД
+- `src/app/admin/page.tsx` — админка
+- `src/app/cabinet/page.tsx` — кабинет
+- `src/app/api/cron/maintenance/route.ts` — maintenance cron
+
+## Запуск
+
+1. Установка:
+```bash
+npm install
+```
+
+2. Создайте `.env.local` на основе `.env.example`.
+
+3. Prisma:
+```bash
+npx prisma generate
+npx prisma migrate dev --name init
+npm run seed
+```
+
+4. Старт:
+```bash
+npm run dev
+```
+
+## Первый вход админа
+
+Используйте учетку из `.env.local`:
+- `SEED_ADMIN_EMAIL`
+- `SEED_ADMIN_PASSWORD`
+
+## Cron (Vercel)
+
+Создайте cron job на путь:
+- `GET /api/cron/maintenance`
+
+И передавайте header:
+- `Authorization: Bearer <CRON_SECRET>`
+
+## Дисклеймер
+
+Платформа не является работодателем и не несет ответственности за действия пользователей.

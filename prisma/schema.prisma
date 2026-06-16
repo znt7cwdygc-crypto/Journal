@@ -1,0 +1,378 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum AccountMode {
+  CONSUMER
+  PROVIDER
+  BOTH
+}
+
+enum ProfileKind {
+  MODEL
+  OPERATOR
+  STUDIO
+  AGENCY
+  EXPERT
+  COACH
+  LAWYER
+  OTHER
+}
+
+enum ArticleKind {
+  BLOG
+  EXPERT
+  PROMO
+}
+
+enum ContentStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ListingType {
+  VACANCY
+  SERVICE
+}
+
+enum EmploymentType {
+  REMOTE
+  OFFICE
+  HYBRID
+}
+
+enum PaymentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum PaymentType {
+  ARTICLE_SLOT
+  VACANCY_PUBLICATION
+  SERVICE_PUBLICATION
+  RESUME_UNLOCK
+}
+
+enum ReportTargetType {
+  ARTICLE
+  COMMENT
+  PROFILE
+  LISTING
+}
+
+enum ReportStatus {
+  PENDING_REVIEW
+  HIDDEN
+  RESOLVED
+}
+
+model User {
+  id                String               @id @default(cuid())
+  name              String?
+  email             String?              @unique
+  emailVerified     DateTime?
+  image             String?
+  profileBio        String?
+  passwordHash      String?
+  role              UserRole             @default(USER)
+  accountMode       AccountMode          @default(CONSUMER)
+  profileKind       ProfileKind          @default(MODEL)
+  tgHandle          String?
+  isAdultConfirmed  Boolean              @default(false)
+  lastActiveAt      DateTime             @default(now())
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  articles          Article[]
+  listings          Listing[]
+  resume            Resume?
+  payments          Payment[]
+  unlocks           ResumeContactUnlock[]
+  articleComments   ArticleComment[]
+  articleRatings    ArticleRating[]
+  commentLikes      CommentLike[]
+  reports           Report[]
+  reviewedReports   Report[]             @relation("ReviewedReports")
+  authorFollowers   Follow[]             @relation("AuthorFollowers")
+  followingAuthors  Follow[]             @relation("AuthorFollowing")
+  topicFollows      TopicFollow[]
+  savedListings     SavedListing[]
+
+  accounts          Account[]
+  sessions          Session[]
+}
+
+model Article {
+  id                String         @id @default(cuid())
+  title             String
+  slug              String         @unique
+  kind              ArticleKind    @default(BLOG)
+  format            String?
+  topic             String?
+  coverImage        String?
+  summary           String
+  body              String
+  status            ContentStatus  @default(PENDING_REVIEW)
+  hiddenReason      String?
+  isEditorPick      Boolean        @default(false)
+  createdById       String
+  createdBy         User           @relation(fields: [createdById], references: [id])
+  publishedAt       DateTime?
+  viewCount         Int            @default(0)
+  responseCount     Int            @default(0)
+  repostCount       Int            @default(0)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  expertSlots       ExpertSlot[]
+  comments          ArticleComment[]
+  ratings           ArticleRating[]
+
+  @@index([status, publishedAt])
+  @@index([topic, status])
+}
+
+model ArticleComment {
+  id         String   @id @default(cuid())
+  articleId  String
+  article    Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId   String?
+  parent     ArticleComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    ArticleComment[] @relation("CommentReplies")
+  body       String
+  isHidden   Boolean  @default(false)
+  hiddenReason String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  likes      CommentLike[]
+
+  @@index([articleId, createdAt])
+  @@index([parentId, createdAt])
+}
+
+model ArticleRating {
+  id         String   @id @default(cuid())
+  articleId  String
+  article    Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  value      Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([articleId, userId])
+  @@index([articleId])
+}
+
+model CommentLike {
+  id         String         @id @default(cuid())
+  commentId  String
+  comment    ArticleComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime       @default(now())
+
+  @@unique([commentId, userId])
+  @@index([commentId])
+}
+
+model ExpertSlot {
+  id                String         @id @default(cuid())
+  articleId         String
+  article           Article        @relation(fields: [articleId], references: [id])
+  geoCode           String
+  title             String
+  specialization    String
+  contact           String
+  vacanciesUrl      String?
+  isRemoteFallback  Boolean        @default(false)
+  startsAt          DateTime
+  expiresAt         DateTime
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([articleId, geoCode, expiresAt])
+}
+
+model Listing {
+  id                String         @id @default(cuid())
+  type              ListingType
+  title             String
+  slug              String?        @unique
+  description       String
+  city              String?
+  geoCode           String?
+  employmentType    EmploymentType?
+  contact           String
+  status            ContentStatus  @default(PENDING_REVIEW)
+  hiddenReason      String?
+  viewCount         Int            @default(0)
+  responseCount     Int            @default(0)
+  expiresAt         DateTime?
+  createdById       String
+  createdBy         User           @relation(fields: [createdById], references: [id])
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  savedBy           SavedListing[]
+
+  @@index([type, status, createdAt])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  followerId  String
+  follower    User     @relation("AuthorFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  authorId    String
+  author      User     @relation("AuthorFollowers", fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, authorId])
+  @@index([authorId])
+}
+
+model TopicFollow {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic     String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, topic])
+  @@index([topic])
+}
+
+model SavedListing {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, listingId])
+  @@index([listingId])
+}
+
+model Report {
+  id            String           @id @default(cuid())
+  targetType    ReportTargetType
+  targetId      String
+  reason        String
+  status        ReportStatus     @default(PENDING_REVIEW)
+  reporterId    String
+  reporter      User             @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reviewedById  String?
+  reviewedBy    User?            @relation("ReviewedReports", fields: [reviewedById], references: [id])
+  reviewedAt    DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([targetType, targetId])
+  @@index([status, createdAt])
+}
+
+model Resume {
+  id                 String               @id @default(cuid())
+  userId             String               @unique
+  user               User                 @relation(fields: [userId], references: [id])
+  title              String
+  bio                String
+  city               String?
+  roleGoal           String
+  experienceMonths   Int                  @default(0)
+  contactEmail       String?
+  contactTelegram    String?
+  viewCount          Int                  @default(0)
+  responseCount      Int                  @default(0)
+  isPublic           Boolean              @default(true)
+  hiddenByInactivity Boolean              @default(false)
+  lastVisitedAt      DateTime             @default(now())
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  unlocks            ResumeContactUnlock[]
+}
+
+model ResumeContactUnlock {
+  id         String       @id @default(cuid())
+  resumeId   String
+  resume     Resume       @relation(fields: [resumeId], references: [id])
+  studioId   String
+  studio     User         @relation(fields: [studioId], references: [id])
+  unlockedAt DateTime     @default(now())
+  expiresAt  DateTime
+
+  @@index([resumeId, studioId, expiresAt])
+}
+
+model Payment {
+  id               String        @id @default(cuid())
+  payerId          String
+  payer            User          @relation(fields: [payerId], references: [id])
+  type             PaymentType
+  amountUsd        Decimal       @db.Decimal(10, 2)
+  txHash           String?
+  receiptImageUrl  String?
+  status           PaymentStatus @default(PENDING)
+  rejectionReason  String?
+  referenceType    String
+  referenceId      String
+  reviewedById     String?
+  reviewedAt       DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([referenceType, referenceId])
+  @@index([status, createdAt])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id            String   @id @default(cuid())
+  sessionToken  String   @unique
+  userId        String
+  expires       DateTime
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier    String
+  token         String   @unique
+  expires       DateTime
+
+  @@unique([identifier, token])
+}
