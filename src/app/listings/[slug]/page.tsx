@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { addListingReviewAction, reportContentAction, respondToListingAction, saveListingAction } from "@/app/actions";
+import {
+  addListingReviewAction,
+  deleteOwnListingReviewAction,
+  reportContentAction,
+  respondToListingAction,
+  saveListingAction,
+  updateOwnListingReviewAction
+} from "@/app/actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { siteUrl, truncateSeo } from "@/lib/seo";
@@ -56,7 +63,7 @@ export default async function ListingDetailsPage({
   searchParams
 }: {
   params: { slug: string };
-  searchParams?: { reported?: string };
+  searchParams?: { reported?: string; review?: string };
 }) {
   const session = await auth();
   const listing = await findListing(params.slug);
@@ -69,6 +76,14 @@ export default async function ListingDetailsPage({
   const visibleRatings = listing.reviews.map((review) => review.rating).filter((rating): rating is number => typeof rating === "number");
   const averageRating = visibleRatings.length ? visibleRatings.reduce((sum, rating) => sum + rating, 0) / visibleRatings.length : 0;
   const isServiceOwner = Boolean(session?.user?.id && session.user.id === listing.createdById);
+  const reviewMessage =
+    searchParams?.review === "added"
+      ? "Отзыв опубликован."
+      : searchParams?.review === "updated"
+        ? "Отзыв обновлен."
+        : searchParams?.review === "deleted"
+          ? "Отзыв удален."
+          : null;
 
   return (
     <article className="bg-white p-6 shadow-sm">
@@ -153,24 +168,35 @@ export default async function ListingDetailsPage({
           )}
 
           {session?.user && !isServiceOwner && (
-            <form action={addListingReviewAction} className="mt-4 space-y-3 rounded-lg border border-zinc-200 p-4">
-              <input type="hidden" name="listingId" value={listing.id} />
-              <label className="block text-sm font-semibold text-zinc-800">
-                Оценка
-                <select name="rating" className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2" defaultValue="5" required>
-                  <option value="5">5 - отлично</option>
-                  <option value="4">4 - хорошо</option>
-                  <option value="3">3 - нормально</option>
-                  <option value="2">2 - слабо</option>
-                  <option value="1">1 - плохо</option>
-                </select>
-              </label>
-              <label className="block text-sm font-semibold text-zinc-800">
-                Отзыв
-                <textarea name="body" className="mt-1 min-h-28 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm leading-6" placeholder="Что понравилось, что можно улучшить, был ли результат" required />
-              </label>
-              <button className="btn btn-primary" type="submit">Опубликовать отзыв</button>
-            </form>
+            <details className="mt-4 rounded-lg border border-zinc-200 bg-white">
+              <summary className="cursor-pointer list-none rounded-lg px-4 py-3 text-sm font-semibold text-zinc-900">
+                Оставить отзыв
+              </summary>
+              <form action={addListingReviewAction} className="space-y-3 border-t border-zinc-100 p-4">
+                <input type="hidden" name="listingId" value={listing.id} />
+                <label className="block text-sm font-semibold text-zinc-800">
+                  Оценка
+                  <select name="rating" className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2" defaultValue="5" required>
+                    <option value="5">5 - отлично</option>
+                    <option value="4">4 - хорошо</option>
+                    <option value="3">3 - нормально</option>
+                    <option value="2">2 - слабо</option>
+                    <option value="1">1 - плохо</option>
+                  </select>
+                </label>
+                <label className="block text-sm font-semibold text-zinc-800">
+                  Отзыв
+                  <textarea name="body" className="mt-1 min-h-28 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm leading-6" placeholder="Что понравилось, что можно улучшить, был ли результат" required />
+                </label>
+                <button className="btn btn-primary" type="submit">Опубликовать отзыв</button>
+              </form>
+            </details>
+          )}
+
+          {reviewMessage && (
+            <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+              {reviewMessage}
+            </div>
           )}
 
           {isServiceOwner && <p className="mt-4 rounded-lg bg-zinc-50 p-4 text-sm text-zinc-600">Автор услуги не может оставить отзыв себе, но может отвечать клиентам.</p>}
@@ -184,6 +210,32 @@ export default async function ListingDetailsPage({
                 </div>
                 <p className="mt-1 text-sm font-semibold text-accent">Оценка: {review.rating} из 5</p>
                 <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{review.body}</p>
+
+                {session?.user?.id === review.userId && (
+                  <div className="mt-3 rounded-lg bg-zinc-50 p-3">
+                    <details>
+                      <summary className="cursor-pointer list-none text-sm font-semibold text-zinc-800">Редактировать отзыв</summary>
+                      <form action={updateOwnListingReviewAction} className="mt-3 space-y-2">
+                        <input type="hidden" name="reviewId" value={review.id} />
+                        <select name="rating" className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm" defaultValue={String(review.rating || 5)} required>
+                          <option value="5">5 - отлично</option>
+                          <option value="4">4 - хорошо</option>
+                          <option value="3">3 - нормально</option>
+                          <option value="2">2 - слабо</option>
+                          <option value="1">1 - плохо</option>
+                        </select>
+                        <textarea name="body" className="min-h-24 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm leading-6" defaultValue={review.body} required />
+                        <div className="flex flex-wrap gap-2">
+                          <button className="btn btn-primary" type="submit">Сохранить</button>
+                        </div>
+                      </form>
+                    </details>
+                    <form action={deleteOwnListingReviewAction} className="mt-2">
+                      <input type="hidden" name="reviewId" value={review.id} />
+                      <button className="btn btn-danger" type="submit">Удалить отзыв</button>
+                    </form>
+                  </div>
+                )}
 
                 {review.replies.length > 0 && (
                   <div className="mt-3 space-y-2 border-l-2 border-zinc-100 pl-3">

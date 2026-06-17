@@ -800,6 +800,46 @@ export async function addListingReviewAction(formData: FormData) {
   redirect(`/listings/${listing.id}?review=added#reviews`);
 }
 
+export async function updateOwnListingReviewAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const reviewId = cleanText(formData.get("reviewId"), 120);
+  const body = requireMultiline(formData.get("body"), "отзыв", 1600);
+  const rating = Number(formData.get("rating") ?? 0);
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new Error("Оценка должна быть от 1 до 5");
+
+  const review = await prisma.listingReview.findFirst({
+    where: { id: reviewId, userId: session.user.id, parentId: null, isHidden: false },
+    include: { listing: { select: { id: true, type: true, createdById: true } } }
+  });
+  if (!review || review.listing.type !== ListingType.SERVICE) throw new Error("Отзыв не найден");
+  if (review.listing.createdById === session.user.id) throw new Error("Нельзя редактировать отзыв на собственную услугу");
+
+  await prisma.listingReview.update({ where: { id: review.id }, data: { body, rating } });
+
+  await revalidateListing(review.listingId);
+  revalidatePath("/admin");
+  redirect(`/listings/${review.listingId}?review=updated#reviews`);
+}
+
+export async function deleteOwnListingReviewAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const reviewId = cleanText(formData.get("reviewId"), 120);
+  const review = await prisma.listingReview.findFirst({
+    where: { id: reviewId, userId: session.user.id, parentId: null, isHidden: false },
+    select: { id: true, listingId: true }
+  });
+  if (!review) throw new Error("Отзыв не найден");
+
+  await prisma.listingReview.delete({ where: { id: review.id } });
+  await revalidateListing(review.listingId);
+  revalidatePath("/admin");
+  redirect(`/listings/${review.listingId}?review=deleted#reviews`);
+}
+
 export async function deleteListingReviewAction(formData: FormData) {
   const session = await auth();
   if (!session?.user || session.user.role !== "ADMIN") throw new Error("Недостаточно прав");
