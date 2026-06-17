@@ -23,6 +23,7 @@ import { ArticleEditorForm } from "@/components/article-editor-form";
 import { CabinetPanelRouter } from "@/components/cabinet-panel-router";
 import { ListingQuizDisclosure } from "@/components/listing-quiz-disclosure";
 import { ProductForm } from "@/components/product-form";
+import { ProductPublishCleanup } from "@/components/product-publish-cleanup";
 import { ResumeQuizDisclosure } from "@/components/resume-quiz-disclosure";
 import { prisma } from "@/lib/prisma";
 
@@ -85,7 +86,7 @@ function formatDeadline(date?: Date | null) {
 export default async function CabinetPage({
   searchParams
 }: {
-  searchParams?: { created?: string; updated?: string; editArticle?: string };
+  searchParams?: { created?: string; updated?: string; editArticle?: string; productReset?: string };
 }) {
   const user = await requireUser();
 
@@ -122,6 +123,7 @@ export default async function CabinetPage({
   const createdMessage = searchParams?.created ? createdMessages[searchParams.created] : null;
   const updatedMessage = searchParams?.updated ? updatedMessages[searchParams.updated] : null;
   const productJustCreated = searchParams?.created === "product";
+  const productFormKey = productJustCreated ? `product-created-${searchParams?.productReset || "new"}` : "product-new";
   const resumeJustSaved = searchParams?.updated === "resume";
   const profileName = dbUser.name || dbUser.email || "Профиль";
   const accountModeLabel =
@@ -135,6 +137,7 @@ export default async function CabinetPage({
   return (
     <div className="space-y-4">
       <CabinetPanelRouter />
+      <ProductPublishCleanup active={productJustCreated} />
       <section className="rounded-lg bg-white p-4 shadow-sm sm:p-5">
         <div className="flex items-center gap-3">
           {dbUser.image ? (
@@ -298,7 +301,7 @@ export default async function CabinetPage({
         </section>
       )}
 
-      <details id="products" data-cabinet-panel className="group rounded-lg bg-white shadow-sm">
+      <details key={productFormKey} id="products" data-cabinet-panel className="group rounded-lg bg-white shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
           <div className="min-w-0">
             <h2 className="font-semibold">Продать товар</h2>
@@ -307,7 +310,7 @@ export default async function CabinetPage({
           <span className="rounded-full bg-mint px-3 py-1 text-xs font-semibold text-ink">30 дней</span>
         </summary>
         <div className="border-t border-zinc-100 p-4">
-          <ProductForm action={submitProductAction} />
+          <ProductForm key={productFormKey} action={submitProductAction} />
         </div>
       </details>
 
