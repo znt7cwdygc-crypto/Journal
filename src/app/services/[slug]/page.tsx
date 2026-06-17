@@ -56,7 +56,7 @@ export default async function ServiceLandingPage({ params }: { params: { slug: s
         }
       ]
     },
-    include: { createdBy: true },
+    include: { createdBy: true, reviews: { where: { parentId: null, isHidden: false }, select: { rating: true } } },
     orderBy: { createdAt: "desc" },
     take: 6
   });

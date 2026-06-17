@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { reportContentAction, respondToListingAction, saveListingAction } from "@/app/actions";
+import { addListingReviewAction, reportContentAction, respondToListingAction, saveListingAction } from "@/app/actions";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { siteUrl, truncateSeo } from "@/lib/seo";
@@ -18,8 +18,23 @@ async function findListing(slug: string) {
         { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] }
       ]
     },
-    include: { createdBy: true, savedBy: true }
+    include: {
+      createdBy: true,
+      savedBy: true,
+      reviews: {
+        where: { parentId: null, isHidden: false },
+        include: {
+          user: true,
+          replies: { where: { isHidden: false }, include: { user: true }, orderBy: { createdAt: "asc" } }
+        },
+        orderBy: { createdAt: "desc" }
+      }
+    }
   });
+}
+
+function reviewerName(user: { name: string | null; email: string | null }) {
+  return user.name || user.email || "Пользователь";
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -51,6 +66,9 @@ export default async function ListingDetailsPage({
 
   const typeLabel = listing.type === "VACANCY" ? "Вакансия" : "Услуга";
   const listingPath = `/listings/${listing.id}`;
+  const visibleRatings = listing.reviews.map((review) => review.rating).filter((rating): rating is number => typeof rating === "number");
+  const averageRating = visibleRatings.length ? visibleRatings.reduce((sum, rating) => sum + rating, 0) / visibleRatings.length : 0;
+  const isServiceOwner = Boolean(session?.user?.id && session.user.id === listing.createdById);
 
   return (
     <article className="bg-white p-6 shadow-sm">
@@ -92,6 +110,7 @@ export default async function ListingDetailsPage({
         <span>{listing.viewCount + 1} просмотров</span>
         <span>{listing.responseCount} откликов</span>
         <span>{listing.savedBy.length} сохранений</span>
+        {listing.type === "SERVICE" && visibleRatings.length > 0 && <span>Рейтинг: {averageRating.toFixed(1)} из 5</span>}
       </div>
       <p className="mt-4 text-sm font-medium">Контакт: {session?.user ? listing.contact : maskContact(listing.contact)}</p>
       {!session?.user && <p className="mt-1 text-xs text-zinc-500">Войдите, чтобы видеть контакт полностью и отправить отклик.</p>}
@@ -115,6 +134,81 @@ export default async function ListingDetailsPage({
           {listing.createdBy.profileBio && <span className="block text-xs leading-5 text-zinc-600">{listing.createdBy.profileBio}</span>}
         </span>
       </Link>
+
+      {listing.type === "SERVICE" && (
+        <section id="reviews" className="mt-8 border-t border-zinc-100 pt-6">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-2xl font-semibold">Отзывы</h2>
+              <p className="mt-1 text-sm text-zinc-500">
+                {visibleRatings.length > 0 ? `Средняя оценка ${averageRating.toFixed(1)} из 5, отзывов: ${visibleRatings.length}` : "Пока нет отзывов. Можно быть первым."}
+              </p>
+            </div>
+          </div>
+
+          {!session?.user && (
+            <div className="mt-4 rounded-lg bg-zinc-50 p-4 text-sm text-zinc-700">
+              <Link className="font-semibold text-accent" href="/auth/signin">Войдите</Link>, чтобы оставить отзыв об услуге.
+            </div>
+          )}
+
+          {session?.user && !isServiceOwner && (
+            <form action={addListingReviewAction} className="mt-4 space-y-3 rounded-lg border border-zinc-200 p-4">
+              <input type="hidden" name="listingId" value={listing.id} />
+              <label className="block text-sm font-semibold text-zinc-800">
+                Оценка
+                <select name="rating" className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2" defaultValue="5" required>
+                  <option value="5">5 - отлично</option>
+                  <option value="4">4 - хорошо</option>
+                  <option value="3">3 - нормально</option>
+                  <option value="2">2 - слабо</option>
+                  <option value="1">1 - плохо</option>
+                </select>
+              </label>
+              <label className="block text-sm font-semibold text-zinc-800">
+                Отзыв
+                <textarea name="body" className="mt-1 min-h-28 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm leading-6" placeholder="Что понравилось, что можно улучшить, был ли результат" required />
+              </label>
+              <button className="btn btn-primary" type="submit">Опубликовать отзыв</button>
+            </form>
+          )}
+
+          {isServiceOwner && <p className="mt-4 rounded-lg bg-zinc-50 p-4 text-sm text-zinc-600">Автор услуги не может оставить отзыв себе, но может отвечать клиентам.</p>}
+
+          <div className="mt-5 space-y-4">
+            {listing.reviews.map((review) => (
+              <div key={review.id} className="rounded-lg border border-zinc-100 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                  <span className="font-semibold text-zinc-900">{reviewerName(review.user)}</span>
+                  <span className="text-xs text-zinc-500">{review.createdAt.toLocaleDateString("ru-RU")}</span>
+                </div>
+                <p className="mt-1 text-sm font-semibold text-accent">Оценка: {review.rating} из 5</p>
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{review.body}</p>
+
+                {review.replies.length > 0 && (
+                  <div className="mt-3 space-y-2 border-l-2 border-zinc-100 pl-3">
+                    {review.replies.map((reply) => (
+                      <div key={reply.id} className="rounded bg-zinc-50 p-3 text-sm">
+                        <p className="font-semibold text-zinc-900">Ответ автора: {reviewerName(reply.user)}</p>
+                        <p className="mt-1 whitespace-pre-wrap leading-6 text-zinc-700">{reply.body}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {isServiceOwner && (
+                  <form action={addListingReviewAction} className="mt-3 flex flex-col gap-2 sm:flex-row">
+                    <input type="hidden" name="listingId" value={listing.id} />
+                    <input type="hidden" name="parentId" value={review.id} />
+                    <input className="min-w-0 flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="body" placeholder="Ответить на отзыв" required />
+                    <button className="btn btn-muted" type="submit">Ответить</button>
+                  </form>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </article>
   );
 }

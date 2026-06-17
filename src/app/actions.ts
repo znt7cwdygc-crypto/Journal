@@ -745,6 +745,52 @@ export async function saveListingAction(formData: FormData) {
   revalidatePath("/cabinet");
 }
 
+export async function addListingReviewAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const listingId = cleanText(formData.get("listingId"), 120);
+  const parentId = cleanText(formData.get("parentId"), 120) || null;
+  const body = requireMultiline(formData.get("body"), "отзыв", 1600);
+  const listing = await prisma.listing.findUnique({ where: { id: listingId }, select: { id: true, type: true, createdById: true } });
+  if (!listing || listing.type !== ListingType.SERVICE) throw new Error("Отзывы можно оставлять только на услуги");
+
+  if (parentId) {
+    if (listing.createdById !== session.user.id) throw new Error("Отвечать на отзыв может только автор услуги");
+    const parent = await prisma.listingReview.findFirst({ where: { id: parentId, listingId: listing.id, parentId: null, isHidden: false } });
+    if (!parent) throw new Error("Отзыв не найден");
+
+    await prisma.listingReview.create({
+      data: { listingId: listing.id, userId: session.user.id, parentId: parent.id, body, rating: null }
+    });
+  } else {
+    if (listing.createdById === session.user.id) throw new Error("Нельзя оставлять отзыв на собственную услугу");
+    const rating = Number(formData.get("rating") ?? 0);
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new Error("Оценка должна быть от 1 до 5");
+
+    await prisma.listingReview.create({
+      data: { listingId: listing.id, userId: session.user.id, body, rating }
+    });
+  }
+
+  await revalidateListing(listing.id);
+  revalidatePath("/admin");
+  redirect(`/listings/${listing.id}?review=added#reviews`);
+}
+
+export async function deleteListingReviewAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") throw new Error("Недостаточно прав");
+
+  const reviewId = cleanText(formData.get("reviewId"), 120);
+  const review = await prisma.listingReview.findUnique({ where: { id: reviewId }, select: { id: true, listingId: true } });
+  if (!review) throw new Error("Отзыв не найден");
+
+  await prisma.listingReview.delete({ where: { id: review.id } });
+  await revalidateListing(review.listingId);
+  revalidatePath("/admin");
+}
+
 export async function reportContentAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");

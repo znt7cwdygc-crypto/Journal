@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { reviewPaymentAction, reviewReportAction } from "@/app/actions";
+import { deleteListingReviewAction, reviewPaymentAction, reviewReportAction } from "@/app/actions";
 import { requireRole } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { TreeBranch, TreeLeaf, TreeRoot } from "@/components/tree";
@@ -14,11 +14,17 @@ export const metadata: Metadata = {
 export default async function AdminPage() {
   await requireRole(["ADMIN"]);
 
-  const [pendingPayments, pendingArticles, pendingListings, reports] = await Promise.all([
+  const [pendingPayments, pendingArticles, pendingListings, reports, listingReviews] = await Promise.all([
     prisma.payment.findMany({ where: { status: "PENDING" }, orderBy: { createdAt: "asc" } }),
     prisma.article.findMany({ where: { status: "PENDING_REVIEW" }, orderBy: { createdAt: "asc" } }),
     prisma.listing.findMany({ where: { status: "PENDING_REVIEW" }, orderBy: { createdAt: "asc" } }),
-    prisma.report.findMany({ where: { status: "PENDING_REVIEW" }, include: { reporter: true }, orderBy: { createdAt: "asc" } })
+    prisma.report.findMany({ where: { status: "PENDING_REVIEW" }, include: { reporter: true }, orderBy: { createdAt: "asc" } }),
+    prisma.listingReview.findMany({
+      where: { listing: { type: "SERVICE" } },
+      include: { listing: true, user: true },
+      orderBy: { createdAt: "desc" },
+      take: 30
+    })
   ]);
 
   return (
@@ -42,6 +48,24 @@ export default async function AdminPage() {
                   <input type="hidden" name="reportId" value={report.id} />
                   <input type="hidden" name="decision" value="resolve" />
                   <button className="rounded bg-emerald-600 px-3 py-1 text-white" type="submit">Разрешить</button>
+                </form>
+              </div>
+            </TreeLeaf>
+          ))}
+        </TreeBranch>
+      </TreeRoot>
+
+      <TreeRoot title="Отзывы на услуги">
+        <TreeBranch label={`Последние (${listingReviews.length})`}>
+          {listingReviews.length === 0 && <p className="text-sm text-zinc-500">Отзывов пока нет.</p>}
+          {listingReviews.map((review) => (
+            <TreeLeaf key={review.id}>
+              <p>{review.parentId ? "Ответ" : `Оценка ${review.rating || "-"} из 5`} • {review.listing.title}</p>
+              <p className="text-xs text-zinc-500">{review.body} • от {review.user.email || review.user.name}</p>
+              <div className="mt-2 flex gap-2">
+                <form action={deleteListingReviewAction}>
+                  <input type="hidden" name="reviewId" value={review.id} />
+                  <button className="rounded bg-red-600 px-3 py-1 text-white" type="submit">Удалить отзыв</button>
                 </form>
               </div>
             </TreeLeaf>

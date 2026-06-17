@@ -70,7 +70,7 @@ export default async function ServicesPage({ searchParams }: { searchParams?: { 
       ]
     },
     orderBy: sort === "views" ? { viewCount: "desc" } : sort === "responses" ? { responseCount: "desc" } : { createdAt: "desc" },
-    include: { createdBy: true }
+    include: { createdBy: true, reviews: { where: { parentId: null, isHidden: false }, select: { rating: true } } }
   });
 
   if (services.length > 0) {

@@ -106,6 +106,7 @@ model User {
   articleComments   ArticleComment[]
   articleRatings    ArticleRating[]
   commentLikes      CommentLike[]
+  listingReviews    ListingReview[]
   reports           Report[]
   reviewedReports   Report[]             @relation("ReviewedReports")
   authorFollowers   Follow[]             @relation("AuthorFollowers")
@@ -231,8 +232,29 @@ model Listing {
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   savedBy           SavedListing[]
+  reviews           ListingReview[]
 
   @@index([type, status, createdAt])
+}
+
+model ListingReview {
+  id           String          @id @default(cuid())
+  listingId    String
+  listing      Listing         @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId     String?
+  parent       ListingReview?  @relation("ListingReviewReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      ListingReview[] @relation("ListingReviewReplies")
+  rating       Int?
+  body         String
+  isHidden     Boolean         @default(false)
+  hiddenReason String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([listingId, createdAt])
+  @@index([parentId, createdAt])
 }
 
 model Follow {

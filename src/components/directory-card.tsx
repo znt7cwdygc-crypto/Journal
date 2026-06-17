@@ -23,6 +23,7 @@ type DirectoryListing = {
   createdAt: Date;
   createdById: string;
   createdBy: DirectoryUser;
+  reviews?: { rating: number | null }[];
 };
 
 type DirectoryResume = {
@@ -88,6 +89,8 @@ export function ListingDirectoryCard({
   const reportReason = kind === "VACANCY" ? "Жалоба на вакансию" : "Жалоба на услугу";
   const kindClass = kind === "VACANCY" ? "bg-hot text-white" : "bg-sky text-white";
   const formatLabel = listing.employmentType || "Формат не указан";
+  const ratings = (listing.reviews || []).map((review) => review.rating).filter((rating): rating is number => typeof rating === "number");
+  const averageRating = ratings.length ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : 0;
 
   return (
     <article className="directory-card bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5">
@@ -107,6 +110,7 @@ export function ListingDirectoryCard({
         <span>{formatLabel}</span>
         <span>Просмотры: {listing.viewCount + 1}</span>
         <span>Отклики: {listing.responseCount}</span>
+        {kind === "SERVICE" && ratings.length > 0 && <span>Рейтинг: {averageRating.toFixed(1)} ({ratings.length})</span>}
       </div>
 
       <div className="mt-3 text-sm text-zinc-700">
