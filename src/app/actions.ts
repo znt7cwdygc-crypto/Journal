@@ -3,14 +3,14 @@
 import { hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { AccountMode, ContentStatus, ListingType, PaymentStatus, PaymentType, Prisma, ProfileKind } from "@prisma/client";
+import { AccountMode, ContentStatus, ListingType, PaymentStatus, PaymentType, Prisma, ProductCondition, ProductDelivery, ProfileKind } from "@prisma/client";
 import { auth, signIn, signOut } from "@/auth";
 import { getExpertLicenseEnd, getResumeUnlockEnd } from "@/lib/licenses";
 import { prisma } from "@/lib/prisma";
-import { listingExpiresAt, resumeExpiresAt } from "@/lib/publication-periods";
+import { listingExpiresAt, productExpiresAt, resumeExpiresAt } from "@/lib/publication-periods";
 import { safeInternalPath } from "@/lib/safe-redirect";
 import { articleTopic } from "@/lib/topics";
-import { saveUploadedImage } from "@/lib/uploaded-image";
+import { isUploadedFile, saveUploadedImage } from "@/lib/uploaded-image";
 import { cleanMultiline, cleanNumber, cleanText, makeSlug, optionalUrl, requireMultiline, requireText } from "@/lib/validation";
 
 function ensureAdult(formData: FormData) {
@@ -84,6 +84,18 @@ function canProvide(accountMode?: string | null) {
 
 async function resolveCoverImage(formData: FormData) {
   return await saveUploadedImage(formData.get("coverFile")) ?? optionalUrl(formData.get("coverImage"));
+}
+
+async function productImageDataUrl(value: unknown) {
+  if (!isUploadedFile(value)) return null;
+  if (!value.name && !value.size) return null;
+  if ((value.size ?? 0) <= 0) return null;
+  if ((value.size ?? 0) > 2 * 1024 * 1024) throw new Error("Фото товара слишком большое. Загрузите файл до 2 МБ");
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  if (!allowedTypes.includes(value.type ?? "")) throw new Error("Фото товара должно быть JPG, PNG, WebP или GIF");
+
+  const bytes = Buffer.from(await value.arrayBuffer());
+  return `data:${value.type};base64,${bytes.toString("base64")}`;
 }
 
 async function revalidateArticle(articleId: string) {
@@ -192,6 +204,21 @@ async function revalidateListing(listingId: string) {
   revalidatePath("/vacancies");
   revalidatePath("/services");
   revalidatePath(`/listings/${listing.id}`);
+}
+
+async function revalidateProduct(productId: string) {
+  revalidatePath("/products");
+  revalidatePath(`/products/${productId}`);
+}
+
+function normalizeProductCondition(value: FormDataEntryValue | null): ProductCondition {
+  const text = String(value ?? "");
+  return ["NEW", "GOOD", "USED", "NEEDS_REPAIR"].includes(text) ? (text as ProductCondition) : ProductCondition.GOOD;
+}
+
+function normalizeProductDelivery(value: FormDataEntryValue | null): ProductDelivery {
+  const text = String(value ?? "");
+  return ["CITY_ONLY", "DELIVERY", "ANY"].includes(text) ? (text as ProductDelivery) : ProductDelivery.ANY;
 }
 
 export async function updateProfileSettingsAction(formData: FormData) {
@@ -327,6 +354,21 @@ export async function respondToListingAction(formData: FormData) {
   });
 
   await revalidateListing(listingId);
+}
+
+export async function respondToProductAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const productId = String(formData.get("productId") ?? "");
+  if (!productId) throw new Error("Product ID missing");
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: { responseCount: { increment: 1 } }
+  });
+
+  await revalidateProduct(productId);
 }
 
 export async function respondToResumeAction(formData: FormData) {
@@ -706,6 +748,121 @@ export async function deleteListingAction(formData: FormData) {
   redirect("/cabinet?updated=listing#materials");
 }
 
+export async function submitProductAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const title = requireText(formData.get("title"), "название товара", 140);
+  const imageUrl = await productImageDataUrl(formData.get("imageFile"));
+  if (!imageUrl) throw new Error("Загрузите фото товара");
+
+  const product = await prisma.product.create({
+    data: {
+      title,
+      category: requireText(formData.get("category"), "категорию", 80),
+      priceRub: cleanNumber(formData.get("priceRub"), 0, 100000000),
+      city: cleanText(formData.get("city"), 120) || null,
+      delivery: normalizeProductDelivery(formData.get("delivery")),
+      condition: normalizeProductCondition(formData.get("condition")),
+      description: requireMultiline(formData.get("description"), "описание", 3000),
+      contact: requireText(formData.get("contact"), "контакт", 180),
+      imageUrl,
+      status: ContentStatus.PUBLISHED,
+      expiresAt: productExpiresAt(),
+      createdById: session.user.id
+    }
+  });
+
+  await revalidateProduct(product.id);
+  revalidatePath("/cabinet");
+  redirect("/cabinet?created=product#materials");
+}
+
+export async function updateProductAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const productId = cleanText(formData.get("productId"), 120);
+  const product = await prisma.product.findFirst({ where: { id: productId, createdById: session.user.id } });
+  if (!product) throw new Error("Товар не найден");
+
+  const nextImage = await productImageDataUrl(formData.get("imageFile"));
+  await prisma.product.update({
+    where: { id: product.id },
+    data: {
+      title: requireText(formData.get("title"), "название товара", 140),
+      category: requireText(formData.get("category"), "категорию", 80),
+      priceRub: cleanNumber(formData.get("priceRub"), 0, 100000000),
+      city: cleanText(formData.get("city"), 120) || null,
+      delivery: normalizeProductDelivery(formData.get("delivery")),
+      condition: normalizeProductCondition(formData.get("condition")),
+      description: requireMultiline(formData.get("description"), "описание", 3000),
+      contact: requireText(formData.get("contact"), "контакт", 180),
+      imageUrl: nextImage ?? product.imageUrl
+    }
+  });
+
+  await revalidateProduct(product.id);
+  revalidatePath("/cabinet");
+  redirect("/cabinet?updated=product#materials");
+}
+
+export async function toggleProductVisibilityAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const productId = cleanText(formData.get("productId"), 120);
+  const product = await prisma.product.findFirst({ where: { id: productId, createdById: session.user.id } });
+  if (!product) throw new Error("Товар не найден");
+
+  await prisma.product.update({
+    where: { id: product.id },
+    data: {
+      status: product.status === ContentStatus.PUBLISHED ? ContentStatus.ARCHIVED : ContentStatus.PUBLISHED,
+      hiddenReason: product.status === ContentStatus.PUBLISHED ? "Скрыто автором" : null,
+      expiresAt: product.status === ContentStatus.PUBLISHED ? product.expiresAt : productExpiresAt()
+    }
+  });
+
+  await revalidateProduct(product.id);
+  revalidatePath("/cabinet");
+  redirect("/cabinet?updated=product#materials");
+}
+
+export async function renewProductAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const productId = cleanText(formData.get("productId"), 120);
+  const product = await prisma.product.findFirst({ where: { id: productId, createdById: session.user.id } });
+  if (!product) throw new Error("Товар не найден");
+  if (product.status !== ContentStatus.ARCHIVED) throw new Error("Продлить можно только архивный товар");
+
+  await prisma.product.update({
+    where: { id: product.id },
+    data: { status: ContentStatus.PUBLISHED, hiddenReason: null, expiresAt: productExpiresAt() }
+  });
+
+  await revalidateProduct(product.id);
+  revalidatePath("/cabinet");
+  redirect("/cabinet?updated=productRenewed#materials");
+}
+
+export async function deleteProductAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const productId = cleanText(formData.get("productId"), 120);
+  const product = await prisma.product.findFirst({ where: { id: productId, createdById: session.user.id } });
+  if (!product) throw new Error("Товар не найден");
+
+  await prisma.product.delete({ where: { id: product.id } });
+
+  revalidatePath("/products");
+  revalidatePath("/cabinet");
+  redirect("/cabinet?updated=product#materials");
+}
+
 export async function followAuthorAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
@@ -764,6 +921,22 @@ export async function saveListingAction(formData: FormData) {
   });
 
   await revalidateListing(listingId);
+  revalidatePath("/cabinet");
+}
+
+export async function saveProductAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const productId = String(formData.get("productId") ?? "");
+  if (!productId) throw new Error("Product ID missing");
+  await prisma.savedProduct.upsert({
+    where: { userId_productId: { userId: session.user.id, productId } },
+    update: {},
+    create: { userId: session.user.id, productId }
+  });
+
+  await revalidateProduct(productId);
   revalidatePath("/cabinet");
 }
 
@@ -861,7 +1034,7 @@ export async function reportContentAction(formData: FormData) {
   const targetId = String(formData.get("targetId") ?? "");
   const reason = cleanText(formData.get("reason"), 600) || "Проверить материал";
   const next = safeInternalPath(cleanText(formData.get("next"), 500), "/articles");
-  if (!["ARTICLE", "COMMENT", "PROFILE", "LISTING"].includes(targetType) || !targetId) throw new Error("Некорректная жалоба");
+  if (!["ARTICLE", "COMMENT", "PROFILE", "LISTING", "PRODUCT"].includes(targetType) || !targetId) throw new Error("Некорректная жалоба");
 
   await prisma.report.create({
     data: {
@@ -877,6 +1050,7 @@ export async function reportContentAction(formData: FormData) {
   revalidatePath("/authors");
   revalidatePath("/vacancies");
   revalidatePath("/services");
+  revalidatePath("/products");
   redirect(withStatusParam(next, "reported", "1"));
 }
 
@@ -905,12 +1079,16 @@ export async function reviewReportAction(formData: FormData) {
     if (report.targetType === "LISTING") {
       await prisma.listing.update({ where: { id: report.targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: report.reason } }).catch(() => null);
     }
+    if (report.targetType === "PRODUCT") {
+      await prisma.product.update({ where: { id: report.targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: report.reason } }).catch(() => null);
+    }
   }
 
   revalidatePath("/admin");
   revalidatePath("/articles");
   revalidatePath("/vacancies");
   revalidatePath("/services");
+  revalidatePath("/products");
 }
 
 function cleanList(formData: FormData, name: string, maxItems = 8) {

@@ -19,7 +19,7 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
   const q = normalizeQuery(searchParams?.q);
   const now = new Date();
 
-  const [articles, authors, listings, resumes] = q
+  const [articles, authors, listings, resumes, products] = q
     ? await Promise.all([
         prisma.article.findMany({
           where: {
@@ -81,11 +81,30 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
           include: { user: true },
           orderBy: { updatedAt: "desc" },
           take: 10
+        }),
+        prisma.product.findMany({
+          where: {
+            status: "PUBLISHED",
+            OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+            AND: [
+              {
+                OR: [
+                  { title: { contains: q, mode: "insensitive" } },
+                  { description: { contains: q, mode: "insensitive" } },
+                  { category: { contains: q, mode: "insensitive" } },
+                  { city: { contains: q, mode: "insensitive" } }
+                ]
+              }
+            ]
+          },
+          include: { createdBy: true },
+          orderBy: { createdAt: "desc" },
+          take: 10
         })
       ])
-    : [[], [], [], []];
+    : [[], [], [], [], []];
 
-  const total = articles.length + authors.length + listings.length + resumes.length;
+  const total = articles.length + authors.length + listings.length + resumes.length + products.length;
 
   return (
     <div className="space-y-5">
@@ -153,6 +172,18 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
               <p className="text-xs text-zinc-500">{resume.user.name || resume.user.email || "Профиль"} • {resume.city || "город не указан"}</p>
               <h2 className="mt-1 font-semibold">{resume.title}</h2>
               <p className="mt-2 text-sm text-zinc-600">{resume.bio}</p>
+            </Link>
+          ))}
+        </SearchSection>
+      )}
+
+      {products.length > 0 && (
+        <SearchSection title="Товары">
+          {products.map((product) => (
+            <Link key={product.id} href={`/products/${product.id}`} className="block border border-zinc-200 bg-white p-4 hover:border-hot">
+              <p className="text-xs text-zinc-500">{product.category} • {product.city || "город не указан"} • {new Intl.NumberFormat("ru-RU").format(product.priceRub)} ₽</p>
+              <h2 className="mt-1 font-semibold">{product.title}</h2>
+              <p className="mt-2 text-sm text-zinc-600">{product.description}</p>
             </Link>
           ))}
         </SearchSection>

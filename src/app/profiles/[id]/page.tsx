@@ -42,6 +42,11 @@ async function findProfile(id: string) {
         orderBy: { createdAt: "desc" },
         take: 10
       },
+      products: {
+        where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+        orderBy: { createdAt: "desc" },
+        take: 10
+      },
       resume: true,
       authorFollowers: true,
       articleComments: {
@@ -151,6 +156,7 @@ export default async function ProfilePage({
               <span className="rounded-full bg-yellow-50 px-3 py-1 font-medium text-amber-800">{useful} полезных реакций</span>
               <span className="rounded-full bg-yellow-50 px-3 py-1 font-medium text-amber-800">рейтинг полезности {usefulnessRating}</span>
               <span className="rounded-full bg-teal-50 px-3 py-1 font-medium text-accent">{user.listings.length} размещений</span>
+              <span className="rounded-full bg-mint px-3 py-1 font-medium text-ink">{user.products.length} товаров</span>
               <span className="rounded-full bg-zinc-100 px-3 py-1 font-medium text-zinc-700">{user.authorFollowers.length} подписчиков</span>
               {verified && <span className="rounded-full bg-emerald-50 px-3 py-1 font-medium text-emerald-700">проверенный профиль</span>}
               {activeAuthor && <span className="rounded-full bg-sky-50 px-3 py-1 font-medium text-sky-700">активный автор</span>}
@@ -195,6 +201,7 @@ export default async function ProfilePage({
         <a className="rounded-lg bg-zinc-100 px-3 py-2 font-semibold text-zinc-700 hover:bg-zinc-200" href="#discussions">Обсуждения</a>
         <a className="rounded-lg bg-zinc-100 px-3 py-2 font-semibold text-zinc-700 hover:bg-zinc-200" href="#vacancies">Вакансии</a>
         <a className="rounded-lg bg-zinc-100 px-3 py-2 font-semibold text-zinc-700 hover:bg-zinc-200" href="#services">Услуги</a>
+        <a className="rounded-lg bg-zinc-100 px-3 py-2 font-semibold text-zinc-700 hover:bg-zinc-200" href="#products">Товары</a>
         <a className="rounded-lg bg-zinc-100 px-3 py-2 font-semibold text-zinc-700 hover:bg-zinc-200" href="#resume">Резюме</a>
       </nav>
 
@@ -253,6 +260,22 @@ export default async function ProfilePage({
             <Link key={listing.id} href={`/listings/${listing.id}`} className="block rounded border p-2 hover:bg-zinc-50">
               <p className="font-medium">{listing.title}</p>
               <p className="text-xs text-zinc-500">{listing.city || "Удаленно"}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section id="products" className="rounded-xl bg-white p-5 shadow-sm">
+        <h2 className="font-medium">Товары автора</h2>
+        <div className="mt-3 space-y-2 text-sm">
+          {user.products.length === 0 && <p className="text-zinc-500">Пока нет товаров.</p>}
+          {user.products.map((product) => (
+            <Link key={product.id} href={`/products/${product.id}`} className="flex items-center gap-3 rounded border p-2 hover:bg-zinc-50">
+              {product.imageUrl && <img className="h-12 w-12 shrink-0 rounded object-cover" src={product.imageUrl} alt={product.title} />}
+              <span className="min-w-0">
+                <span className="block truncate font-medium">{product.title}</span>
+                <span className="text-xs text-zinc-500">{product.category} • {new Intl.NumberFormat("ru-RU").format(product.priceRub)} ₽</span>
+              </span>
             </Link>
           ))}
         </div>

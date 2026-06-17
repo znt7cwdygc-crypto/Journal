@@ -5,19 +5,24 @@ import {
   createResumeAction,
   deleteArticleAction,
   deleteListingAction,
+  deleteProductAction,
   renewListingAction,
+  renewProductAction,
   renewResumeAction,
   saveBlogDraftAction,
   submitBlogArticleAction,
   submitListingAction,
+  submitProductAction,
   toggleArticleVisibilityAction,
   toggleListingVisibilityAction,
+  toggleProductVisibilityAction,
   updatePublicProfileAction,
   updateProfileSettingsAction
 } from "@/app/actions";
 import { ArticleEditorForm } from "@/components/article-editor-form";
 import { CabinetPanelRouter } from "@/components/cabinet-panel-router";
 import { ListingQuizDisclosure } from "@/components/listing-quiz-disclosure";
+import { ProductForm } from "@/components/product-form";
 import { ResumeQuizDisclosure } from "@/components/resume-quiz-disclosure";
 import { prisma } from "@/lib/prisma";
 
@@ -31,7 +36,8 @@ export const metadata: Metadata = {
 const createdMessages: Record<string, string> = {
   article: "Материал опубликован в ленте.",
   blog: "Статья опубликована в ленте.",
-  listing: "Размещение опубликовано в разделе вакансий или услуг."
+  listing: "Размещение опубликовано в разделе вакансий или услуг.",
+  product: "Товар опубликован в разделе товаров на 30 дней."
 };
 
 const updatedMessages: Record<string, string> = {
@@ -42,7 +48,9 @@ const updatedMessages: Record<string, string> = {
   article: "Статья обновлена.",
   listing: "Размещение обновлено.",
   listingRenewed: "Публикация продлена на 30 дней.",
-  resumeRenewed: "Резюме продлено на 7 дней."
+  resumeRenewed: "Резюме продлено на 7 дней.",
+  product: "Товар обновлен.",
+  productRenewed: "Товар продлен на 30 дней."
 };
 
 const profileKindLabels: Record<string, string> = {
@@ -81,7 +89,7 @@ export default async function CabinetPage({
 }) {
   const user = await requireUser();
 
-  const [dbUser, myArticles, myListings, myResume, draftArticle, followedAuthors, followedTopics, savedListings] = await Promise.all([
+  const [dbUser, myArticles, myListings, myProducts, myResume, draftArticle, followedAuthors, followedTopics, savedListings, savedProducts] = await Promise.all([
     prisma.user.findUnique({
       where: { id: user.id },
       include: {
@@ -91,11 +99,13 @@ export default async function CabinetPage({
     }),
     prisma.article.findMany({ where: { createdById: user.id }, orderBy: { createdAt: "desc" }, take: 10 }),
     prisma.listing.findMany({ where: { createdById: user.id }, orderBy: { createdAt: "desc" }, take: 10 }),
+    prisma.product.findMany({ where: { createdById: user.id }, orderBy: { createdAt: "desc" }, take: 10 }),
     prisma.resume.findUnique({ where: { userId: user.id } }),
     prisma.article.findFirst({ where: { createdById: user.id, status: "DRAFT" }, orderBy: { updatedAt: "desc" } }),
     prisma.follow.findMany({ where: { followerId: user.id }, include: { author: true }, orderBy: { createdAt: "desc" }, take: 6 }),
     prisma.topicFollow.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 8 }),
-    prisma.savedListing.findMany({ where: { userId: user.id }, include: { listing: true }, orderBy: { createdAt: "desc" }, take: 6 })
+    prisma.savedListing.findMany({ where: { userId: user.id }, include: { listing: true }, orderBy: { createdAt: "desc" }, take: 6 }),
+    prisma.savedProduct.findMany({ where: { userId: user.id }, include: { product: true }, orderBy: { createdAt: "desc" }, take: 6 })
   ]);
 
   if (!dbUser) {
@@ -146,8 +156,8 @@ export default async function CabinetPage({
             <p className="text-zinc-500">статей</p>
           </div>
           <div className="rounded-lg bg-zinc-50 p-2">
-            <p className="text-lg font-semibold text-ink">{myListings.length}</p>
-            <p className="text-zinc-500">размещений</p>
+            <p className="text-lg font-semibold text-ink">{myListings.length + myProducts.length}</p>
+            <p className="text-zinc-500">объявлений</p>
           </div>
           <div className="rounded-lg bg-zinc-50 p-2">
             <p className="text-lg font-semibold text-ink">{followedTopics.length + followedAuthors.length}</p>
@@ -160,6 +170,7 @@ export default async function CabinetPage({
           <a className="shrink-0 rounded-lg bg-zinc-900 px-3 py-2 text-white" href="#resume">Резюме</a>
           <a className="shrink-0 rounded-lg bg-zinc-100 px-3 py-2 text-zinc-700" href="#profile">Профиль</a>
           <a className="shrink-0 rounded-lg bg-zinc-100 px-3 py-2 text-zinc-700" href="#materials">Мое</a>
+          <a className="shrink-0 rounded-lg bg-zinc-100 px-3 py-2 text-zinc-700" href="#products">Товар</a>
           {providerMode && <a className="shrink-0 rounded-lg bg-zinc-100 px-3 py-2 text-zinc-700" href="#vacancy">Вакансия</a>}
           {providerMode && <a className="shrink-0 rounded-lg bg-zinc-100 px-3 py-2 text-zinc-700" href="#service">Услуга</a>}
         </div>
@@ -279,6 +290,19 @@ export default async function CabinetPage({
         </div>
       </details>
 
+      <details id="products" data-cabinet-panel className="group rounded-lg bg-white shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
+          <div className="min-w-0">
+            <h2 className="font-semibold">Продать товар</h2>
+            <p className="mt-1 text-xs text-zinc-500">Объявление как на Авито: фото, цена, город, описание и контакт</p>
+          </div>
+          <span className="rounded-full bg-mint px-3 py-1 text-xs font-semibold text-ink">30 дней</span>
+        </summary>
+        <div className="border-t border-zinc-100 p-4">
+          <ProductForm action={submitProductAction} />
+        </div>
+      </details>
+
       <ResumeQuizDisclosure action={createResumeAction} resume={myResume} />
 
       {providerMode && (
@@ -293,7 +317,7 @@ export default async function CabinetPage({
           <div>
             <h2 className="font-semibold">Мое</h2>
             <p className="mt-1 text-xs text-zinc-500">
-              Статьи, подписки, вакансии, услуги и сохраненные размещения в одном месте
+              Статьи, подписки, товары, вакансии, услуги и сохраненное в одном месте
             </p>
           </div>
           <span className="shrink-0 rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700 group-open:bg-zinc-900 group-open:text-white">
@@ -425,6 +449,73 @@ export default async function CabinetPage({
 
           <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
             <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">Мои товары</h3>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600">{myProducts.length}</span>
+            </div>
+            <div className="mt-3 space-y-2">
+              {myProducts.map((product) => {
+                const isExpiredArchive = product.status === "ARCHIVED" && Boolean(product.expiresAt && product.expiresAt <= now);
+                return (
+                  <div key={product.id} className="rounded-lg bg-white p-3 text-sm">
+                    <div className="flex items-start gap-3">
+                      {product.imageUrl && <img className="h-16 w-16 shrink-0 rounded-lg object-cover" src={product.imageUrl} alt={product.title} />}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate font-medium">{product.title}</p>
+                            <p className="mt-1 text-xs text-zinc-500">
+                              Товар • {isExpiredArchive ? "Архив" : listingStatusLabels[String(product.status)] || String(product.status)}
+                              {" • до "}
+                              {formatDeadline(product.expiresAt)}
+                              {product.city ? ` • ${product.city}` : ""}
+                            </p>
+                          </div>
+                          <p className="shrink-0 rounded-lg bg-zinc-900 px-2 py-1 text-xs font-bold text-white">
+                            {new Intl.NumberFormat("ru-RU").format(product.priceRub)} ₽
+                          </p>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-1">
+                          <a className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-800" href={`/products/${product.id}`}>
+                            Открыть
+                          </a>
+                          <a className="rounded-lg bg-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-700" href={`/cabinet/products/${product.id}/edit`}>
+                            Редактировать
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2 border-t border-zinc-100 pt-3">
+                      {isExpiredArchive ? (
+                        <form action={renewProductAction}>
+                          <input type="hidden" name="productId" value={product.id} />
+                          <button className="rounded-lg bg-hot px-3 py-2 text-xs font-semibold text-white" type="submit">
+                            Продлить на 30 дней
+                          </button>
+                        </form>
+                      ) : (
+                        <form action={toggleProductVisibilityAction}>
+                          <input type="hidden" name="productId" value={product.id} />
+                          <button className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-800" type="submit">
+                            {product.status === "PUBLISHED" ? "Скрыть" : "Опубликовать"}
+                          </button>
+                        </form>
+                      )}
+                      <form action={deleteProductAction}>
+                        <input type="hidden" name="productId" value={product.id} />
+                        <button className="rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700" type="submit">
+                          Удалить
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                );
+              })}
+              {myProducts.length === 0 && <p className="text-xs text-zinc-500">Здесь появятся товары, которые вы выставите на продажу.</p>}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
+            <div className="flex items-center justify-between gap-2">
               <h3 className="text-sm font-semibold">Мои вакансии и услуги</h3>
               <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600">{myListings.length}</span>
             </div>
@@ -495,6 +586,25 @@ export default async function CabinetPage({
                 </a>
               ))}
               {savedListings.length === 0 && <p className="text-xs text-zinc-500">Пока ничего не сохранено.</p>}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">Сохраненные товары</h3>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600">{savedProducts.length}</span>
+            </div>
+            <div className="mt-3 space-y-2">
+              {savedProducts.map((item) => (
+                <a key={item.id} className="flex items-center gap-3 rounded-lg bg-white p-3 text-sm hover:text-hot" href={`/products/${item.productId}`}>
+                  {item.product.imageUrl && <img className="h-12 w-12 shrink-0 rounded-lg object-cover" src={item.product.imageUrl} alt={item.product.title} />}
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">{item.product.title}</span>
+                    <span className="mt-1 block text-xs text-zinc-500">{item.product.category}</span>
+                  </span>
+                </a>
+              ))}
+              {savedProducts.length === 0 && <p className="text-xs text-zinc-500">Пока нет сохраненных товаров.</p>}
             </div>
           </div>
           </div>

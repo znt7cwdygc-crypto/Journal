@@ -12,7 +12,7 @@ function line(title: string, path: string, description?: string) {
 
 export async function GET() {
   const now = new Date();
-  const [articles, listings] = await Promise.all([
+  const [articles, listings, products] = await Promise.all([
     prisma.article.findMany({
       where: { status: "PUBLISHED" },
       select: { id: true, title: true, summary: true, topic: true, updatedAt: true },
@@ -22,6 +22,12 @@ export async function GET() {
     prisma.listing.findMany({
       where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
       select: { id: true, title: true, description: true, type: true, city: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+      take: 20
+    }),
+    prisma.product.findMany({
+      where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+      select: { id: true, title: true, description: true, category: true, city: true, priceRub: true, updatedAt: true },
       orderBy: { updatedAt: "desc" },
       take: 20
     })
@@ -41,6 +47,7 @@ export async function GET() {
     line("Authors", "/authors", "public author profiles"),
     line("Vacancies", "/vacancies", "public specialist vacancies, excluding model hiring in user-generated vacancies"),
     line("Services", "/services", "public service listings and expert offers"),
+    line("Products", "/products", "public marketplace listings from community members"),
     line("Resumes", "/resumes", "public resumes"),
     line("Stories", "/stories", "personal stories and editorial collection"),
     line("Money", "/money", "income, fees and finance-related materials"),
@@ -68,6 +75,18 @@ export async function GET() {
           )
         )
       : ["- No public listings yet."]),
+    "",
+    "## Recent public products",
+    "",
+    ...(products.length
+      ? products.map((product) =>
+          line(
+            product.title,
+            `/products/${product.id}`,
+            ["Product", product.category, product.city, `${product.priceRub} RUB`, product.description.slice(0, 160)].filter(Boolean).join(": ")
+          )
+        )
+      : ["- No public products yet."]),
     "",
     "## Crawling notes",
     "",
