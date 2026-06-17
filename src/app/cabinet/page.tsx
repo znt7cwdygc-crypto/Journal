@@ -35,7 +35,7 @@ const createdMessages: Record<string, string> = {
 };
 
 const updatedMessages: Record<string, string> = {
-  resume: "Резюме сохранено и доступно в каталоге выбранного города.",
+  resume: "Резюме опубликовано и доступно в каталоге на 7 дней.",
   profile: "Режим участия и тип профиля обновлены.",
   publicProfile: "Публичный профиль обновлен.",
   draft: "Черновик сохранен на сервере.",
@@ -111,6 +111,7 @@ export default async function CabinetPage({
   const providerMode = dbUser.accountMode === "PROVIDER" || dbUser.accountMode === "BOTH" || dbUser.role === "ADMIN";
   const createdMessage = searchParams?.created ? createdMessages[searchParams.created] : null;
   const updatedMessage = searchParams?.updated ? updatedMessages[searchParams.updated] : null;
+  const resumeJustSaved = searchParams?.updated === "resume";
   const profileName = dbUser.name || dbUser.email || "Профиль";
   const accountModeLabel =
     dbUser.accountMode === "PROVIDER"
@@ -242,7 +243,7 @@ export default async function CabinetPage({
         </section>
       )}
 
-      <details id="blog" data-cabinet-panel className="group rounded-lg bg-white shadow-sm" open>
+      <details id="blog" data-cabinet-panel className="group rounded-lg bg-white shadow-sm" open={isEditingArticle}>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
           <div className="min-w-0">
             <h2 className="font-semibold">Статья</h2>
@@ -389,6 +390,11 @@ export default async function CabinetPage({
             <div className="mt-3">
               {myResume ? (
                 <div className="rounded-lg bg-white p-3 text-sm">
+                  {resumeJustSaved && (
+                    <div className="mb-3 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
+                      Резюме опубликовано. Оно уже доступно в каталоге и будет активно до {formatDeadline(myResume.expiresAt)}.
+                    </div>
+                  )}
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate font-medium">{myResume.title}</p>

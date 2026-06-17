@@ -1020,7 +1020,8 @@ export async function createResumeAction(formData: FormData) {
   });
 
   revalidatePath("/resumes");
-  redirect("/cabinet?updated=resume");
+  revalidatePath("/cabinet");
+  redirect("/cabinet?updated=resume#materials");
 }
 
 export async function renewResumeAction() {
