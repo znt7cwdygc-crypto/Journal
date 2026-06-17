@@ -83,10 +83,20 @@ function formatDeadline(date?: Date | null) {
   return date ? date.toLocaleDateString("ru-RU") : "срок не указан";
 }
 
+function searchValue(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 export default async function CabinetPage({
   searchParams
 }: {
-  searchParams?: { created?: string; updated?: string; editArticle?: string; productReset?: string };
+  searchParams?: {
+    created?: string | string[];
+    updated?: string | string[];
+    editArticle?: string | string[];
+    productReset?: string | string[];
+    productError?: string | string[];
+  };
 }) {
   const user = await requireUser();
 
@@ -114,17 +124,25 @@ export default async function CabinetPage({
   }
 
   const now = new Date();
-  const editArticleId = typeof searchParams?.editArticle === "string" ? searchParams.editArticle : "";
+  const createdParam = searchValue(searchParams?.created);
+  const updatedParam = searchValue(searchParams?.updated);
+  const productResetParam = searchValue(searchParams?.productReset);
+  const productError = (searchValue(searchParams?.productError) || "").slice(0, 220);
+  const editArticleId = searchValue(searchParams?.editArticle) || "";
   const selectedArticle = editArticleId
     ? myArticles.find((article) => article.id === editArticleId) ?? null
     : null;
   const isEditingArticle = Boolean(selectedArticle);
   const providerMode = dbUser.accountMode === "PROVIDER" || dbUser.accountMode === "BOTH" || dbUser.role === "ADMIN";
-  const createdMessage = searchParams?.created ? createdMessages[searchParams.created] : null;
-  const updatedMessage = searchParams?.updated ? updatedMessages[searchParams.updated] : null;
-  const productJustCreated = searchParams?.created === "product";
-  const productFormKey = productJustCreated ? `product-created-${searchParams?.productReset || "new"}` : "product-new";
-  const resumeJustSaved = searchParams?.updated === "resume";
+  const createdMessage = createdParam ? createdMessages[createdParam] : null;
+  const updatedMessage = updatedParam ? updatedMessages[updatedParam] : null;
+  const productJustCreated = createdParam === "product";
+  const productFormKey = productJustCreated
+    ? `product-created-${productResetParam || "new"}`
+    : productError
+      ? `product-error-${productError}`
+      : "product-new";
+  const resumeJustSaved = updatedParam === "resume";
   const profileName = dbUser.name || dbUser.email || "Профиль";
   const accountModeLabel =
     dbUser.accountMode === "PROVIDER"
@@ -301,7 +319,14 @@ export default async function CabinetPage({
         </section>
       )}
 
-      <details key={productFormKey} id="products" data-cabinet-panel className="group rounded-lg bg-white shadow-sm">
+      {productError && (
+        <section className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <p className="font-semibold">Товар не опубликован.</p>
+          <p className="mt-1 leading-5">{productError}</p>
+        </section>
+      )}
+
+      <details key={productFormKey} id="products" data-cabinet-panel className="group rounded-lg bg-white shadow-sm" open={Boolean(productError)}>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
           <div className="min-w-0">
             <h2 className="font-semibold">Продать товар</h2>
