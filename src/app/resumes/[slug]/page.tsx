@@ -33,12 +33,14 @@ export default async function ResumeLandingPage({ params }: { params: { slug: st
   const landing = getSeoLanding("resume", params.slug);
   if (!landing) notFound();
   const session = await auth();
+  const now = new Date();
 
   const term = params.slug === "operators" ? "оператор" : "модель";
   const resumes = await prisma.resume.findMany({
     where: {
       isPublic: true,
       hiddenByInactivity: false,
+      expiresAt: { gt: now },
       OR: [
         { title: { contains: term, mode: "insensitive" } },
         { roleGoal: { contains: term, mode: "insensitive" } },

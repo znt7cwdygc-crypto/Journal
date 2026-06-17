@@ -7,6 +7,7 @@ import { AccountMode, ContentStatus, ListingType, PaymentStatus, PaymentType, Pr
 import { auth, signIn, signOut } from "@/auth";
 import { getExpertLicenseEnd, getResumeUnlockEnd } from "@/lib/licenses";
 import { prisma } from "@/lib/prisma";
+import { listingExpiresAt, resumeExpiresAt } from "@/lib/publication-periods";
 import { safeInternalPath } from "@/lib/safe-redirect";
 import { articleTopic } from "@/lib/topics";
 import { saveUploadedImage } from "@/lib/uploaded-image";
@@ -606,7 +607,7 @@ export async function submitListingAction(formData: FormData) {
       employmentType: (["REMOTE", "OFFICE", "HYBRID"].includes(employmentType) ? employmentType : "REMOTE") as never,
       contact: requireText(formData.get("contact"), "контакт", 180),
       status: ContentStatus.PUBLISHED,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+      expiresAt: listingExpiresAt(),
       createdById: user.id
     }
   });
@@ -658,7 +659,8 @@ export async function toggleListingVisibilityAction(formData: FormData) {
     where: { id: listing.id },
     data: {
       status: listing.status === ContentStatus.PUBLISHED ? ContentStatus.ARCHIVED : ContentStatus.PUBLISHED,
-      hiddenReason: listing.status === ContentStatus.PUBLISHED ? "Скрыто автором" : null
+      hiddenReason: listing.status === ContentStatus.PUBLISHED ? "Скрыто автором" : null,
+      expiresAt: listing.status === ContentStatus.PUBLISHED ? listing.expiresAt : listingExpiresAt()
     }
   });
 
@@ -666,6 +668,26 @@ export async function toggleListingVisibilityAction(formData: FormData) {
   revalidatePath(`/listings/${listing.id}`);
   revalidatePath("/cabinet");
   redirect("/cabinet?updated=listing#materials");
+}
+
+export async function renewListingAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const listingId = cleanText(formData.get("listingId"), 120);
+  const listing = await prisma.listing.findFirst({ where: { id: listingId, createdById: session.user.id } });
+  if (!listing) throw new Error("Размещение не найдено");
+  if (listing.status !== ContentStatus.ARCHIVED) throw new Error("Продлить можно только архивное размещение");
+
+  await prisma.listing.update({
+    where: { id: listing.id },
+    data: { status: ContentStatus.PUBLISHED, hiddenReason: null, expiresAt: listingExpiresAt() }
+  });
+
+  revalidatePath(listing.type === ListingType.VACANCY ? "/vacancies" : "/services");
+  revalidatePath(`/listings/${listing.id}`);
+  revalidatePath("/cabinet");
+  redirect("/cabinet?updated=listingRenewed#materials");
 }
 
 export async function deleteListingAction(formData: FormData) {
@@ -941,7 +963,8 @@ export async function createResumeAction(formData: FormData) {
       contactEmail: cleanText(formData.get("contactEmail"), 255) || null,
       contactTelegram: cleanText(formData.get("contactTelegram"), 120) || null,
       lastVisitedAt: new Date(),
-      hiddenByInactivity: false
+      hiddenByInactivity: false,
+      expiresAt: resumeExpiresAt()
     },
     create: {
       userId: session.user.id,
@@ -951,7 +974,8 @@ export async function createResumeAction(formData: FormData) {
       roleGoal,
       experienceMonths: cleanNumber(formData.get("experienceMonths"), 0, 600),
       contactEmail: cleanText(formData.get("contactEmail"), 255) || null,
-      contactTelegram: cleanText(formData.get("contactTelegram"), 120) || null
+      contactTelegram: cleanText(formData.get("contactTelegram"), 120) || null,
+      expiresAt: resumeExpiresAt()
     }
   });
 
@@ -959,11 +983,29 @@ export async function createResumeAction(formData: FormData) {
   redirect("/cabinet?updated=resume");
 }
 
+export async function renewResumeAction() {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const resume = await prisma.resume.findUnique({ where: { userId: session.user.id } });
+  if (!resume) throw new Error("Резюме не найдено");
+  if (!resume.expiresAt || resume.expiresAt > new Date()) throw new Error("Продлить можно только архивное резюме");
+
+  await prisma.resume.update({
+    where: { id: resume.id },
+    data: { hiddenByInactivity: false, lastVisitedAt: new Date(), expiresAt: resumeExpiresAt() }
+  });
+
+  revalidatePath("/resumes");
+  revalidatePath("/cabinet");
+  redirect("/cabinet?updated=resumeRenewed#materials");
+}
+
 export async function requestResumeUnlockAction(formData: FormData) {
   const user = await requirePaidUser();
   const resumeId = String(formData.get("resumeId") ?? "");
   if (!resumeId) throw new Error("Resume ID missing");
-  const resume = await prisma.resume.findFirst({ where: { id: resumeId, isPublic: true, hiddenByInactivity: false }, select: { userId: true } });
+  const resume = await prisma.resume.findFirst({ where: { id: resumeId, isPublic: true, hiddenByInactivity: false, expiresAt: { gt: new Date() } }, select: { userId: true } });
   if (!resume) throw new Error("Резюме не найдено");
   if (resume.userId === user.id) throw new Error("Нельзя разблокировать собственное резюме");
 
@@ -1008,7 +1050,7 @@ export async function reviewPaymentAction(formData: FormData) {
     if (payment.referenceType === "listing") {
       await prisma.listing.update({
         where: { id: payment.referenceId },
-        data: { status: ContentStatus.PUBLISHED, expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30) }
+        data: { status: ContentStatus.PUBLISHED, expiresAt: listingExpiresAt() }
       });
     }
 

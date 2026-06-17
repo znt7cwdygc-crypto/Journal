@@ -409,6 +409,7 @@ async function ensureFixture() {
 
   const now = new Date();
   const expiresAt = new Date(now.getTime() + 1000 * 60 * 60 * 24 * 30);
+  const resumeExpiresAt = new Date(now.getTime() + 1000 * 60 * 60 * 24 * 7);
 
   await prisma.article.create({
     data: {
@@ -475,7 +476,8 @@ async function ensureFixture() {
       contactTelegram: "@qa_model2",
       isPublic: true,
       hiddenByInactivity: false,
-      lastVisitedAt: now
+      lastVisitedAt: now,
+      expiresAt: resumeExpiresAt
     }
   });
 }

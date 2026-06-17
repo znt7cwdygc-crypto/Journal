@@ -11,10 +11,19 @@ export async function GET(req: NextRequest) {
   const now = new Date();
   const inactiveCutoff = new Date(now.getTime() - 1000 * 60 * 60 * 24 * 14);
 
-  const [hiddenResumes, archivedListings] = await Promise.all([
-    prisma.resume.updateMany({ where: { lastVisitedAt: { lt: inactiveCutoff } }, data: { hiddenByInactivity: true } }),
-    prisma.listing.updateMany({ where: { status: "PUBLISHED", expiresAt: { lt: now } }, data: { status: "ARCHIVED" } })
+  const [expiredResumes, inactiveResumes, archivedListings] = await Promise.all([
+    prisma.resume.updateMany({ where: { hiddenByInactivity: false, expiresAt: { lt: now } }, data: { hiddenByInactivity: true } }),
+    prisma.resume.updateMany({ where: { hiddenByInactivity: false, lastVisitedAt: { lt: inactiveCutoff } }, data: { hiddenByInactivity: true } }),
+    prisma.listing.updateMany({
+      where: { status: "PUBLISHED", expiresAt: { lt: now } },
+      data: { status: "ARCHIVED", hiddenReason: "Срок публикации истек" }
+    })
   ]);
 
-  return NextResponse.json({ ok: true, hiddenResumes: hiddenResumes.count, archivedListings: archivedListings.count });
+  return NextResponse.json({
+    ok: true,
+    expiredResumes: expiredResumes.count,
+    inactiveResumes: inactiveResumes.count,
+    archivedListings: archivedListings.count
+  });
 }

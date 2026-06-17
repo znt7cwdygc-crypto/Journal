@@ -40,6 +40,7 @@ async function main() {
   const plusMonths4 = new Date(now);
   plusMonths4.setMonth(plusMonths4.getMonth() + 4);
   const plus30 = new Date(now.getTime() + 1000 * 60 * 60 * 24 * 30);
+  const plus7 = new Date(now.getTime() + 1000 * 60 * 60 * 24 * 7);
 
   const a1 = await prisma.article.create({
     data: {
@@ -218,7 +219,8 @@ async function main() {
       contactTelegram: "@model_alina",
       hiddenByInactivity: false,
       isPublic: true,
-      lastVisitedAt: now
+      lastVisitedAt: now,
+      expiresAt: plus7
     }
   });
 
@@ -234,7 +236,8 @@ async function main() {
       contactTelegram: "@sofia_ops",
       hiddenByInactivity: false,
       isPublic: true,
-      lastVisitedAt: now
+      lastVisitedAt: now,
+      expiresAt: plus7
     }
   });
 
@@ -250,7 +253,8 @@ async function main() {
       contactTelegram: "@mia_admin",
       hiddenByInactivity: false,
       isPublic: true,
-      lastVisitedAt: now
+      lastVisitedAt: now,
+      expiresAt: plus7
     }
   });
 
@@ -275,7 +279,7 @@ async function main() {
     articles: await prisma.article.count({ where: { status: ContentStatus.PUBLISHED } }),
     vacancies: await prisma.listing.count({ where: { type: ListingType.VACANCY, status: ContentStatus.PUBLISHED } }),
     services: await prisma.listing.count({ where: { type: ListingType.SERVICE, status: ContentStatus.PUBLISHED } }),
-    resumes: await prisma.resume.count({ where: { isPublic: true, hiddenByInactivity: false } })
+    resumes: await prisma.resume.count({ where: { isPublic: true, hiddenByInactivity: false, expiresAt: { gt: now } } })
   };
 
   console.log("Demo seeded:", counts);

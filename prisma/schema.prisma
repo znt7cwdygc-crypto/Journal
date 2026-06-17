@@ -326,10 +326,13 @@ model Resume {
   isPublic           Boolean              @default(true)
   hiddenByInactivity Boolean              @default(false)
   lastVisitedAt      DateTime             @default(now())
+  expiresAt          DateTime?
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
 
   unlocks            ResumeContactUnlock[]
+
+  @@index([isPublic, hiddenByInactivity, expiresAt])
 }
 
 model ResumeContactUnlock {

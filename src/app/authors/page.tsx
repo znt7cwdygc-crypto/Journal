@@ -36,6 +36,7 @@ const sortFilters = [
 export default async function AuthorsPage({ searchParams }: { searchParams?: { kind?: string; sort?: string } }) {
   const activeKind = kindFilters.some((filter) => filter.key === searchParams?.kind) ? searchParams?.kind || "ALL" : "ALL";
   const activeSort = sortFilters.some((filter) => filter.key === searchParams?.sort) ? searchParams?.sort || "new" : "new";
+  const now = new Date();
 
   const where: Prisma.UserWhereInput = {
     AND: [
@@ -44,7 +45,7 @@ export default async function AuthorsPage({ searchParams }: { searchParams?: { k
         OR: [
           { articles: { some: { status: "PUBLISHED" } } },
           { listings: { some: { status: "PUBLISHED" } } },
-          { resume: { is: { isPublic: true, hiddenByInactivity: false } } }
+          { resume: { is: { isPublic: true, hiddenByInactivity: false, expiresAt: { gt: now } } } }
         ]
       }
     ]

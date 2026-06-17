@@ -54,7 +54,6 @@ function cityWhere(cityValue: CityValue | "") {
 export default async function ResumesPage({ searchParams }: { searchParams?: { sort?: string; city?: string } }) {
   const session = await auth();
   const now = new Date();
-  const inactivityCutoff = new Date(now.getTime() - 1000 * 60 * 60 * 24 * 14);
   const sort = searchParams?.sort || "new";
   const cityValue = normalizeCity(searchParams?.city);
   const cityMeta = CITY_OPTIONS.find((city) => city.value === cityValue);
@@ -63,7 +62,7 @@ export default async function ResumesPage({ searchParams }: { searchParams?: { s
     where: {
       isPublic: true,
       hiddenByInactivity: false,
-      lastVisitedAt: { gte: inactivityCutoff },
+      expiresAt: { gt: now },
       ...(cityValue ? cityWhere(cityValue) : {})
     },
     include: { user: true },

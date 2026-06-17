@@ -41,7 +41,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }),
       prisma.user.findMany({
         where: {
-          OR: [{ articles: { some: { status: "PUBLISHED" } } }, { resume: { is: { isPublic: true, hiddenByInactivity: false } } }]
+          OR: [{ articles: { some: { status: "PUBLISHED" } } }, { resume: { is: { isPublic: true, hiddenByInactivity: false, expiresAt: { gt: now } } } }]
         },
         select: { id: true, updatedAt: true },
         orderBy: { updatedAt: "desc" },

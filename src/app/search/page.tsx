@@ -70,6 +70,7 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
           where: {
             isPublic: true,
             hiddenByInactivity: false,
+            expiresAt: { gt: now },
             OR: [
               { title: { contains: q, mode: "insensitive" } },
               { bio: { contains: q, mode: "insensitive" } },

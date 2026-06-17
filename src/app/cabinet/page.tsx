@@ -5,6 +5,8 @@ import {
   createResumeAction,
   deleteArticleAction,
   deleteListingAction,
+  renewListingAction,
+  renewResumeAction,
   saveBlogDraftAction,
   submitBlogArticleAction,
   submitListingAction,
@@ -38,7 +40,9 @@ const updatedMessages: Record<string, string> = {
   publicProfile: "Публичный профиль обновлен.",
   draft: "Черновик сохранен на сервере.",
   article: "Статья обновлена.",
-  listing: "Размещение обновлено."
+  listing: "Размещение обновлено.",
+  listingRenewed: "Публикация продлена на 30 дней.",
+  resumeRenewed: "Резюме продлено на 7 дней."
 };
 
 const profileKindLabels: Record<string, string> = {
@@ -65,6 +69,10 @@ const listingStatusLabels: Record<string, string> = {
   PENDING_REVIEW: "На проверке",
   ARCHIVED: "Скрыто"
 };
+
+function formatDeadline(date?: Date | null) {
+  return date ? date.toLocaleDateString("ru-RU") : "срок не указан";
+}
 
 export default async function CabinetPage({
   searchParams
@@ -94,6 +102,7 @@ export default async function CabinetPage({
     redirect("/auth/signin");
   }
 
+  const now = new Date();
   const editArticleId = typeof searchParams?.editArticle === "string" ? searchParams.editArticle : "";
   const selectedArticle = editArticleId
     ? myArticles.find((article) => article.id === editArticleId) ?? null
@@ -374,45 +383,95 @@ export default async function CabinetPage({
 
           <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
             <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">Мое резюме</h3>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600">{myResume ? 1 : 0}</span>
+            </div>
+            <div className="mt-3">
+              {myResume ? (
+                <div className="rounded-lg bg-white p-3 text-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{myResume.title}</p>
+                      <p className="mt-1 text-xs text-zinc-500">
+                        {myResume.hiddenByInactivity || (myResume.expiresAt && myResume.expiresAt <= now) ? "Архив" : "Опубликовано"}
+                        {" • до "}
+                        {formatDeadline(myResume.expiresAt)}
+                        {myResume.city ? ` • ${myResume.city}` : ""}
+                      </p>
+                    </div>
+                    <a className="rounded-lg bg-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-700" href="#resume">
+                      Редактировать
+                    </a>
+                  </div>
+                  {(myResume.hiddenByInactivity || (myResume.expiresAt && myResume.expiresAt <= now)) && (
+                    <form action={renewResumeAction} className="mt-3 border-t border-zinc-100 pt-3">
+                      <button className="rounded-lg bg-hot px-3 py-2 text-xs font-semibold text-white" type="submit">
+                        Продлить на 7 дней
+                      </button>
+                    </form>
+                  )}
+                </div>
+              ) : (
+                <p className="text-xs text-zinc-500">Резюме пока нет. Заполните анкету в блоке резюме.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
+            <div className="flex items-center justify-between gap-2">
               <h3 className="text-sm font-semibold">Мои вакансии и услуги</h3>
               <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600">{myListings.length}</span>
             </div>
             <div className="mt-3 space-y-2">
-              {myListings.map((listing) => (
-                <div key={listing.id} className="rounded-lg bg-white p-3 text-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{listing.title}</p>
-                      <p className="mt-1 text-xs text-zinc-500">
-                        {listing.type === "VACANCY" ? "Вакансия" : "Услуга"} • {listingStatusLabels[String(listing.status)] || String(listing.status)}
-                        {listing.city ? ` • ${listing.city}` : ""}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 flex-wrap justify-end gap-1">
-                      <a className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-800" href={`/listings/${listing.id}`}>
-                        Открыть
-                      </a>
-                      <a className="rounded-lg bg-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-700" href={`/cabinet/listings/${listing.id}/edit`}>
-                        Редактировать
-                      </a>
-                    </div>
+              {myListings.map((listing) => {
+                const isExpiredArchive = listing.status === "ARCHIVED" && Boolean(listing.expiresAt && listing.expiresAt <= now);
+                return (
+                  <div key={listing.id} className="rounded-lg bg-white p-3 text-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{listing.title}</p>
+                          <p className="mt-1 text-xs text-zinc-500">
+                            {listing.type === "VACANCY" ? "Вакансия" : "Услуга"} • {isExpiredArchive ? "Архив" : listingStatusLabels[String(listing.status)] || String(listing.status)}
+                            {" • до "}
+                            {formatDeadline(listing.expiresAt)}
+                            {listing.city ? ` • ${listing.city}` : ""}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 flex-wrap justify-end gap-1">
+                          <a className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-800" href={`/listings/${listing.id}`}>
+                            Открыть
+                          </a>
+                          <a className="rounded-lg bg-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-700" href={`/cabinet/listings/${listing.id}/edit`}>
+                            Редактировать
+                          </a>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2 border-t border-zinc-100 pt-3">
+                        {isExpiredArchive ? (
+                          <form action={renewListingAction}>
+                            <input type="hidden" name="listingId" value={listing.id} />
+                            <button className="rounded-lg bg-hot px-3 py-2 text-xs font-semibold text-white" type="submit">
+                              Продлить на 30 дней
+                            </button>
+                          </form>
+                        ) : (
+                          <form action={toggleListingVisibilityAction}>
+                            <input type="hidden" name="listingId" value={listing.id} />
+                            <button className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-800" type="submit">
+                              {listing.status === "PUBLISHED" ? "Скрыть" : "Опубликовать"}
+                            </button>
+                          </form>
+                        )}
+                        <form action={deleteListingAction}>
+                          <input type="hidden" name="listingId" value={listing.id} />
+                          <button className="rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700" type="submit">
+                            Удалить
+                          </button>
+                        </form>
+                      </div>
                   </div>
-                  <div className="mt-3 flex flex-wrap gap-2 border-t border-zinc-100 pt-3">
-                    <form action={toggleListingVisibilityAction}>
-                      <input type="hidden" name="listingId" value={listing.id} />
-                      <button className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-800" type="submit">
-                        {listing.status === "PUBLISHED" ? "Скрыть" : "Опубликовать"}
-                      </button>
-                    </form>
-                    <form action={deleteListingAction}>
-                      <input type="hidden" name="listingId" value={listing.id} />
-                      <button className="rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700" type="submit">
-                        Удалить
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
               {myListings.length === 0 && <p className="text-xs text-zinc-500">Здесь появятся ваши вакансии и услуги.</p>}
             </div>
           </div>

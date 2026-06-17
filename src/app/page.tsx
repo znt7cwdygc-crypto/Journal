@@ -49,6 +49,7 @@ function previewText(text: string, max = 180) {
 }
 
 export default async function HomePage() {
+  const now = new Date();
   const [articles, authors, listings] = await Promise.all([
     prisma.article.findMany({
       where: { status: "PUBLISHED" },
@@ -61,7 +62,7 @@ export default async function HomePage() {
         OR: [
           { articles: { some: { status: "PUBLISHED" } } },
           { listings: { some: { status: "PUBLISHED" } } },
-          { resume: { is: { isPublic: true, hiddenByInactivity: false } } }
+          { resume: { is: { isPublic: true, hiddenByInactivity: false, expiresAt: { gt: now } } } }
         ]
       },
       include: {
@@ -71,7 +72,7 @@ export default async function HomePage() {
       take: 3
     }),
     prisma.listing.findMany({
-      where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+      where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
       include: { createdBy: true },
       orderBy: { createdAt: "desc" },
       take: 4
