@@ -39,6 +39,9 @@ export async function Header() {
           ) : (
             <div className="flex items-center gap-1 text-xs">
               <Link className="rounded-lg border border-zinc-200 px-2 py-1.5" href="/auth/signin">Вход</Link>
+              <Link className="rounded-lg bg-hot px-2.5 py-1.5 font-medium text-white shadow-sm shadow-red-200 hover:bg-red-600" href="/auth/signup">
+                Регистрация
+              </Link>
             </div>
           )}
         </div>
