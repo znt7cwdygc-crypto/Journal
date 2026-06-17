@@ -121,6 +121,7 @@ export default async function CabinetPage({
   const providerMode = dbUser.accountMode === "PROVIDER" || dbUser.accountMode === "BOTH" || dbUser.role === "ADMIN";
   const createdMessage = searchParams?.created ? createdMessages[searchParams.created] : null;
   const updatedMessage = searchParams?.updated ? updatedMessages[searchParams.updated] : null;
+  const productJustCreated = searchParams?.created === "product";
   const resumeJustSaved = searchParams?.updated === "resume";
   const profileName = dbUser.name || dbUser.email || "Профиль";
   const accountModeLabel =
@@ -176,7 +177,7 @@ export default async function CabinetPage({
         </div>
       </section>
 
-      {(createdMessage || updatedMessage) && (
+      {((createdMessage && !productJustCreated) || updatedMessage) && (
         <section className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
           {createdMessage || updatedMessage}
         </section>
@@ -289,6 +290,13 @@ export default async function CabinetPage({
           <ArticleEditorForm key={selectedArticle?.id ?? "new-article"} action={submitBlogArticleAction} draftAction={saveBlogDraftAction} initialDraft={selectedArticle} />
         </div>
       </details>
+
+      {productJustCreated && (
+        <section id="products-result" className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <p className="font-semibold">Ваш товар опубликован.</p>
+          <p className="mt-1 leading-5">Он уже доступен в разделе товаров на 30 дней. Форма добавления закрыта, а товар можно открыть или отредактировать в блоке «Мое».</p>
+        </section>
+      )}
 
       <details id="products" data-cabinet-panel className="group rounded-lg bg-white shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">

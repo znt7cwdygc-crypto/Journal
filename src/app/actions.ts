@@ -775,7 +775,7 @@ export async function submitProductAction(formData: FormData) {
 
   await revalidateProduct(product.id);
   revalidatePath("/cabinet");
-  redirect("/cabinet?created=product#materials");
+  redirect("/cabinet?created=product#products-result");
 }
 
 export async function updateProductAction(formData: FormData) {
