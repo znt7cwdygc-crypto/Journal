@@ -1,4 +1,5 @@
 import type { ProductCondition, ProductDelivery } from "@prisma/client";
+import { ProductSubmitButton } from "@/components/product-submit-button";
 
 type ProductFormValues = {
   id?: string;
@@ -94,7 +95,10 @@ export function ProductForm({
         <input className="form-field mt-1" name="contact" defaultValue={product?.contact ?? ""} placeholder="@telegram или email" required />
       </label>
 
-      <button className="btn btn-primary w-full sm:w-auto" type="submit">{submitLabel}</button>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <ProductSubmitButton label={submitLabel} />
+        <p className="text-xs leading-5 text-zinc-500">После нажатия дождитесь публикации, обычно это занимает несколько секунд.</p>
+      </div>
     </form>
   );
 }

@@ -757,24 +757,46 @@ export async function submitProductAction(formData: FormData) {
     const title = requireText(formData.get("title"), "название товара", 140);
     const imageUrl = await productImageDataUrl(formData.get("imageFile"));
     if (!imageUrl) throw new Error("Загрузите фото товара");
-
-    const product = await prisma.product.create({
-      data: {
+    const category = requireText(formData.get("category"), "категорию", 80);
+    const priceRub = cleanNumber(formData.get("priceRub"), 0, 100000000);
+    const city = cleanText(formData.get("city"), 120) || null;
+    const delivery = normalizeProductDelivery(formData.get("delivery"));
+    const condition = normalizeProductCondition(formData.get("condition"));
+    const description = requireMultiline(formData.get("description"), "описание", 3000);
+    const contact = requireText(formData.get("contact"), "контакт", 180);
+    const recentDuplicate = await prisma.product.findFirst({
+      where: {
+        createdById: session.user.id,
         title,
-        category: requireText(formData.get("category"), "категорию", 80),
-        priceRub: cleanNumber(formData.get("priceRub"), 0, 100000000),
-        city: cleanText(formData.get("city"), 120) || null,
-        delivery: normalizeProductDelivery(formData.get("delivery")),
-        condition: normalizeProductCondition(formData.get("condition")),
-        description: requireMultiline(formData.get("description"), "описание", 3000),
-        contact: requireText(formData.get("contact"), "контакт", 180),
-        imageUrl,
-        status: ContentStatus.PUBLISHED,
-        expiresAt: productExpiresAt(),
-        createdById: session.user.id
-      }
+        priceRub,
+        contact,
+        createdAt: { gte: new Date(Date.now() - 2 * 60 * 1000) }
+      },
+      orderBy: { createdAt: "desc" },
+      select: { id: true }
     });
-    productId = product.id;
+
+    if (recentDuplicate) {
+      productId = recentDuplicate.id;
+    } else {
+      const product = await prisma.product.create({
+        data: {
+          title,
+          category,
+          priceRub,
+          city,
+          delivery,
+          condition,
+          description,
+          contact,
+          imageUrl,
+          status: ContentStatus.PUBLISHED,
+          expiresAt: productExpiresAt(),
+          createdById: session.user.id
+        }
+      });
+      productId = product.id;
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Не удалось опубликовать товар";
     redirect(`/cabinet?productError=${encodeURIComponent(message.slice(0, 180))}#products`);
