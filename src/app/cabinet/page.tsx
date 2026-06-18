@@ -94,6 +94,9 @@ export default async function CabinetPage({
     created?: string | string[];
     updated?: string | string[];
     editArticle?: string | string[];
+    articleId?: string | string[];
+    listingId?: string | string[];
+    resumeId?: string | string[];
     productReset?: string | string[];
     productError?: string | string[];
   };
@@ -154,6 +157,9 @@ export default async function CabinetPage({
   const now = new Date();
   const createdParam = searchValue(searchParams?.created);
   const updatedParam = searchValue(searchParams?.updated);
+  const articleResultId = searchValue(searchParams?.articleId) || "";
+  const listingResultId = searchValue(searchParams?.listingId) || "";
+  const resumeResultId = searchValue(searchParams?.resumeId) || "";
   const productResetParam = searchValue(searchParams?.productReset);
   const productError = (searchValue(searchParams?.productError) || "").slice(0, 220);
   const editArticleId = searchValue(searchParams?.editArticle) || "";
@@ -165,12 +171,15 @@ export default async function CabinetPage({
   const createdMessage = createdParam ? createdMessages[createdParam] : null;
   const updatedMessage = updatedParam ? updatedMessages[updatedParam] : null;
   const productJustCreated = createdParam === "product";
+  const articleJustCreated = createdParam === "article" && Boolean(articleResultId);
+  const listingJustCreated = (createdParam === "vacancy" || createdParam === "service" || createdParam === "listing") && Boolean(listingResultId);
+  const resumeJustSaved = updatedParam === "resume";
+  const customSuccessVisible = productJustCreated || articleJustCreated || listingJustCreated || resumeJustSaved;
   const productFormKey = productJustCreated
     ? `product-created-${productResetParam || "new"}`
     : productError
       ? `product-error-${productError}`
       : "product-new";
-  const resumeJustSaved = updatedParam === "resume";
   const profileName = dbUser.name || dbUser.email || "Профиль";
   const accountModeLabel =
     dbUser.accountMode === "PROVIDER"
@@ -226,7 +235,7 @@ export default async function CabinetPage({
         </div>
       </section>
 
-      {((createdMessage && !productJustCreated) || updatedMessage) && (
+      {((createdMessage && !customSuccessVisible) || (updatedMessage && !customSuccessVisible)) && (
         <section className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
           {createdMessage || updatedMessage}
         </section>
@@ -304,6 +313,16 @@ export default async function CabinetPage({
         </section>
       )}
 
+      {articleJustCreated && (
+        <section id="article-result" className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <p className="font-semibold">Статья опубликована.</p>
+          <p className="mt-1 leading-5">Она уже доступна в ленте. Форма статьи закрыта и очищена.</p>
+          <a className="mt-3 inline-flex rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white" href={`/articles/${articleResultId}`}>
+            Открыть статью
+          </a>
+        </section>
+      )}
+
       <details id="blog" data-cabinet-panel className="group rounded-lg bg-white shadow-sm" open={isEditingArticle}>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
           <div className="min-w-0">
@@ -336,7 +355,7 @@ export default async function CabinetPage({
               </a>
             ) : null}
           </div>
-          <ArticleEditorForm key={selectedArticle?.id ?? "new-article"} action={submitBlogArticleAction} draftAction={saveBlogDraftAction} initialDraft={selectedArticle} />
+          <ArticleEditorForm key={articleJustCreated ? `article-created-${articleResultId}` : selectedArticle?.id ?? "new-article"} action={submitBlogArticleAction} draftAction={saveBlogDraftAction} initialDraft={selectedArticle} />
         </div>
       </details>
 
@@ -367,12 +386,33 @@ export default async function CabinetPage({
         </div>
       </details>
 
-      <ResumeQuizDisclosure action={createResumeAction} resume={myResume} />
+      {resumeJustSaved && (
+        <section id="resume-result" className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <p className="font-semibold">Резюме опубликовано.</p>
+          <p className="mt-1 leading-5">Оно уже доступно в каталоге на 7 дней. Форма резюме закрыта и сброшена.</p>
+          <a className="mt-3 inline-flex rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white" href={`/profiles/${dbUser.id}#resume`}>
+            Открыть резюме
+          </a>
+        </section>
+      )}
+
+      <ResumeQuizDisclosure key={resumeJustSaved ? `resume-saved-${resumeResultId || "new"}` : "resume-form"} action={createResumeAction} resume={myResume} />
 
       {providerMode && (
         <>
-          <ListingQuizDisclosure action={submitListingAction} kind="VACANCY" />
-          <ListingQuizDisclosure action={submitListingAction} kind="SERVICE" />
+          {listingJustCreated && (
+            <section id="listing-result" className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+              <p className="font-semibold">{createdParam === "service" ? "Услуга опубликована." : "Вакансия опубликована."}</p>
+              <p className="mt-1 leading-5">
+                {createdParam === "service" ? "Услуга уже доступна в каталоге на 30 дней." : "Вакансия уже доступна в каталоге на 30 дней."} Форма закрыта и сброшена.
+              </p>
+              <a className="mt-3 inline-flex rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white" href={`/listings/${listingResultId}`}>
+                {createdParam === "service" ? "Открыть услугу" : "Открыть вакансию"}
+              </a>
+            </section>
+          )}
+          <ListingQuizDisclosure key={listingJustCreated && createdParam === "vacancy" ? `vacancy-created-${listingResultId}` : "vacancy-form"} action={submitListingAction} kind="VACANCY" />
+          <ListingQuizDisclosure key={listingJustCreated && createdParam === "service" ? `service-created-${listingResultId}` : "service-form"} action={submitListingAction} kind="SERVICE" />
         </>
       )}
 

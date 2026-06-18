@@ -435,7 +435,7 @@ export async function submitBlogArticleAction(formData: FormData) {
 
       await revalidateArticle(article.id);
       revalidatePath("/cabinet");
-      redirect(`/articles/${article.id}`);
+      redirect(`/cabinet?created=article&articleId=${encodeURIComponent(article.id)}#article-result`);
     }
   }
 
@@ -457,7 +457,7 @@ export async function submitBlogArticleAction(formData: FormData) {
 
   revalidatePath("/articles");
   revalidatePath("/cabinet");
-  redirect(`/articles/${article.id}`);
+  redirect(`/cabinet?created=article&articleId=${encodeURIComponent(article.id)}#article-result`);
 }
 
 export async function saveBlogDraftAction(formData: FormData) {
@@ -657,7 +657,7 @@ export async function submitListingAction(formData: FormData) {
   revalidatePath(type === ListingType.VACANCY ? "/vacancies" : "/services");
   revalidatePath("/listings");
   revalidatePath("/cabinet");
-  redirect("/cabinet?created=listing");
+  redirect(`/cabinet?created=${type === ListingType.VACANCY ? "vacancy" : "service"}&listingId=${encodeURIComponent(listing.id)}#listing-result`);
 }
 
 export async function updateListingAction(formData: FormData) {
@@ -1199,7 +1199,7 @@ export async function createResumeAction(formData: FormData) {
       ? buildModelResumeBio(formData)
       : requireMultiline(formData.get("bio"), "о себе", 6000);
 
-  await prisma.resume.upsert({
+  const resume = await prisma.resume.upsert({
     where: { userId: session.user.id },
     update: {
       title,
@@ -1228,7 +1228,7 @@ export async function createResumeAction(formData: FormData) {
 
   revalidatePath("/resumes");
   revalidatePath("/cabinet");
-  redirect("/cabinet?updated=resume#materials");
+  redirect(`/cabinet?updated=resume&resumeId=${encodeURIComponent(resume.id)}#resume-result`);
 }
 
 export async function renewResumeAction() {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { FormSubmitButton } from "@/components/form-submit-button";
 
 type ArticleEditorFormProps = {
   action: (formData: FormData) => void | Promise<void>;
@@ -134,12 +135,12 @@ export function ArticleEditorForm({ action, draftAction, submitLabel = "Опуб
         <p className="text-xs leading-5 text-zinc-500">Не указывайте реальные имена, адреса, документы, аккаунты клиентов или чужие контакты.</p>
 
         <div className="flex flex-col-reverse gap-2 border-t border-zinc-100 pt-4 sm:flex-row sm:justify-end">
-          <button className="btn btn-ghost" type="submit" formAction={draftAction} disabled={isUploading}>
+          <FormSubmitButton className="btn btn-ghost" disabled={isUploading} formAction={draftAction} pendingText="Сохраняем...">
             Сохранить черновик
-          </button>
-          <button className="btn btn-primary" type="submit" disabled={isUploading}>
+          </FormSubmitButton>
+          <FormSubmitButton className="btn btn-primary" disabled={isUploading} pendingText="Публикуем...">
             {submitLabel}
-          </button>
+          </FormSubmitButton>
         </div>
       </form>
     </section>

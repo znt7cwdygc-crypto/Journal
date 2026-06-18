@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { FormSubmitButton } from "@/components/form-submit-button";
 import { resumeQuizOptions, resumeQuizSteps } from "@/lib/quizzes/resume-quiz";
 
 type ResumeDraft = {
@@ -419,9 +420,9 @@ export function ModelResumeForm({ action, resume }: ModelResumeFormProps) {
               Далее
             </button>
           ) : (
-            <button className="quiz-next" type="submit">
+            <FormSubmitButton className="quiz-next" pendingText="Сохраняем...">
               Сохранить резюме
-            </button>
+            </FormSubmitButton>
           )}
         </div>
       </form>

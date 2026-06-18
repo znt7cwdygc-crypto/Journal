@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { FormSubmitButton } from "@/components/form-submit-button";
 import { serviceQuizOptions, serviceQuizSteps } from "@/lib/quizzes/service-quiz";
 import { vacancyQuizOptions, vacancyQuizSteps } from "@/lib/quizzes/vacancy-quiz";
 
@@ -315,9 +316,9 @@ export function ListingQuizForm({ action, kind, initialValues, listingId, submit
               Далее
             </button>
           ) : (
-            <button className="quiz-next" type="submit">
+            <FormSubmitButton className="quiz-next" pendingText={submitLabel ? "Сохраняем..." : "Публикуем..."}>
               {submitLabel ?? "Опубликовать"}
-            </button>
+            </FormSubmitButton>
           )}
         </div>
       </form>
