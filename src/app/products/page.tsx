@@ -34,7 +34,21 @@ export default async function ProductsPage({ searchParams }: { searchParams?: { 
       OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }]
     },
     orderBy: sort === "views" ? { viewCount: "desc" } : sort === "responses" ? { responseCount: "desc" } : { createdAt: "desc" },
-    include: { createdBy: true }
+    select: {
+      id: true,
+      title: true,
+      category: true,
+      priceRub: true,
+      city: true,
+      delivery: true,
+      condition: true,
+      description: true,
+      contact: true,
+      viewCount: true,
+      responseCount: true,
+      createdAt: true,
+      createdBy: { select: { id: true, name: true, email: true, image: true, profileBio: true } }
+    }
   });
 
   if (products.length > 0) {
@@ -76,7 +90,7 @@ export default async function ProductsPage({ searchParams }: { searchParams?: { 
         <section key={category} className="space-y-2">
           <h2 className="text-sm font-semibold uppercase tracking-[0.08em] text-zinc-500">{category}</h2>
           {items.map((product) => (
-            <ProductDirectoryCard key={product.id} product={product} currentPath={currentPath} isSignedIn={Boolean(session?.user)} />
+            <ProductDirectoryCard key={product.id} product={{ ...product, imageUrl: null }} currentPath={currentPath} isSignedIn={Boolean(session?.user)} />
           ))}
         </section>
       ))}

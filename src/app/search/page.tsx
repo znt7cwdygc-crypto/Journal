@@ -97,7 +97,14 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
               }
             ]
           },
-          include: { createdBy: true },
+          select: {
+            id: true,
+            title: true,
+            category: true,
+            city: true,
+            priceRub: true,
+            description: true
+          },
           orderBy: { createdAt: "desc" },
           take: 10
         })

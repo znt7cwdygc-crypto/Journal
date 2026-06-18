@@ -90,7 +90,7 @@ async function productImageDataUrl(value: unknown) {
   if (!isUploadedFile(value)) return null;
   if (!value.name && !value.size) return null;
   if ((value.size ?? 0) <= 0) return null;
-  if ((value.size ?? 0) > 2 * 1024 * 1024) throw new Error("Фото товара слишком большое. Загрузите файл до 2 МБ");
+  if ((value.size ?? 0) > 350 * 1024) throw new Error("Фото товара слишком большое. Загрузите сжатое фото до 350 КБ");
   const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
   if (!allowedTypes.includes(value.type ?? "")) throw new Error("Фото товара должно быть JPG, PNG, WebP или GIF");
 

@@ -110,13 +110,41 @@ export default async function CabinetPage({
     }),
     prisma.article.findMany({ where: { createdById: user.id }, orderBy: { createdAt: "desc" }, take: 10 }),
     prisma.listing.findMany({ where: { createdById: user.id }, orderBy: { createdAt: "desc" }, take: 10 }),
-    prisma.product.findMany({ where: { createdById: user.id }, orderBy: { createdAt: "desc" }, take: 10 }),
+    prisma.product.findMany({
+      where: { createdById: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        priceRub: true,
+        city: true,
+        status: true,
+        expiresAt: true
+      }
+    }),
     prisma.resume.findUnique({ where: { userId: user.id } }),
     prisma.article.findFirst({ where: { createdById: user.id, status: "DRAFT" }, orderBy: { updatedAt: "desc" } }),
     prisma.follow.findMany({ where: { followerId: user.id }, include: { author: true }, orderBy: { createdAt: "desc" }, take: 6 }),
     prisma.topicFollow.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 8 }),
     prisma.savedListing.findMany({ where: { userId: user.id }, include: { listing: true }, orderBy: { createdAt: "desc" }, take: 6 }),
-    prisma.savedProduct.findMany({ where: { userId: user.id }, include: { product: true }, orderBy: { createdAt: "desc" }, take: 6 })
+    prisma.savedProduct.findMany({
+      where: { userId: user.id },
+      include: {
+        product: {
+          select: {
+            id: true,
+            title: true,
+            category: true,
+            priceRub: true,
+            city: true
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" },
+      take: 6
+    })
   ]);
 
   if (!dbUser) {
@@ -494,7 +522,6 @@ export default async function CabinetPage({
                 return (
                   <div key={product.id} className="rounded-lg bg-white p-3 text-sm">
                     <div className="flex items-start gap-3">
-                      {product.imageUrl && <img className="h-16 w-16 shrink-0 rounded-lg object-cover" src={product.imageUrl} alt={product.title} />}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
@@ -633,7 +660,6 @@ export default async function CabinetPage({
             <div className="mt-3 space-y-2">
               {savedProducts.map((item) => (
                 <a key={item.id} className="flex items-center gap-3 rounded-lg bg-white p-3 text-sm hover:text-hot" href={`/products/${item.productId}`}>
-                  {item.product.imageUrl && <img className="h-12 w-12 shrink-0 rounded-lg object-cover" src={item.product.imageUrl} alt={item.product.title} />}
                   <span className="min-w-0">
                     <span className="block truncate font-medium">{item.product.title}</span>
                     <span className="mt-1 block text-xs text-zinc-500">{item.product.category}</span>

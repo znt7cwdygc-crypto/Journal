@@ -35,7 +35,7 @@ export function ProductForm({
           <img className="mt-2 aspect-[4/3] w-full rounded-lg object-cover" src={product.imageUrl} alt={product.title || "Фото товара"} />
         )}
         <input id="product-image" className="mt-2 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm" type="file" name="imageFile" accept="image/*" required={!product?.imageUrl} />
-        <p className="form-hint mt-2">До 2 МБ. Первое фото будет обложкой карточки.</p>
+        <p className="form-hint mt-2">До 350 КБ. Фото показывается на странице товара.</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">

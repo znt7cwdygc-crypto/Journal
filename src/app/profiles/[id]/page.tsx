@@ -44,6 +44,7 @@ async function findProfile(id: string) {
       },
       products: {
         where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+        select: { id: true, title: true, category: true, priceRub: true },
         orderBy: { createdAt: "desc" },
         take: 10
       },
@@ -271,7 +272,6 @@ export default async function ProfilePage({
           {user.products.length === 0 && <p className="text-zinc-500">Пока нет товаров.</p>}
           {user.products.map((product) => (
             <Link key={product.id} href={`/products/${product.id}`} className="flex items-center gap-3 rounded border p-2 hover:bg-zinc-50">
-              {product.imageUrl && <img className="h-12 w-12 shrink-0 rounded object-cover" src={product.imageUrl} alt={product.title} />}
               <span className="min-w-0">
                 <span className="block truncate font-medium">{product.title}</span>
                 <span className="text-xs text-zinc-500">{product.category} • {new Intl.NumberFormat("ru-RU").format(product.priceRub)} ₽</span>
