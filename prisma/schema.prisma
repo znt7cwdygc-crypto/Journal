@@ -129,6 +129,7 @@ model User {
   savedListings    SavedListing[]
   products         Product[]
   savedProducts    SavedProduct[]
+  matchProfile      MatchProfile?
 
   accounts Account[]
   sessions Session[]
@@ -388,6 +389,36 @@ model Resume {
   unlocks ResumeContactUnlock[]
 
   @@index([isPublic, hiddenByInactivity, expiresAt])
+}
+
+model MatchProfile {
+  id              String        @id @default(cuid())
+  userId          String        @unique
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seekerRole      String
+  lookingFor      String
+  title           String
+  city            String?
+  timezone        String?
+  experience      String
+  schedule        String
+  operatorPercent String?
+  currentCheck    String?
+  niche           String?
+  workFormat      String
+  bio             String
+  contact         String
+  status          ContentStatus @default(PUBLISHED)
+  hiddenReason    String?
+  viewCount       Int           @default(0)
+  responseCount   Int           @default(0)
+  expiresAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([status, updatedAt])
+  @@index([seekerRole, lookingFor, status])
+  @@index([city, status])
 }
 
 model ResumeContactUnlock {

@@ -7,11 +7,13 @@ import {
   deleteListingAction,
   deleteProductAction,
   renewListingAction,
+  renewMatchProfileAction,
   renewProductAction,
   renewResumeAction,
   saveBlogDraftAction,
   submitBlogArticleAction,
   submitListingAction,
+  submitMatchProfileAction,
   submitProductAction,
   toggleArticleVisibilityAction,
   toggleListingVisibilityAction,
@@ -22,6 +24,7 @@ import {
 import { ArticleEditorForm } from "@/components/article-editor-form";
 import { CabinetPanelRouter } from "@/components/cabinet-panel-router";
 import { ListingQuizDisclosure } from "@/components/listing-quiz-disclosure";
+import { MatchProfileForm } from "@/components/match-profile-form";
 import { ProductForm } from "@/components/product-form";
 import { ProductPublishCleanup } from "@/components/product-publish-cleanup";
 import { ResumeQuizDisclosure } from "@/components/resume-quiz-disclosure";
@@ -96,6 +99,7 @@ export default async function CabinetPage({
     editArticle?: string | string[];
     articleId?: string | string[];
     listingId?: string | string[];
+    matchProfileId?: string | string[];
     resumeId?: string | string[];
     productReset?: string | string[];
     productError?: string | string[];
@@ -103,7 +107,7 @@ export default async function CabinetPage({
 }) {
   const user = await requireUser();
 
-  const [dbUser, myArticles, myListings, myProducts, myResume, draftArticle, followedAuthors, followedTopics, savedListings, savedProducts] = await Promise.all([
+  const [dbUser, myArticles, myListings, myProducts, myResume, myMatchProfile, draftArticle, followedAuthors, followedTopics, savedListings, savedProducts] = await Promise.all([
     prisma.user.findUnique({
       where: { id: user.id },
       include: {
@@ -128,6 +132,7 @@ export default async function CabinetPage({
       }
     }),
     prisma.resume.findUnique({ where: { userId: user.id } }),
+    prisma.matchProfile.findUnique({ where: { userId: user.id } }),
     prisma.article.findFirst({ where: { createdById: user.id, status: "DRAFT" }, orderBy: { updatedAt: "desc" } }),
     prisma.follow.findMany({ where: { followerId: user.id }, include: { author: true }, orderBy: { createdAt: "desc" }, take: 6 }),
     prisma.topicFollow.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 8 }),
@@ -159,6 +164,7 @@ export default async function CabinetPage({
   const updatedParam = searchValue(searchParams?.updated);
   const articleResultId = searchValue(searchParams?.articleId) || "";
   const listingResultId = searchValue(searchParams?.listingId) || "";
+  const matchProfileResultId = searchValue(searchParams?.matchProfileId) || "";
   const resumeResultId = searchValue(searchParams?.resumeId) || "";
   const productResetParam = searchValue(searchParams?.productReset);
   const productError = (searchValue(searchParams?.productError) || "").slice(0, 220);
@@ -173,8 +179,9 @@ export default async function CabinetPage({
   const productJustCreated = createdParam === "product";
   const articleJustCreated = createdParam === "article" && Boolean(articleResultId);
   const listingJustCreated = (createdParam === "vacancy" || createdParam === "service" || createdParam === "listing") && Boolean(listingResultId);
+  const matchProfileJustCreated = createdParam === "matchProfile" && Boolean(matchProfileResultId);
   const resumeJustSaved = updatedParam === "resume";
-  const customSuccessVisible = productJustCreated || articleJustCreated || listingJustCreated || resumeJustSaved;
+  const customSuccessVisible = productJustCreated || articleJustCreated || listingJustCreated || matchProfileJustCreated || resumeJustSaved;
   const productFormKey = productJustCreated
     ? `product-created-${productResetParam || "new"}`
     : productError
@@ -188,6 +195,7 @@ export default async function CabinetPage({
         ? "Ищу и предлагаю"
         : "Ищу услуги / работу";
   const profileKindLabel = profileKindLabels[String(dbUser.profileKind || "MODEL")] || "Профиль";
+  const canPublishMatchProfile = dbUser.profileKind === "MODEL" || dbUser.profileKind === "OPERATOR";
 
   return (
     <div className="space-y-4">
@@ -230,6 +238,7 @@ export default async function CabinetPage({
           <a className="shrink-0 rounded-lg bg-zinc-100 px-3 py-2 text-zinc-700" href="#profile">Профиль</a>
           <a className="shrink-0 rounded-lg bg-zinc-100 px-3 py-2 text-zinc-700" href="#materials">Мое</a>
           <a className="shrink-0 rounded-lg bg-zinc-100 px-3 py-2 text-zinc-700" href="#products">Товар</a>
+          {canPublishMatchProfile && <a className="shrink-0 rounded-lg bg-zinc-100 px-3 py-2 text-zinc-700" href="#match">Модель оператор</a>}
           {providerMode && <a className="shrink-0 rounded-lg bg-zinc-100 px-3 py-2 text-zinc-700" href="#vacancy">Вакансия</a>}
           {providerMode && <a className="shrink-0 rounded-lg bg-zinc-100 px-3 py-2 text-zinc-700" href="#service">Услуга</a>}
         </div>
@@ -398,6 +407,35 @@ export default async function CabinetPage({
 
       <ResumeQuizDisclosure key={resumeJustSaved ? `resume-saved-${resumeResultId || "new"}` : "resume-form"} action={createResumeAction} resume={myResume} />
 
+      {matchProfileJustCreated && (
+        <section id="match-result" className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <p className="font-semibold">Анкета опубликована.</p>
+          <p className="mt-1 leading-5">Она уже доступна в разделе «Модель оператор» на 14 дней. Форма закрыта и сброшена.</p>
+          <a className="mt-3 inline-flex rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white" href="/model-operator">
+            Открыть раздел
+          </a>
+        </section>
+      )}
+
+      {canPublishMatchProfile ? (
+        <details key={matchProfileJustCreated ? `match-created-${matchProfileResultId}` : "match-form"} id="match" data-cabinet-panel className="group rounded-lg bg-white shadow-sm">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
+            <div>
+              <h2 className="font-semibold">Модель оператор</h2>
+              <p className="mt-1 text-xs text-zinc-500">Анкета для поиска связки, бесплатно на 14 дней</p>
+            </div>
+            <span className="rounded-full bg-mint px-3 py-1 text-xs font-semibold text-ink">14 дней</span>
+          </summary>
+          <div className="border-t border-zinc-100 p-3">
+            <MatchProfileForm action={submitMatchProfileAction} profile={myMatchProfile} profileKind={String(dbUser.profileKind)} />
+          </div>
+        </details>
+      ) : (
+        <section className="rounded-lg border border-zinc-200 bg-white p-4 text-sm text-zinc-600">
+          Раздел «Модель оператор» доступен только профилям с типом «Модель» или «Оператор». Тип можно поменять в блоке профиля.
+        </section>
+      )}
+
       {providerMode && (
         <>
           {listingJustCreated && (
@@ -421,7 +459,7 @@ export default async function CabinetPage({
           <div>
             <h2 className="font-semibold">Мое</h2>
             <p className="mt-1 text-xs text-zinc-500">
-              Статьи, подписки, товары, вакансии, услуги и сохраненное в одном месте
+              Статьи, подписки, модель-оператор, товары, вакансии, услуги и сохраненное
             </p>
           </div>
           <span className="shrink-0 rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700 group-open:bg-zinc-900 group-open:text-white">
@@ -547,6 +585,47 @@ export default async function CabinetPage({
                 </div>
               ) : (
                 <p className="text-xs text-zinc-500">Резюме пока нет. Заполните анкету в блоке резюме.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">Модель оператор</h3>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600">{myMatchProfile ? 1 : 0}</span>
+            </div>
+            <div className="mt-3">
+              {myMatchProfile ? (
+                <div className="rounded-lg bg-white p-3 text-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">{myMatchProfile.title}</p>
+                      <p className="mt-1 text-xs text-zinc-500">
+                        {myMatchProfile.status === "ARCHIVED" || (myMatchProfile.expiresAt && myMatchProfile.expiresAt <= now) ? "Архив" : "Опубликовано"}
+                        {" • до "}
+                        {formatDeadline(myMatchProfile.expiresAt)}
+                        {myMatchProfile.city ? ` • ${myMatchProfile.city}` : ""}
+                      </p>
+                    </div>
+                    <a className="rounded-lg bg-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-700" href="#match">
+                      Редактировать
+                    </a>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2 border-t border-zinc-100 pt-3">
+                    <a className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-800" href="/model-operator">
+                      Открыть раздел
+                    </a>
+                    {(myMatchProfile.status === "ARCHIVED" || (myMatchProfile.expiresAt && myMatchProfile.expiresAt <= now)) && (
+                      <form action={renewMatchProfileAction}>
+                        <button className="rounded-lg bg-hot px-3 py-2 text-xs font-semibold text-white" type="submit">
+                          Продлить на 14 дней
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-zinc-500">Здесь появится анкета для поиска модели или оператора.</p>
               )}
             </div>
           </div>

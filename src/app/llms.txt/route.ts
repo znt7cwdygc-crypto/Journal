@@ -12,7 +12,7 @@ function line(title: string, path: string, description?: string) {
 
 export async function GET() {
   const now = new Date();
-  const [articles, listings, products] = await Promise.all([
+  const [articles, listings, products, matchProfiles] = await Promise.all([
     prisma.article.findMany({
       where: { status: "PUBLISHED" },
       select: { id: true, title: true, summary: true, topic: true, updatedAt: true },
@@ -28,6 +28,12 @@ export async function GET() {
     prisma.product.findMany({
       where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
       select: { id: true, title: true, description: true, category: true, city: true, priceRub: true, updatedAt: true },
+      orderBy: { updatedAt: "desc" },
+      take: 20
+    }),
+    prisma.matchProfile.findMany({
+      where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+      select: { id: true, title: true, seekerRole: true, lookingFor: true, city: true, experience: true, workFormat: true, updatedAt: true },
       orderBy: { updatedAt: "desc" },
       take: 20
     })
@@ -49,6 +55,7 @@ export async function GET() {
     line("Services", "/services", "public service listings and expert offers"),
     line("Products", "/products", "public marketplace listings from community members"),
     line("Resumes", "/resumes", "public resumes"),
+    line("Model Operator", "/model-operator", "public 14-day matching profiles for models and operators"),
     line("Stories", "/stories", "personal stories and editorial collection"),
     line("Money", "/money", "income, fees and finance-related materials"),
     line("Safety", "/safety", "privacy and safety guides"),
@@ -87,6 +94,18 @@ export async function GET() {
           )
         )
       : ["- No public products yet."]),
+    "",
+    "## Recent model-operator profiles",
+    "",
+    ...(matchProfiles.length
+      ? matchProfiles.map((profile) =>
+          line(
+            profile.title,
+            "/model-operator",
+            ["Match profile", profile.seekerRole, `looking for ${profile.lookingFor}`, profile.city, profile.experience, profile.workFormat].filter(Boolean).join(": ")
+          )
+        )
+      : ["- No public model-operator profiles yet."]),
     "",
     "## Crawling notes",
     "",

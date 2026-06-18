@@ -7,7 +7,7 @@ import { AccountMode, ContentStatus, ListingType, PaymentStatus, PaymentType, Pr
 import { auth, signIn, signOut } from "@/auth";
 import { getExpertLicenseEnd, getResumeUnlockEnd } from "@/lib/licenses";
 import { prisma } from "@/lib/prisma";
-import { listingExpiresAt, productExpiresAt, resumeExpiresAt } from "@/lib/publication-periods";
+import { listingExpiresAt, matchProfileExpiresAt, productExpiresAt, resumeExpiresAt } from "@/lib/publication-periods";
 import { safeInternalPath } from "@/lib/safe-redirect";
 import { articleTopic } from "@/lib/topics";
 import { isUploadedFile, saveUploadedImage } from "@/lib/uploaded-image";
@@ -219,6 +219,31 @@ function normalizeProductCondition(value: FormDataEntryValue | null): ProductCon
 function normalizeProductDelivery(value: FormDataEntryValue | null): ProductDelivery {
   const text = String(value ?? "");
   return ["CITY_ONLY", "DELIVERY", "ANY"].includes(text) ? (text as ProductDelivery) : ProductDelivery.ANY;
+}
+
+const matchRoles = ["MODEL", "OPERATOR"] as const;
+const matchLookingFor = ["MODEL", "OPERATOR", "BOTH"] as const;
+const matchFormats = ["REMOTE", "OFFICE", "HYBRID"] as const;
+
+function normalizeMatchOption<T extends readonly string[]>(value: FormDataEntryValue | null, allowed: T, fallback: T[number]) {
+  const text = String(value ?? "");
+  return allowed.includes(text) ? text : fallback;
+}
+
+function buildMatchProfileBio(formData: FormData) {
+  const workFormat = String(formData.get("workFormat") ?? "REMOTE");
+  const workFormatLabel = workFormat === "OFFICE" ? "В студии" : workFormat === "HYBRID" ? "Гибрид" : "Удаленно";
+
+  return [
+    structuredLine("Опыт", requireText(formData.get("experience"), "опыт", 120)),
+    structuredLine("График", requireText(formData.get("schedule"), "график", 180)),
+    structuredLine("Часовой пояс", cleanText(formData.get("timezone"), 80)),
+    structuredLine("Процент оператору", cleanText(formData.get("operatorPercent"), 80)),
+    structuredLine("Текущий чек", cleanText(formData.get("currentCheck"), 120)),
+    structuredLine("Ниша", cleanText(formData.get("niche"), 160)),
+    structuredLine("Формат работы", workFormatLabel),
+    structuredLine("О себе / ожидания", requireMultiline(formData.get("bio"), "описание", 2000))
+  ].filter(Boolean).join("\n\n");
 }
 
 export async function updateProfileSettingsAction(formData: FormData) {
@@ -1247,6 +1272,100 @@ export async function renewResumeAction() {
   revalidatePath("/resumes");
   revalidatePath("/cabinet");
   redirect("/cabinet?updated=resumeRenewed#materials");
+}
+
+export async function submitMatchProfileAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, profileKind: true }
+  });
+  if (!user) redirect("/auth/signin");
+  if (!matchRoles.includes(user.profileKind as (typeof matchRoles)[number])) {
+    throw new Error("Анкету в разделе «Модель оператор» могут публиковать только модели и операторы");
+  }
+
+  const seekerRole = normalizeMatchOption(formData.get("seekerRole"), matchRoles, user.profileKind === "OPERATOR" ? "OPERATOR" : "MODEL");
+  const lookingFor = normalizeMatchOption(formData.get("lookingFor"), matchLookingFor, seekerRole === "MODEL" ? "OPERATOR" : "MODEL");
+  const workFormat = normalizeMatchOption(formData.get("workFormat"), matchFormats, "REMOTE");
+  const title = requireText(formData.get("title"), "заголовок", 140);
+  const bio = buildMatchProfileBio(formData);
+
+  const profile = await prisma.matchProfile.upsert({
+    where: { userId: user.id },
+    update: {
+      seekerRole,
+      lookingFor,
+      title,
+      city: cleanText(formData.get("city"), 120) || null,
+      timezone: cleanText(formData.get("timezone"), 80) || null,
+      experience: requireText(formData.get("experience"), "опыт", 120),
+      schedule: requireText(formData.get("schedule"), "график", 180),
+      operatorPercent: cleanText(formData.get("operatorPercent"), 80) || null,
+      currentCheck: cleanText(formData.get("currentCheck"), 120) || null,
+      niche: cleanText(formData.get("niche"), 160) || null,
+      workFormat,
+      bio,
+      contact: requireText(formData.get("contact"), "контакт", 180),
+      status: ContentStatus.PUBLISHED,
+      hiddenReason: null,
+      expiresAt: matchProfileExpiresAt()
+    },
+    create: {
+      userId: user.id,
+      seekerRole,
+      lookingFor,
+      title,
+      city: cleanText(formData.get("city"), 120) || null,
+      timezone: cleanText(formData.get("timezone"), 80) || null,
+      experience: requireText(formData.get("experience"), "опыт", 120),
+      schedule: requireText(formData.get("schedule"), "график", 180),
+      operatorPercent: cleanText(formData.get("operatorPercent"), 80) || null,
+      currentCheck: cleanText(formData.get("currentCheck"), 120) || null,
+      niche: cleanText(formData.get("niche"), 160) || null,
+      workFormat,
+      bio,
+      contact: requireText(formData.get("contact"), "контакт", 180),
+      status: ContentStatus.PUBLISHED,
+      expiresAt: matchProfileExpiresAt()
+    }
+  });
+
+  revalidatePath("/model-operator");
+  revalidatePath("/cabinet");
+  redirect(`/cabinet?created=matchProfile&matchProfileId=${encodeURIComponent(profile.id)}#match-result`);
+}
+
+export async function renewMatchProfileAction() {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const profile = await prisma.matchProfile.findUnique({ where: { userId: session.user.id } });
+  if (!profile) throw new Error("Анкета не найдена");
+
+  await prisma.matchProfile.update({
+    where: { id: profile.id },
+    data: { status: ContentStatus.PUBLISHED, hiddenReason: null, expiresAt: matchProfileExpiresAt() }
+  });
+
+  revalidatePath("/model-operator");
+  revalidatePath("/cabinet");
+  redirect("/cabinet?updated=matchProfileRenewed#materials");
+}
+
+export async function respondToMatchProfileAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const profileId = cleanText(formData.get("matchProfileId"), 120);
+  await prisma.matchProfile.update({
+    where: { id: profileId },
+    data: { responseCount: { increment: 1 } }
+  });
+
+  revalidatePath("/model-operator");
 }
 
 export async function requestResumeUnlockAction(formData: FormData) {

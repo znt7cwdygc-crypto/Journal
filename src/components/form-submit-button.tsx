@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 
 export function FormSubmitButton({
@@ -9,7 +10,7 @@ export function FormSubmitButton({
   disabled,
   formAction
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   pendingText: string;
   className: string;
   disabled?: boolean;

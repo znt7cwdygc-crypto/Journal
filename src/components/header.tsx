@@ -52,6 +52,7 @@ export async function Header() {
         <Link className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5" href="/authors">Авторы</Link>
         <Link className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5" href="/vacancies">Вакансии</Link>
         <Link className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5" href="/resumes">Резюме</Link>
+        <Link className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5" href="/model-operator">Модель оператор</Link>
         <Link className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5" href="/services">Услуги</Link>
         <Link className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5" href="/products">Товары</Link>
       </nav>

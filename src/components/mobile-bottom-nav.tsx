@@ -7,7 +7,7 @@ const items = [
   ["Главная", "/"],
   ["Лента", "/articles"],
   ["Написать", "/cabinet"],
-  ["Работа", "/vacancies"],
+  ["Связки", "/model-operator"],
   ["Кабинет", "/cabinet"]
 ] as const;
 

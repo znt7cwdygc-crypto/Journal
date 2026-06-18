@@ -6,6 +6,7 @@ const menu = [
   ["Авторы", "/authors"],
   ["Вакансии", "/vacancies"],
   ["Резюме", "/resumes"],
+  ["Модель оператор", "/model-operator"],
   ["Услуги", "/services"],
   ["Товары", "/products"],
   ["Полезные ссылки", "/links"]
