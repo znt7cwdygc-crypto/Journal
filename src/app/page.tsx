@@ -184,10 +184,13 @@ export default async function HomePage() {
           <div className="mt-3 space-y-3">
             {products.map((product) => (
               <Link key={product.id} href={`/products/${product.id}`} className="block border-b border-zinc-100 pb-3 last:border-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-hot">{product.category}</p>
-                <p className="mt-1 font-medium leading-snug line-clamp-2">{product.title}</p>
-                <p className="mt-1 text-sm font-semibold text-ink">{formatPrice(product.priceRub)} ₽</p>
-                <p className="mt-1 text-xs text-zinc-500">{product.city || "город не указан"}</p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium leading-snug line-clamp-2">{product.title}</p>
+                    <p className="mt-1 text-xs text-zinc-500">{product.category} • {product.city || "город не указан"}</p>
+                  </div>
+                  <p className="shrink-0 rounded-md bg-zinc-100 px-2 py-1 text-sm font-semibold leading-none text-ink">{formatPrice(product.priceRub)} ₽</p>
+                </div>
               </Link>
             ))}
             {products.length === 0 && <p className="text-sm text-zinc-500">Пока нет активных товаров.</p>}
