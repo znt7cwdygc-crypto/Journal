@@ -82,10 +82,11 @@ export default async function HomePage() {
         title: true,
         category: true,
         priceRub: true,
-        city: true
+        city: true,
+        description: true
       },
       orderBy: { createdAt: "desc" },
-      take: 3
+      take: 4
     })
   ]);
 
@@ -188,6 +189,7 @@ export default async function HomePage() {
                   <div className="min-w-0">
                     <p className="font-medium leading-snug line-clamp-2">{product.title}</p>
                     <p className="mt-1 text-xs text-zinc-500">{product.category} • {product.city || "город не указан"}</p>
+                    <p className="mt-1 line-clamp-1 text-xs leading-5 text-zinc-500">{product.description}</p>
                   </div>
                   <p className="shrink-0 rounded-md bg-zinc-100 px-2 py-1 text-sm font-semibold leading-none text-ink">{formatPrice(product.priceRub)} ₽</p>
                 </div>
