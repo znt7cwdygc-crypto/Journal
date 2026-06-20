@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { FormSubmitButton } from "@/components/form-submit-button";
+import { TiptapArticleEditor } from "@/components/tiptap-article-editor";
 
 type ArticleEditorFormProps = {
   action: (formData: FormData) => void | Promise<void>;
@@ -26,24 +27,11 @@ function normalizeImagePath(src: string) {
   return src.startsWith("/uploads/") ? src.replace("/uploads/", "/media/") : src;
 }
 
-function cleanBody(body: string) {
-  return body
-    .split(/\n{2,}/)
-    .map((part) => part.trim())
-    .filter((part) => {
-      const image = part.match(/^!\[(.*?)\]\((\/(?:uploads|media)\/[^)\s]+|https?:\/\/[^)\s]+)\)$/);
-      return !image;
-    })
-    .filter(Boolean)
-    .join("\n\n");
-}
-
 export function ArticleEditorForm({ action, draftAction, submitLabel = "Опубликовать", initialDraft }: ArticleEditorFormProps) {
   const [title, setTitle] = useState(initialDraft?.title ?? "");
   const [summary, setSummary] = useState(initialDraft?.summary ?? "");
   const [format, setFormat] = useState(initialDraft?.format ?? formats[0]);
   const [topic, setTopic] = useState(initialDraft?.topic ?? "");
-  const [body, setBody] = useState(() => cleanBody(initialDraft?.body ?? ""));
   const [coverImage, setCoverImage] = useState(normalizeImagePath(initialDraft?.coverImage ?? ""));
   const [coverPreview, setCoverPreview] = useState(normalizeImagePath(initialDraft?.coverImage ?? ""));
   const [uploadMessage, setUploadMessage] = useState("");
@@ -114,7 +102,9 @@ export function ArticleEditorForm({ action, draftAction, submitLabel = "Опуб
 
         <label className="form-label">
           Текст статьи
-          <textarea className="form-textarea min-h-[260px] py-3 leading-7" name="body" placeholder="Пишите как обычный пост на форуме: текст, абзацы, списки, вопросы к читателям." value={body} onChange={(event) => setBody(event.target.value)} required />
+          <div className="mt-1">
+            <TiptapArticleEditor name="body" initialContent={initialDraft?.body ?? ""} />
+          </div>
         </label>
 
         <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">

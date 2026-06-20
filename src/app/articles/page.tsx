@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 import { followTopicAction, reportContentAction } from "@/app/actions";
 import { auth } from "@/auth";
 import { SafeImage } from "@/components/safe-image";
+import { stripArticleHtml } from "@/lib/article-html";
 import { safeImageUrl } from "@/lib/media";
 import { prisma } from "@/lib/prisma";
 import { demoArticles, topicNav } from "@/lib/ugc-demo";
@@ -27,7 +28,8 @@ export async function generateMetadata({ searchParams }: { searchParams?: { topi
 }
 
 function previewText(text: string) {
-  return text.length > 260 ? `${text.slice(0, 260)}...` : text;
+  const preview = stripArticleHtml(text) || text;
+  return preview.length > 260 ? `${preview.slice(0, 260)}...` : preview;
 }
 
 const sortOptions = [
@@ -194,7 +196,7 @@ export default async function ArticlesPage({
         const useful = article.ratings.filter((r) => r.value === 4).length;
         const reactions = likes + useful;
         const comments = article.comments.length;
-        const topic = article.topic || inferArticleTopic(article.title, `${article.summary} ${article.body}`);
+        const topic = article.topic || inferArticleTopic(article.title, `${article.summary} ${stripArticleHtml(article.body)}`);
         const coverImage = safeImageUrl(article.coverImage);
         const authorImage = safeImageUrl(article.createdBy.image);
 

@@ -13,6 +13,7 @@ import {
 import { auth } from "@/auth";
 import { ShareArticleButton } from "@/components/share-article-button";
 import { SafeImage } from "@/components/safe-image";
+import { isHtmlArticleBody, sanitizeArticleHtml, stripArticleHtml } from "@/lib/article-html";
 import { safeImageUrl } from "@/lib/media";
 import { siteName, siteUrl, truncateSeo } from "@/lib/seo";
 
@@ -41,6 +42,15 @@ async function findPublishedArticle(slug: string, commentSort = "new") {
 }
 
 function renderArticleBody(body: string) {
+  if (isHtmlArticleBody(body)) {
+    return (
+      <div
+        className="article-html"
+        dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(body) }}
+      />
+    );
+  }
+
   return body
     .split(/\n{2,}/)
     .map((block) => block.trim())
@@ -101,7 +111,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   if (!article) return { title: "Материал не найден", robots: { index: false, follow: false } };
 
   const path = `/articles/${article.id}`;
-  const description = truncateSeo(article.summary || article.body);
+  const description = truncateSeo(article.summary || stripArticleHtml(article.body));
 
   return {
     title: article.title,
@@ -188,7 +198,7 @@ export default async function ArticleDetailsPage({
             "@context": "https://schema.org",
             "@type": "Article",
             headline: article.title,
-            description: truncateSeo(article.summary || article.body),
+            description: truncateSeo(article.summary || stripArticleHtml(article.body)),
             datePublished: article.publishedAt?.toISOString(),
             dateModified: article.updatedAt.toISOString(),
             mainEntityOfPage: siteUrl(`/articles/${article.id}`).toString(),

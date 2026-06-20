@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { AccountMode, ContentStatus, ListingType, PaymentStatus, PaymentType, Prisma, ProductCondition, ProductDelivery, ProfileKind } from "@prisma/client";
 import { auth, signIn, signOut } from "@/auth";
 import { getExpertLicenseEnd, getResumeUnlockEnd } from "@/lib/licenses";
+import { normalizeArticleBody, stripArticleHtml } from "@/lib/article-html";
 import { prisma } from "@/lib/prisma";
 import { listingExpiresAt, matchProfileExpiresAt, productExpiresAt, resumeExpiresAt } from "@/lib/publication-periods";
 import { safeInternalPath } from "@/lib/safe-redirect";
@@ -135,6 +136,19 @@ function requireArticleTopic(value: FormDataEntryValue | null) {
   const topic = cleanText(value, 80);
   if (!articleTopics.includes(topic)) throw new Error("Выберите рубрику статьи");
   return topic;
+}
+
+function requireArticleBody(value: FormDataEntryValue | null) {
+  const body = normalizeArticleBody(value);
+  const text = stripArticleHtml(body);
+  if (text.length < 2) throw new Error("Заполните текст статьи");
+  if (body.length > 12000) throw new Error("текст слишком длинный");
+  return body;
+}
+
+function cleanArticleDraftBody(value: FormDataEntryValue | null) {
+  const body = normalizeArticleBody(value, "Начните писать текст статьи.");
+  return body.length > 12000 ? body.slice(0, 12000) : body;
 }
 
 function withStatusParam(path: string, key: string, value: string) {
@@ -431,7 +445,7 @@ export async function submitBlogArticleAction(formData: FormData) {
 
   const title = requireText(formData.get("title"), "заголовок", 140);
   const summary = requireText(formData.get("summary"), "краткое описание", 260);
-  const body = requireMultiline(formData.get("body"), "текст", 12000);
+  const body = requireArticleBody(formData.get("body"));
   const format = normalizeArticleFormat(formData.get("format"));
   const topic = requireArticleTopic(formData.get("topic"));
   const coverImage = await resolveCoverImage(formData);
@@ -491,7 +505,7 @@ export async function saveBlogDraftAction(formData: FormData) {
 
   const title = cleanText(formData.get("title"), 140) || "Черновик без заголовка";
   const summary = cleanText(formData.get("summary"), 260) || "Короткое описание появится здесь.";
-  const body = cleanMultiline(formData.get("body"), 12000) || "Начните писать текст статьи.";
+  const body = cleanArticleDraftBody(formData.get("body"));
   const draftId = cleanText(formData.get("draftId"), 120);
   const format = normalizeArticleFormat(formData.get("format"));
   const topic = normalizeTopic(formData.get("topic"), title, body);
@@ -538,7 +552,7 @@ export async function updateBlogArticleAction(formData: FormData) {
 
   const title = requireText(formData.get("title"), "заголовок", 140);
   const summary = requireText(formData.get("summary"), "краткое описание", 260);
-  const body = requireMultiline(formData.get("body"), "текст", 12000);
+  const body = requireArticleBody(formData.get("body"));
   const format = normalizeArticleFormat(formData.get("format"));
   const topic = requireArticleTopic(formData.get("topic"));
   const coverImage = await resolveCoverImage(formData);
