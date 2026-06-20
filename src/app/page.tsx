@@ -56,9 +56,13 @@ function articleMeta(article: { comments: unknown[]; responseCount: number; view
   ].join(" • ");
 }
 
+function formatPrice(value: number) {
+  return new Intl.NumberFormat("ru-RU").format(value);
+}
+
 export default async function HomePage() {
   const now = new Date();
-  const [articles, listings] = await Promise.all([
+  const [articles, listings, products] = await Promise.all([
     prisma.article.findMany({
       where: { status: "PUBLISHED" },
       include: { createdBy: true, comments: true, ratings: true },
@@ -70,6 +74,18 @@ export default async function HomePage() {
       include: { createdBy: true },
       orderBy: { createdAt: "desc" },
       take: 4
+    }),
+    prisma.product.findMany({
+      where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        priceRub: true,
+        city: true
+      },
+      orderBy: { createdAt: "desc" },
+      take: 3
     })
   ]);
 
@@ -162,17 +178,19 @@ export default async function HomePage() {
       <section className="grid gap-3 md:grid-cols-2">
         <div className="content-card">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="section-title">Обсуждаемое</h2>
-            <Link href="/articles?sort=discussed" className="text-sm font-medium text-accent">Все</Link>
+            <h2 className="section-title">Товары</h2>
+            <Link href="/products" className="text-sm font-medium text-accent">Все</Link>
           </div>
           <div className="mt-3 space-y-3">
-            {discussedArticles.map((article) => (
-              <Link key={article.id} href={`/articles/${article.id}`} className="block border-b border-zinc-100 pb-3 last:border-0">
-                <p className="font-medium leading-snug">{article.title}</p>
-                <p className="mt-1 text-xs text-zinc-500">{article.comments.length + article.responseCount} обсуждений • {article.repostCount} репостов</p>
+            {products.map((product) => (
+              <Link key={product.id} href={`/products/${product.id}`} className="block border-b border-zinc-100 pb-3 last:border-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-hot">{product.category}</p>
+                <p className="mt-1 font-medium leading-snug line-clamp-2">{product.title}</p>
+                <p className="mt-1 text-sm font-semibold text-ink">{formatPrice(product.priceRub)} ₽</p>
+                <p className="mt-1 text-xs text-zinc-500">{product.city || "город не указан"}</p>
               </Link>
             ))}
-            {discussedArticles.length === 0 && <p className="text-sm text-zinc-500">Пока нет обсуждений.</p>}
+            {products.length === 0 && <p className="text-sm text-zinc-500">Пока нет активных товаров.</p>}
           </div>
         </div>
         <div className="content-card">
