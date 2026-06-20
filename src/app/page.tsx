@@ -86,6 +86,12 @@ export default async function HomePage() {
     .sort((a, b) => b.comments.length + b.responseCount - (a.comments.length + a.responseCount))
     .slice(0, 4);
   const feedArticles = articles.slice(1);
+  const vacancyListings = listings.filter((listing) => listing.type === "VACANCY").slice(0, 2);
+  const serviceListings = listings.filter((listing) => listing.type === "SERVICE").slice(0, 2);
+  const listingBlocks = [
+    { title: "Вакансии", href: "/vacancies", items: vacancyListings },
+    { title: "Услуги", href: "/services", items: serviceListings }
+  ];
 
   return (
     <div className="page-stack">
@@ -170,19 +176,24 @@ export default async function HomePage() {
           </div>
         </div>
         <div className="content-card">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="section-title">Вакансии и услуги</h2>
-            <Link href="/vacancies" className="text-sm font-medium text-accent">Смотреть</Link>
-          </div>
-          <div className="mt-3 space-y-3">
-            {listings.map((listing) => (
-              <Link key={listing.id} href={`/listings/${listing.id}`} className="block border-b border-zinc-100 pb-3 last:border-0">
-                <p className="text-xs font-semibold text-hot">{listing.type === "VACANCY" ? "Вакансия" : "Услуга"}</p>
-                <p className="mt-1 font-medium leading-snug">{listing.title}</p>
-                <p className="mt-1 text-xs text-zinc-500">{listing.createdBy.name || listing.createdBy.email || "Автор"} • {listing.city || "без города"}</p>
-              </Link>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {listingBlocks.map(({ title, href, items }) => (
+              <div key={title} className="min-w-0">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="section-title text-lg">{title}</h2>
+                  <Link href={href} className="text-sm font-medium text-accent">Все</Link>
+                </div>
+                <div className="mt-3 space-y-3">
+                  {items.map((listing) => (
+                    <Link key={listing.id} href={`/listings/${listing.id}`} className="block border-b border-zinc-100 pb-3 last:border-0">
+                      <p className="font-medium leading-snug line-clamp-2">{listing.title}</p>
+                      <p className="mt-1 text-xs text-zinc-500">{listing.createdBy.name || listing.createdBy.email || "Автор"} • {listing.city || "без города"}</p>
+                    </Link>
+                  ))}
+                  {items.length === 0 && <p className="text-sm text-zinc-500">Пока нет активных объявлений.</p>}
+                </div>
+              </div>
             ))}
-            {listings.length === 0 && <p className="text-sm text-zinc-500">Пока нет активных размещений.</p>}
           </div>
         </div>
       </section>
