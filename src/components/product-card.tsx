@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { reportContentAction, respondToProductAction, saveProductAction } from "@/app/actions";
-import { maskContact } from "@/lib/validation";
+import { reportContentAction, saveProductAction } from "@/app/actions";
+import { ContactReveal } from "@/components/contact-reveal";
 
 type ProductUser = {
   id: string;
@@ -25,6 +25,7 @@ type ProductCardItem = {
   responseCount: number;
   createdAt: Date;
   createdBy: ProductUser;
+  savedBy?: { userId: string }[];
 };
 
 const deliveryLabels: Record<string, string> = {
@@ -57,6 +58,8 @@ export function ProductDirectoryCard({
   currentPath: string;
   isSignedIn: boolean;
 }) {
+  const isSaved = Boolean(product.savedBy?.length);
+
   return (
     <article className="directory-card bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5">
       <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -79,30 +82,23 @@ export function ProductDirectoryCard({
         <span>{deliveryLabels[product.delivery] || product.delivery}</span>
         <span>{conditionLabels[product.condition] || product.condition}</span>
         <span>Просмотры: {product.viewCount + 1}</span>
-        <span>Отклики: {product.responseCount}</span>
       </div>
 
-      <div className="mt-3 text-sm text-zinc-700">
-        <span className="font-medium text-zinc-900">Контакт: </span>
-        {isSignedIn ? product.contact : maskContact(product.contact)}
-        {!isSignedIn && <p className="mt-1 text-xs text-zinc-500">Войдите, чтобы видеть контакт полностью и написать продавцу.</p>}
-      </div>
-
-      <div className="directory-actions mt-4 flex flex-wrap gap-2">
-        <form action={respondToProductAction}>
-          <input type="hidden" name="productId" value={product.id} />
-          <button className="btn btn-primary w-full" type="submit">Написать</button>
-        </form>
+      <div className="directory-actions mt-4 grid grid-cols-3 gap-2">
+        <ContactReveal contact={product.contact} signedIn={isSignedIn} compact />
         <form action={saveProductAction}>
           <input type="hidden" name="productId" value={product.id} />
-          <button className="btn btn-muted w-full" type="submit">Сохранить</button>
+          <input type="hidden" name="next" value={currentPath} />
+          <button className="btn btn-muted h-10 w-full whitespace-nowrap px-1 text-[11px]" type="submit">
+            {isSaved ? "Убрать" : "В избранное"}
+          </button>
         </form>
         <form action={reportContentAction}>
           <input type="hidden" name="targetType" value="PRODUCT" />
           <input type="hidden" name="targetId" value={product.id} />
           <input type="hidden" name="reason" value="Жалоба на товар" />
           <input type="hidden" name="next" value={currentPath} />
-          <button className="btn btn-danger w-full" type="submit">Жалоба</button>
+          <button className="btn btn-danger h-10 w-full whitespace-nowrap px-1 text-[11px]" type="submit">Жалоба</button>
         </form>
       </div>
 

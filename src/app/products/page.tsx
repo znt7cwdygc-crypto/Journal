@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { auth } from "@/auth";
-import { ContentSort } from "@/components/content-sort";
+import { ProductFilterForm } from "@/components/product-filter-form";
 import { ProductDirectoryCard } from "@/components/product-card";
 import { prisma } from "@/lib/prisma";
 
@@ -19,21 +19,35 @@ export const metadata: Metadata = {
 
 const sortOptions = [
   { key: "new", label: "Новые" },
-  { key: "views", label: "Популярные" },
-  { key: "responses", label: "По откликам" }
+  { key: "views", label: "Популярные" }
 ];
 
-export default async function ProductsPage({ searchParams }: { searchParams?: { sort?: string; reported?: string } }) {
-  const session = await auth();
-  const sort = searchParams?.sort || "new";
-  const currentPath = `/products${sort !== "new" ? `?sort=${encodeURIComponent(sort)}` : ""}`;
+function cleanFilter(value?: string) {
+  return String(value ?? "").trim().slice(0, 120);
+}
 
-  const products = await prisma.product.findMany({
+function normalizeSort(value?: string) {
+  return sortOptions.some((option) => option.key === value) ? String(value) : "new";
+}
+
+export default async function ProductsPage({ searchParams }: { searchParams?: { sort?: string; city?: string; category?: string; reported?: string; favorite?: string } }) {
+  const session = await auth();
+  const sort = normalizeSort(searchParams?.sort);
+  const cityValue = cleanFilter(searchParams?.city);
+  const categoryValue = cleanFilter(searchParams?.category);
+  const currentParams = new URLSearchParams();
+  if (cityValue) currentParams.set("city", cityValue);
+  if (categoryValue) currentParams.set("category", categoryValue);
+  if (sort !== "new") currentParams.set("sort", sort);
+  const currentQuery = currentParams.toString();
+  const currentPath = `/products${currentQuery ? `?${currentQuery}` : ""}`;
+
+  const allProducts = await prisma.product.findMany({
     where: {
       status: "PUBLISHED",
       OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }]
     },
-    orderBy: sort === "views" ? { viewCount: "desc" } : sort === "responses" ? { responseCount: "desc" } : { createdAt: "desc" },
+    orderBy: sort === "views" ? { viewCount: "desc" } : { createdAt: "desc" },
     select: {
       id: true,
       title: true,
@@ -47,8 +61,17 @@ export default async function ProductsPage({ searchParams }: { searchParams?: { 
       viewCount: true,
       responseCount: true,
       createdAt: true,
-      createdBy: { select: { id: true, name: true, email: true, image: true, profileBio: true } }
+      createdBy: { select: { id: true, name: true, email: true, image: true, profileBio: true } },
+      savedBy: session?.user?.id ? { where: { userId: session.user.id }, select: { userId: true } } : { where: { userId: "__guest__" }, select: { userId: true } }
     }
+  });
+
+  const cities = Array.from(new Set(allProducts.map((product) => product.city?.trim()).filter((city): city is string => Boolean(city)))).sort((a, b) => a.localeCompare(b, "ru"));
+  const categories = Array.from(new Set(allProducts.map((product) => product.category).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ru"));
+  const products = allProducts.filter((product) => {
+    const cityMatches = !cityValue || product.city?.trim() === cityValue;
+    const categoryMatches = !categoryValue || product.category === categoryValue;
+    return cityMatches && categoryMatches;
   });
 
   if (products.length > 0) {
@@ -59,6 +82,12 @@ export default async function ProductsPage({ searchParams }: { searchParams?: { 
   for (const product of products) {
     grouped.set(product.category, [...(grouped.get(product.category) || []), product]);
   }
+  const favoriteMessage =
+    searchParams?.favorite === "added"
+      ? "Товар добавлен в избранное."
+      : searchParams?.favorite === "removed"
+        ? "Товар убран из избранного."
+        : null;
 
   return (
     <div className="space-y-4">
@@ -71,18 +100,23 @@ export default async function ProductsPage({ searchParams }: { searchParams?: { 
         <a className="btn btn-primary" href="/cabinet#products">Продать товар</a>
       </div>
 
-      <ContentSort basePath="/products" active={sort} options={sortOptions} />
+      <ProductFilterForm cityValue={cityValue} categoryValue={categoryValue} sortValue={sort} cities={cities} categories={categories} sortOptions={sortOptions} />
 
       {searchParams?.reported && (
         <section className="rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800">
           Жалоба отправлена в модерацию.
         </section>
       )}
+      {favoriteMessage && (
+        <section className="rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+          {favoriteMessage}
+        </section>
+      )}
 
       {products.length === 0 && (
         <section className="border border-zinc-200 bg-white p-5">
-          <h2 className="font-medium">Товаров пока нет</h2>
-          <p className="mt-2 text-sm text-zinc-600">Можно первым выставить камеру, свет, мебель или другой полезный товар.</p>
+          <h2 className="font-medium">Под выбранные фильтры товаров пока нет</h2>
+          <p className="mt-2 text-sm text-zinc-600">Попробуйте другой город или категорию, когда появятся новые товары.</p>
         </section>
       )}
 

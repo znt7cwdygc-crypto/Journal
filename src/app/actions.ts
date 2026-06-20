@@ -991,15 +991,21 @@ export async function saveProductAction(formData: FormData) {
   if (!session?.user) redirect("/auth/signin");
 
   const productId = String(formData.get("productId") ?? "");
+  const next = safeInternalPath(cleanText(formData.get("next"), 500), "/cabinet#materials");
   if (!productId) throw new Error("Product ID missing");
-  await prisma.savedProduct.upsert({
-    where: { userId_productId: { userId: session.user.id, productId } },
-    update: {},
-    create: { userId: session.user.id, productId }
+  const existing = await prisma.savedProduct.findUnique({
+    where: { userId_productId: { userId: session.user.id, productId } }
   });
+
+  if (existing) {
+    await prisma.savedProduct.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.savedProduct.create({ data: { userId: session.user.id, productId } });
+  }
 
   await revalidateProduct(productId);
   revalidatePath("/cabinet");
+  redirect(withStatusParam(next, "favorite", existing ? "removed" : "added"));
 }
 
 export async function addListingReviewAction(formData: FormData) {

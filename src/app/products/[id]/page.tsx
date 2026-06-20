@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { reportContentAction, respondToProductAction, saveProductAction } from "@/app/actions";
+import { reportContentAction, saveProductAction } from "@/app/actions";
 import { auth } from "@/auth";
+import { ContactReveal } from "@/components/contact-reveal";
 import { prisma } from "@/lib/prisma";
 import { siteUrl, truncateSeo } from "@/lib/seo";
-import { maskContact } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -56,7 +56,7 @@ export default async function ProductDetailsPage({
   searchParams
 }: {
   params: { id: string };
-  searchParams?: { reported?: string };
+  searchParams?: { reported?: string; favorite?: string };
 }) {
   const session = await auth();
   const product = await findProduct(params.id);
@@ -66,6 +66,13 @@ export default async function ProductDetailsPage({
 
   const productPath = `/products/${product.id}`;
   const authorName = product.createdBy.name || product.createdBy.email || "Продавец";
+  const isSaved = Boolean(session?.user?.id && product.savedBy.some((item) => item.userId === session.user.id));
+  const favoriteMessage =
+    searchParams?.favorite === "added"
+      ? "Товар добавлен в избранное."
+      : searchParams?.favorite === "removed"
+        ? "Товар убран из избранного."
+        : null;
 
   return (
     <article className="bg-white p-5 shadow-sm sm:p-6">
@@ -110,8 +117,7 @@ export default async function ProductDetailsPage({
         <span>{deliveryLabels[String(product.delivery)] || product.delivery}</span>
         <span>{conditionLabels[String(product.condition)] || product.condition}</span>
         <span>{product.viewCount + 1} просмотров</span>
-        <span>{product.responseCount} откликов</span>
-        <span>{product.savedBy.length} сохранений</span>
+        <span>{product.savedBy.length} в избранном</span>
       </div>
 
       <p className="mt-5 whitespace-pre-wrap text-base leading-8 text-zinc-800">{product.description}</p>
@@ -121,25 +127,27 @@ export default async function ProductDetailsPage({
           Жалоба отправлена в модерацию.
         </div>
       )}
+      {favoriteMessage && (
+        <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+          {favoriteMessage}
+        </div>
+      )}
 
-      <p className="mt-5 text-sm font-medium">Контакт: {session?.user ? product.contact : maskContact(product.contact)}</p>
-      {!session?.user && <p className="mt-1 text-xs text-zinc-500">Войдите, чтобы видеть контакт полностью и написать продавцу.</p>}
-
-      <div className="mt-5 flex flex-wrap gap-2">
-        <form action={respondToProductAction}>
-          <input type="hidden" name="productId" value={product.id} />
-          <button className="btn btn-primary" type="submit">Написать продавцу</button>
-        </form>
+      <div className="mt-5 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
+        <ContactReveal contact={product.contact} signedIn={Boolean(session?.user)} compact />
         <form action={saveProductAction}>
           <input type="hidden" name="productId" value={product.id} />
-          <button className="btn btn-muted" type="submit">Сохранить</button>
+          <input type="hidden" name="next" value={productPath} />
+          <button className="h-10 w-full rounded-lg bg-zinc-100 px-1 text-[11px] font-semibold text-zinc-800" type="submit">
+            {isSaved ? "Убрать" : "В избранное"}
+          </button>
         </form>
         <form action={reportContentAction}>
           <input type="hidden" name="targetType" value="PRODUCT" />
           <input type="hidden" name="targetId" value={product.id} />
           <input type="hidden" name="reason" value="Жалоба на товар" />
           <input type="hidden" name="next" value={productPath} />
-          <button className="btn btn-danger" type="submit">Пожаловаться</button>
+          <button className="h-10 w-full rounded-lg bg-red-50 px-1 text-[11px] font-semibold text-red-700" type="submit">Жалоба</button>
         </form>
       </div>
 
