@@ -56,7 +56,8 @@ function ToolbarButton({
 }) {
   return (
     <button
-      className={`rounded-md px-2.5 py-1.5 text-sm font-semibold transition ${active ? "bg-zinc-900 text-white" : "bg-white text-zinc-700 hover:bg-zinc-100"} disabled:cursor-not-allowed disabled:opacity-40`}
+      aria-label={title}
+      className={`whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-semibold transition ${active ? "bg-zinc-900 text-white" : "bg-white text-zinc-700 hover:bg-zinc-100"} disabled:cursor-not-allowed disabled:opacity-40`}
       disabled={disabled}
       onClick={onClick}
       title={title}
@@ -150,49 +151,49 @@ export function TiptapArticleEditor({ name, initialContent }: TiptapArticleEdito
       <input name={name} type="hidden" value={html} />
       <div className="flex flex-wrap gap-1 border-b border-zinc-100 bg-zinc-50 p-2">
         <ToolbarButton active={editor?.isActive("paragraph")} disabled={!editor} onClick={() => editor?.chain().focus().setParagraph().run()} title="Обычный текст">
-          P
+          Текст
         </ToolbarButton>
         <ToolbarButton active={editor?.isActive("heading", { level: 2 })} disabled={!editor} onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} title="Заголовок">
-          H2
+          Заголовок
         </ToolbarButton>
         <ToolbarButton active={editor?.isActive("heading", { level: 3 })} disabled={!editor} onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} title="Подзаголовок">
-          H3
+          Подзаг.
         </ToolbarButton>
         <ToolbarButton active={editor?.isActive("bold")} disabled={!editor} onClick={() => editor?.chain().focus().toggleBold().run()} title="Жирный">
-          B
+          Ж
         </ToolbarButton>
         <ToolbarButton active={editor?.isActive("italic")} disabled={!editor} onClick={() => editor?.chain().focus().toggleItalic().run()} title="Курсив">
-          I
+          К
         </ToolbarButton>
         <ToolbarButton active={editor?.isActive("underline")} disabled={!editor} onClick={() => editor?.chain().focus().toggleUnderline().run()} title="Подчеркнутый">
-          U
+          Ч
         </ToolbarButton>
         <ToolbarButton active={editor?.isActive("bulletList")} disabled={!editor} onClick={() => editor?.chain().focus().toggleBulletList().run()} title="Список">
-          • list
+          • Список
         </ToolbarButton>
         <ToolbarButton active={editor?.isActive("orderedList")} disabled={!editor} onClick={() => editor?.chain().focus().toggleOrderedList().run()} title="Нумерованный список">
-          1. list
+          1. Список
         </ToolbarButton>
         <ToolbarButton active={editor?.isActive("blockquote")} disabled={!editor} onClick={() => editor?.chain().focus().toggleBlockquote().run()} title="Цитата">
-          Quote
+          Цитата
         </ToolbarButton>
         <ToolbarButton active={editor?.isActive("link")} disabled={!editor} onClick={setLink} title="Ссылка">
-          Link
+          Ссылка
         </ToolbarButton>
         <ToolbarButton disabled={!editor} onClick={() => editor?.chain().focus().setHorizontalRule().run()} title="Разделитель">
-          HR
+          Линия
         </ToolbarButton>
         <ToolbarButton active={editor?.isActive({ textAlign: "left" })} disabled={!editor} onClick={() => editor?.chain().focus().setTextAlign("left").run()} title="По левому краю">
-          Left
+          Слева
         </ToolbarButton>
         <ToolbarButton active={editor?.isActive({ textAlign: "center" })} disabled={!editor} onClick={() => editor?.chain().focus().setTextAlign("center").run()} title="По центру">
-          Center
+          Центр
         </ToolbarButton>
         <ToolbarButton active={editor?.isActive({ textAlign: "right" })} disabled={!editor} onClick={() => editor?.chain().focus().setTextAlign("right").run()} title="По правому краю">
-          Right
+          Справа
         </ToolbarButton>
-        <label className={`cursor-pointer rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 ${isUploading ? "pointer-events-none opacity-50" : ""}`} title="Изображение">
-          Image
+        <label className={`cursor-pointer whitespace-nowrap rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 ${isUploading ? "pointer-events-none opacity-50" : ""}`} title="Изображение">
+          Фото
           <input
             className="sr-only"
             disabled={!editor || isUploading}
@@ -206,10 +207,10 @@ export function TiptapArticleEditor({ name, initialContent }: TiptapArticleEdito
           />
         </label>
         <ToolbarButton disabled={!editor || !editor.can().undo()} onClick={() => editor?.chain().focus().undo().run()} title="Отменить">
-          Undo
+          Назад
         </ToolbarButton>
         <ToolbarButton disabled={!editor || !editor.can().redo()} onClick={() => editor?.chain().focus().redo().run()} title="Повторить">
-          Redo
+          Вперед
         </ToolbarButton>
       </div>
       <EditorContent editor={editor} />
