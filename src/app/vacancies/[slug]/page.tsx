@@ -72,7 +72,10 @@ export default async function VacancyLandingPage({ params }: { params: { slug: s
       OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       AND: [vacancyWhere(params.slug)]
     },
-    include: { createdBy: true },
+    include: {
+      createdBy: true,
+      savedBy: session?.user?.id ? { where: { userId: session.user.id }, select: { userId: true } } : { where: { userId: "__guest__" }, select: { userId: true } }
+    },
     orderBy: { createdAt: "desc" },
     take: 6
   });

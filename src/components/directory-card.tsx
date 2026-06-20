@@ -66,8 +66,9 @@ function AuthorFooter({ author }: { author: DirectoryUser }) {
   );
 }
 
-function DirectoryActionRow({ children, compact = false }: { children: ReactNode; compact?: boolean }) {
-  return <div className={compact ? "directory-actions mt-4 grid grid-cols-3 gap-2" : "directory-actions mt-4 flex flex-wrap gap-2"}>{children}</div>;
+function DirectoryActionRow({ children, columns }: { children: ReactNode; columns?: 3 | 4 }) {
+  const compactClass = columns === 4 ? "grid-cols-4" : columns === 3 ? "grid-cols-3" : "";
+  return <div className={columns ? `directory-actions mt-4 grid ${compactClass} gap-2` : "directory-actions mt-4 flex flex-wrap gap-2"}>{children}</div>;
 }
 
 function HiddenListingInputs({ listingId }: { listingId: string }) {
@@ -115,6 +116,8 @@ export function ListingDirectoryCard({
   const price = isService ? structuredValue(listing.description, "Цена") : "";
   const shortDescription = isService ? serviceSummary(listing.description) : listing.description;
   const isSaved = Boolean(listing.savedBy?.length);
+  const compactListing = kind === "VACANCY" || isService;
+  const compactButtonClass = "btn h-10 w-full whitespace-nowrap px-1 text-[11px]";
 
   return (
     <article className="directory-card bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5">
@@ -142,7 +145,7 @@ export function ListingDirectoryCard({
         {kind === "SERVICE" && ratings.length > 0 && <span>Рейтинг: {averageRating.toFixed(1)} ({ratings.length})</span>}
       </div>
 
-      {!isService && (
+      {!compactListing && (
         <div className="mt-3 text-sm text-zinc-700">
           <span className="font-medium text-zinc-900">Контакт: </span>
           {isSignedIn ? listing.contact : maskContact(listing.contact)}
@@ -150,21 +153,21 @@ export function ListingDirectoryCard({
         </div>
       )}
 
-      <DirectoryActionRow compact={isService}>
-        {isService && <ContactReveal contact={listing.contact} signedIn={isSignedIn} compact />}
-        {!isService && (
+      <DirectoryActionRow columns={isService ? 3 : kind === "VACANCY" ? 4 : undefined}>
+        {compactListing && <ContactReveal contact={listing.contact} signedIn={isSignedIn} compact />}
+        {kind === "VACANCY" && (
           <form action={respondToListingAction}>
             <HiddenListingInputs listingId={listing.id} />
-            <button className="btn btn-primary w-full" type="submit">
-              Откликнуться
+            <button className={`${compactButtonClass} btn-primary`} type="submit">
+              Отклик
             </button>
           </form>
         )}
         <form action={saveListingAction}>
           <HiddenListingInputs listingId={listing.id} />
           <input type="hidden" name="next" value={currentPath} />
-          <button className={isService ? "btn btn-muted h-10 w-full px-2 text-xs" : "btn btn-muted w-full"} type="submit">
-            {isService ? (isSaved ? "Убрать" : "В избранное") : "Сохранить"}
+          <button className={compactListing ? `${compactButtonClass} btn-muted` : "btn btn-muted w-full"} type="submit">
+            {compactListing ? (isSaved ? "Убрать" : "В избранное") : "Сохранить"}
           </button>
         </form>
         <form action={reportContentAction}>
@@ -172,7 +175,7 @@ export function ListingDirectoryCard({
           <input type="hidden" name="targetId" value={listing.id} />
           <input type="hidden" name="reason" value={reportReason} />
           <input type="hidden" name="next" value={currentPath} />
-          <button className={isService ? "btn btn-danger h-10 w-full px-2 text-xs" : "btn btn-danger w-full"} type="submit">
+          <button className={compactListing ? `${compactButtonClass} btn-danger` : "btn btn-danger w-full"} type="submit">
             Жалоба
           </button>
         </form>
