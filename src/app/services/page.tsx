@@ -1,10 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { ContentSort } from "@/components/content-sort";
-import { CityFilter } from "@/components/city-filter";
 import { ListingDirectoryCard } from "@/components/directory-card";
 import { serviceTopic } from "@/lib/topics";
-import { CITY_OPTIONS, type CityValue } from "@/lib/city-constants";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -20,57 +17,66 @@ export const metadata: Metadata = {
   }
 };
 
-const sortOptions = [
-  { key: "new", label: "Новые" },
-  { key: "views", label: "Популярные" },
-  { key: "responses", label: "По откликам" }
-];
-
-function normalizeCity(value?: string): CityValue | "" {
-  return CITY_OPTIONS.some((city) => city.value === value) ? (value as CityValue) : "";
+function structuredValue(text: string, label: string) {
+  const line = text.split("\n").find((item) => item.trim().toLowerCase().startsWith(`${label.toLowerCase()}:`));
+  return line ? line.slice(line.indexOf(":") + 1).trim() : "";
 }
 
-function cityWhere(cityValue: CityValue | "") {
-  const cityMeta = CITY_OPTIONS.find((city) => city.value === cityValue);
-  if (!cityMeta) return {};
-
-  const remote = [
-    { city: { equals: "Удаленно", mode: "insensitive" as const } },
-    { city: { equals: "remote", mode: "insensitive" as const } },
-    { city: { contains: "удален", mode: "insensitive" as const } },
-    { geoCode: { equals: "remote", mode: "insensitive" as const } },
-    { employmentType: "REMOTE" as const }
-  ];
-
-  if (cityMeta.value === "remote") return { OR: remote };
-
-  return {
-    OR: [
-      { city: { equals: cityMeta.label, mode: "insensitive" as const } },
-      { geoCode: { equals: cityMeta.geoCode, mode: "insensitive" as const } },
-      ...remote
-    ]
-  };
+function serviceCategory(title: string, description: string) {
+  return structuredValue(description, "Категория") || serviceTopic(title, description);
 }
 
-export default async function ServicesPage({ searchParams }: { searchParams?: { sort?: string; city?: string; reported?: string } }) {
+function cleanFilter(value?: string) {
+  return String(value ?? "").trim().slice(0, 120);
+}
+
+function isRemoteService(service: { city: string | null; geoCode: string | null; employmentType: string | null }) {
+  const city = (service.city || "").toLowerCase();
+  return service.employmentType === "REMOTE" || service.geoCode?.toLowerCase() === "remote" || city === "remote" || city.includes("удален");
+}
+
+export default async function ServicesPage({ searchParams }: { searchParams?: { city?: string; category?: string; reported?: string; favorite?: string } }) {
   const session = await auth();
-  const sort = searchParams?.sort || "new";
-  const cityValue = normalizeCity(searchParams?.city);
-  const cityMeta = CITY_OPTIONS.find((city) => city.value === cityValue);
-  const currentPath = `/services${cityValue ? `?city=${encodeURIComponent(cityValue)}` : ""}`;
+  const cityValue = cleanFilter(searchParams?.city);
+  const categoryValue = cleanFilter(searchParams?.category);
+  const currentParams = new URLSearchParams();
+  if (cityValue) currentParams.set("city", cityValue);
+  if (categoryValue) currentParams.set("category", categoryValue);
+  const currentQuery = currentParams.toString();
+  const currentPath = `/services${currentQuery ? `?${currentQuery}` : ""}`;
 
-  const services = await prisma.listing.findMany({
+  const allServices = await prisma.listing.findMany({
     where: {
       type: "SERVICE",
       status: "PUBLISHED",
       AND: [
-        { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
-        ...(cityValue ? [cityWhere(cityValue)] : [])
+        { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] }
       ]
     },
-    orderBy: sort === "views" ? { viewCount: "desc" } : sort === "responses" ? { responseCount: "desc" } : { createdAt: "desc" },
-    include: { createdBy: true, reviews: { where: { parentId: null, isHidden: false }, select: { rating: true } } }
+    orderBy: { createdAt: "desc" },
+    include: {
+      createdBy: true,
+      reviews: { where: { parentId: null, isHidden: false }, select: { rating: true } },
+      savedBy: session?.user?.id ? { where: { userId: session.user.id }, select: { userId: true } } : { where: { userId: "__guest__" }, select: { userId: true } }
+    }
+  });
+
+  const categories = Array.from(new Set(allServices.map((service) => serviceCategory(service.title, service.description)))).sort((a, b) => a.localeCompare(b, "ru"));
+  const hasRemote = allServices.some(isRemoteService);
+  const cities = Array.from(
+    new Set(
+      allServices
+        .filter((service) => !isRemoteService(service))
+        .map((service) => service.city?.trim())
+        .filter((city): city is string => Boolean(city))
+    )
+  ).sort((a, b) => a.localeCompare(b, "ru"));
+
+  const services = allServices.filter((service) => {
+    const categoryMatches = !categoryValue || serviceCategory(service.title, service.description) === categoryValue;
+    const remote = isRemoteService(service);
+    const cityMatches = !cityValue || (cityValue === "remote" ? remote : remote || service.city?.trim() === cityValue);
+    return categoryMatches && cityMatches;
   });
 
   if (services.length > 0) {
@@ -78,25 +84,62 @@ export default async function ServicesPage({ searchParams }: { searchParams?: { 
   }
 
   const grouped = new Map<string, typeof services>();
-  for (const v of services) {
-    const key = serviceTopic(v.title, v.description);
-    grouped.set(key, [...(grouped.get(key) || []), v]);
+  for (const service of services) {
+    const key = serviceCategory(service.title, service.description);
+    grouped.set(key, [...(grouped.get(key) || []), service]);
   }
+  const favoriteMessage =
+    searchParams?.favorite === "added"
+      ? "Услуга добавлена в избранное."
+      : searchParams?.favorite === "removed"
+        ? "Услуга убрана из избранного."
+        : null;
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Услуги{cityMeta ? ` • ${cityMeta.label}` : ""}</h1>
-      <CityFilter basePath="/services" active={cityValue} sort={sort} />
-      <ContentSort basePath="/services" active={sort} options={sortOptions} params={{ city: cityValue || undefined }} />
+      <h1 className="text-2xl font-semibold">Услуги</h1>
+      <form className="grid gap-3 rounded-lg border border-zinc-100 bg-white p-4 sm:grid-cols-[1fr_1fr_auto]" action="/services">
+        <label className="text-sm font-semibold text-zinc-800">
+          Город
+          <select name="city" className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm" defaultValue={cityValue}>
+            <option value="">Все</option>
+            {hasRemote && <option value="remote">Удаленно</option>}
+            {cities.map((city) => (
+              <option key={city} value={city}>
+                {city}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm font-semibold text-zinc-800">
+          Категория услуги
+          <select name="category" className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm" defaultValue={categoryValue}>
+            <option value="">Все</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button className="btn btn-primary self-end" type="submit">
+          Показать
+        </button>
+      </form>
       {searchParams?.reported && (
         <section className="rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800">
           Жалоба отправлена в модерацию.
         </section>
       )}
+      {favoriteMessage && (
+        <section className="rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+          {favoriteMessage}
+        </section>
+      )}
       {services.length === 0 && (
         <section className="border border-zinc-200 bg-white p-5">
-          <h2 className="font-medium">{cityMeta ? `Для города ${cityMeta.label} услуг пока нет` : "Услуг пока нет"}</h2>
-          <p className="mt-2 text-sm text-zinc-600">Попробуйте другой город в фильтре или вернитесь позже, когда появятся новые эксперты.</p>
+          <h2 className="font-medium">Под выбранные фильтры услуг пока нет</h2>
+          <p className="mt-2 text-sm text-zinc-600">Попробуйте другой город или категорию, когда появятся новые предложения.</p>
         </section>
       )}
       {Array.from(grouped.entries()).map(([section, items]) => (

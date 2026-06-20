@@ -757,7 +757,7 @@ export default async function CabinetPage({
 
           <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold">Сохраненные вакансии и услуги</h3>
+              <h3 className="text-sm font-semibold">Избранные вакансии и услуги</h3>
               <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600">{savedListings.length}</span>
             </div>
             <div className="mt-3 space-y-2">
@@ -767,7 +767,7 @@ export default async function CabinetPage({
                   <p className="mt-1 text-xs text-zinc-500">{item.listing.type === "VACANCY" ? "Вакансия" : "Услуга"}</p>
                 </a>
               ))}
-              {savedListings.length === 0 && <p className="text-xs text-zinc-500">Пока ничего не сохранено.</p>}
+              {savedListings.length === 0 && <p className="text-xs text-zinc-500">Пока ничего не добавлено в избранное.</p>}
             </div>
           </div>
 

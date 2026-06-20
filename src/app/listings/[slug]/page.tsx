@@ -10,6 +10,7 @@ import {
   updateOwnListingReviewAction
 } from "@/app/actions";
 import { auth } from "@/auth";
+import { ContactReveal } from "@/components/contact-reveal";
 import { prisma } from "@/lib/prisma";
 import { siteUrl, truncateSeo } from "@/lib/seo";
 import { maskContact } from "@/lib/validation";
@@ -44,6 +45,24 @@ function reviewerName(user: { name: string | null; email: string | null }) {
   return user.name || user.email || "Пользователь";
 }
 
+function structuredValue(text: string, label: string) {
+  const line = text.split("\n").find((item) => item.trim().toLowerCase().startsWith(`${label.toLowerCase()}:`));
+  return line ? line.slice(line.indexOf(":") + 1).trim() : "";
+}
+
+function serviceSummary(description: string) {
+  const summary = structuredValue(description, "Коротко");
+  if (summary) return summary;
+
+  return (
+    description
+      .split("\n")
+      .map((part) => part.trim())
+      .find((part) => part && !/^(категория|цена|комментарий к цене|что входит|опыт|портфолио|срок|доступность|ограничения):/i.test(part)) ||
+    description
+  );
+}
+
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const listing = await findListing(params.slug);
   if (!listing) return { title: "Размещение не найдено", robots: { index: false, follow: false } };
@@ -63,7 +82,7 @@ export default async function ListingDetailsPage({
   searchParams
 }: {
   params: { slug: string };
-  searchParams?: { reported?: string; review?: string };
+  searchParams?: { reported?: string; review?: string; favorite?: string };
 }) {
   const session = await auth();
   const listing = await findListing(params.slug);
@@ -76,6 +95,10 @@ export default async function ListingDetailsPage({
   const visibleRatings = listing.reviews.map((review) => review.rating).filter((rating): rating is number => typeof rating === "number");
   const averageRating = visibleRatings.length ? visibleRatings.reduce((sum, rating) => sum + rating, 0) / visibleRatings.length : 0;
   const isServiceOwner = Boolean(session?.user?.id && session.user.id === listing.createdById);
+  const isService = listing.type === "SERVICE";
+  const isSaved = Boolean(session?.user?.id && listing.savedBy.some((item) => item.userId === session.user.id));
+  const price = isService ? structuredValue(listing.description, "Цена") : "";
+  const summary = isService ? serviceSummary(listing.description) : listing.description;
   const reviewMessage =
     searchParams?.review === "added"
       ? "Отзыв опубликован."
@@ -84,6 +107,16 @@ export default async function ListingDetailsPage({
         : searchParams?.review === "deleted"
           ? "Отзыв удален."
           : null;
+  const favoriteMessage =
+    searchParams?.favorite === "added"
+      ? isService
+        ? "Услуга добавлена в избранное."
+        : "Размещение добавлено в избранное."
+      : searchParams?.favorite === "removed"
+        ? isService
+          ? "Услуга убрана из избранного."
+          : "Размещение убрано из избранного."
+        : null;
 
   return (
     <article className="bg-white p-6 shadow-sm">
@@ -115,24 +148,39 @@ export default async function ListingDetailsPage({
         <span className="rounded-full bg-sky-50 px-3 py-1 text-sky-700">{listing.employmentType || "Формат не указан"}</span>
       </div>
       <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-tight">{listing.title}</h1>
+      {price && <p className="mt-4 inline-flex rounded-xl bg-zinc-900 px-4 py-2 text-lg font-bold text-white">{price}</p>}
+      {isService && summary !== listing.description && <p className="mt-4 text-lg leading-7 text-zinc-700">{summary}</p>}
       <p className="mt-4 whitespace-pre-wrap text-base leading-8 text-zinc-800">{listing.description}</p>
       {searchParams?.reported && (
         <div className="mt-4 rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800">
           Жалоба отправлена в модерацию.
         </div>
       )}
+      {favoriteMessage && (
+        <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+          {favoriteMessage}
+        </div>
+      )}
       <div className="mt-5 flex flex-wrap gap-2 text-sm text-zinc-600">
         <span>{listing.viewCount + 1} просмотров</span>
         <span>{listing.responseCount} откликов</span>
-        <span>{listing.savedBy.length} сохранений</span>
+        <span>{listing.savedBy.length} в избранном</span>
         {listing.type === "SERVICE" && visibleRatings.length > 0 && <span>Рейтинг: {averageRating.toFixed(1)} из 5</span>}
       </div>
-      <p className="mt-4 text-sm font-medium">Контакт: {session?.user ? listing.contact : maskContact(listing.contact)}</p>
-      {!session?.user && <p className="mt-1 text-xs text-zinc-500">Войдите, чтобы видеть контакт полностью и отправить отклик.</p>}
+      {isService ? (
+        <div className="mt-4">
+          <ContactReveal contact={listing.contact} signedIn={Boolean(session?.user)} />
+        </div>
+      ) : (
+        <>
+          <p className="mt-4 text-sm font-medium">Контакт: {session?.user ? listing.contact : maskContact(listing.contact)}</p>
+          {!session?.user && <p className="mt-1 text-xs text-zinc-500">Войдите, чтобы видеть контакт полностью и отправить отклик.</p>}
+        </>
+      )}
 
       <div className="mt-5 flex flex-wrap gap-2">
-        <form action={respondToListingAction}><input type="hidden" name="listingId" value={listing.id} /><button className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white" type="submit">Откликнуться</button></form>
-        <form action={saveListingAction}><input type="hidden" name="listingId" value={listing.id} /><button className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-800" type="submit">Сохранить</button></form>
+        {!isService && <form action={respondToListingAction}><input type="hidden" name="listingId" value={listing.id} /><button className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white" type="submit">Откликнуться</button></form>}
+        <form action={saveListingAction}><input type="hidden" name="listingId" value={listing.id} /><input type="hidden" name="next" value={listingPath} /><button className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-800" type="submit">{isService ? (isSaved ? "★ Убрать из избранного" : "☆ Добавить в избранное") : "Сохранить"}</button></form>
         <form action={reportContentAction}><input type="hidden" name="targetType" value="LISTING" /><input type="hidden" name="targetId" value={listing.id} /><input type="hidden" name="reason" value="Жалоба на размещение" /><input type="hidden" name="next" value={listingPath} /><button className="rounded-lg bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-600" type="submit">Пожаловаться</button></form>
       </div>
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { reportContentAction, respondToListingAction, respondToResumeAction, saveListingAction } from "@/app/actions";
+import { ContactReveal } from "@/components/contact-reveal";
 import { maskContact } from "@/lib/validation";
 
 type DirectoryUser = {
@@ -24,6 +25,7 @@ type DirectoryListing = {
   createdById: string;
   createdBy: DirectoryUser;
   reviews?: { rating: number | null }[];
+  savedBy?: { userId: string }[];
 };
 
 type DirectoryResume = {
@@ -72,6 +74,24 @@ function HiddenListingInputs({ listingId }: { listingId: string }) {
   return <input type="hidden" name="listingId" value={listingId} />;
 }
 
+function structuredValue(text: string, label: string) {
+  const line = text.split("\n").find((item) => item.trim().toLowerCase().startsWith(`${label.toLowerCase()}:`));
+  return line ? line.slice(line.indexOf(":") + 1).trim() : "";
+}
+
+function serviceSummary(description: string) {
+  const summary = structuredValue(description, "Коротко");
+  if (summary) return summary;
+
+  return (
+    description
+      .split("\n")
+      .map((part) => part.trim())
+      .find((part) => part && !/^(категория|цена|комментарий к цене|что входит|опыт|портфолио|срок|доступность|ограничения):/i.test(part)) ||
+    description
+  );
+}
+
 export function ListingDirectoryCard({
   listing,
   kind,
@@ -91,6 +111,10 @@ export function ListingDirectoryCard({
   const formatLabel = listing.employmentType || "Формат не указан";
   const ratings = (listing.reviews || []).map((review) => review.rating).filter((rating): rating is number => typeof rating === "number");
   const averageRating = ratings.length ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : 0;
+  const isService = kind === "SERVICE";
+  const price = isService ? structuredValue(listing.description, "Цена") : "";
+  const shortDescription = isService ? serviceSummary(listing.description) : listing.description;
+  const isSaved = Boolean(listing.savedBy?.length);
 
   return (
     <article className="directory-card bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5">
@@ -102,7 +126,12 @@ export function ListingDirectoryCard({
 
       <Link href={`/listings/${listing.id}`} className="block">
         <h3 className="mt-3 text-xl font-semibold leading-tight text-ink">{listing.title}</h3>
-        <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{listing.description}</p>
+        {price && (
+          <p className="mt-3 inline-flex rounded-lg bg-zinc-900 px-3 py-2 text-base font-bold text-white">
+            {price}
+          </p>
+        )}
+        <p className="mt-3 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{shortDescription}</p>
       </Link>
 
       <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500">
@@ -113,23 +142,32 @@ export function ListingDirectoryCard({
         {kind === "SERVICE" && ratings.length > 0 && <span>Рейтинг: {averageRating.toFixed(1)} ({ratings.length})</span>}
       </div>
 
-      <div className="mt-3 text-sm text-zinc-700">
-        <span className="font-medium text-zinc-900">Контакт: </span>
-        {isSignedIn ? listing.contact : maskContact(listing.contact)}
-        {!isSignedIn && <p className="mt-1 text-xs text-zinc-500">Войдите, чтобы видеть контакт полностью и отправить отклик.</p>}
-      </div>
+      {isService ? (
+        <div className="mt-3">
+          <ContactReveal contact={listing.contact} signedIn={isSignedIn} />
+        </div>
+      ) : (
+        <div className="mt-3 text-sm text-zinc-700">
+          <span className="font-medium text-zinc-900">Контакт: </span>
+          {isSignedIn ? listing.contact : maskContact(listing.contact)}
+          {!isSignedIn && <p className="mt-1 text-xs text-zinc-500">Войдите, чтобы видеть контакт полностью и отправить отклик.</p>}
+        </div>
+      )}
 
       <DirectoryActionRow>
-        <form action={respondToListingAction}>
-          <HiddenListingInputs listingId={listing.id} />
-          <button className="btn btn-primary w-full" type="submit">
-            Откликнуться
-          </button>
-        </form>
+        {!isService && (
+          <form action={respondToListingAction}>
+            <HiddenListingInputs listingId={listing.id} />
+            <button className="btn btn-primary w-full" type="submit">
+              Откликнуться
+            </button>
+          </form>
+        )}
         <form action={saveListingAction}>
           <HiddenListingInputs listingId={listing.id} />
+          <input type="hidden" name="next" value={currentPath} />
           <button className="btn btn-muted w-full" type="submit">
-            Сохранить
+            {isService ? (isSaved ? "★ Убрать из избранного" : "☆ Добавить в избранное") : "Сохранить"}
           </button>
         </form>
         <form action={reportContentAction}>
