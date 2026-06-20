@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { ListingDirectoryCard } from "@/components/directory-card";
+import { ServiceFilterForm } from "@/components/service-filter-form";
 import { serviceTopic } from "@/lib/topics";
 import type { Metadata } from "next";
 
@@ -98,34 +99,7 @@ export default async function ServicesPage({ searchParams }: { searchParams?: { 
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Услуги</h1>
-      <form className="grid gap-3 rounded-lg border border-zinc-100 bg-white p-4 sm:grid-cols-[1fr_1fr_auto]" action="/services">
-        <label className="text-sm font-semibold text-zinc-800">
-          Город
-          <select name="city" className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm" defaultValue={cityValue}>
-            <option value="">Все</option>
-            {hasRemote && <option value="remote">Удаленно</option>}
-            {cities.map((city) => (
-              <option key={city} value={city}>
-                {city}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-sm font-semibold text-zinc-800">
-          Категория услуги
-          <select name="category" className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm" defaultValue={categoryValue}>
-            <option value="">Все</option>
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button className="btn btn-primary self-end" type="submit">
-          Показать
-        </button>
-      </form>
+      <ServiceFilterForm cityValue={cityValue} categoryValue={categoryValue} hasRemote={hasRemote} cities={cities} categories={categories} />
       {searchParams?.reported && (
         <section className="rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800">
           Жалоба отправлена в модерацию.

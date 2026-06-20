@@ -167,21 +167,18 @@ export default async function ListingDetailsPage({
         <span>{listing.savedBy.length} в избранном</span>
         {listing.type === "SERVICE" && visibleRatings.length > 0 && <span>Рейтинг: {averageRating.toFixed(1)} из 5</span>}
       </div>
-      {isService ? (
-        <div className="mt-4">
-          <ContactReveal contact={listing.contact} signedIn={Boolean(session?.user)} />
-        </div>
-      ) : (
+      {!isService && (
         <>
           <p className="mt-4 text-sm font-medium">Контакт: {session?.user ? listing.contact : maskContact(listing.contact)}</p>
           {!session?.user && <p className="mt-1 text-xs text-zinc-500">Войдите, чтобы видеть контакт полностью и отправить отклик.</p>}
         </>
       )}
 
-      <div className="mt-5 flex flex-wrap gap-2">
+      <div className={isService ? "mt-5 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap" : "mt-5 flex flex-wrap gap-2"}>
+        {isService && <ContactReveal contact={listing.contact} signedIn={Boolean(session?.user)} compact />}
         {!isService && <form action={respondToListingAction}><input type="hidden" name="listingId" value={listing.id} /><button className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white" type="submit">Откликнуться</button></form>}
-        <form action={saveListingAction}><input type="hidden" name="listingId" value={listing.id} /><input type="hidden" name="next" value={listingPath} /><button className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-800" type="submit">{isService ? (isSaved ? "★ Убрать из избранного" : "☆ Добавить в избранное") : "Сохранить"}</button></form>
-        <form action={reportContentAction}><input type="hidden" name="targetType" value="LISTING" /><input type="hidden" name="targetId" value={listing.id} /><input type="hidden" name="reason" value="Жалоба на размещение" /><input type="hidden" name="next" value={listingPath} /><button className="rounded-lg bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-600" type="submit">Пожаловаться</button></form>
+        <form action={saveListingAction}><input type="hidden" name="listingId" value={listing.id} /><input type="hidden" name="next" value={listingPath} /><button className={isService ? "h-10 w-full rounded-lg bg-zinc-100 px-2 text-xs font-semibold text-zinc-800" : "rounded-lg bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-800"} type="submit">{isService ? (isSaved ? "Убрать" : "В избранное") : "Сохранить"}</button></form>
+        <form action={reportContentAction}><input type="hidden" name="targetType" value="LISTING" /><input type="hidden" name="targetId" value={listing.id} /><input type="hidden" name="reason" value="Жалоба на размещение" /><input type="hidden" name="next" value={listingPath} /><button className={isService ? "h-10 w-full rounded-lg bg-red-50 px-2 text-xs font-semibold text-red-700" : "rounded-lg bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-600"} type="submit">Жалоба</button></form>
       </div>
 
       <Link href={`/profiles/${listing.createdById}`} className="mt-6 flex items-center gap-3 rounded-lg bg-zinc-50 p-3 text-sm hover:bg-zinc-100">

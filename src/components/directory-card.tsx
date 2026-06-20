@@ -66,8 +66,8 @@ function AuthorFooter({ author }: { author: DirectoryUser }) {
   );
 }
 
-function DirectoryActionRow({ children }: { children: ReactNode }) {
-  return <div className="directory-actions mt-4 flex flex-wrap gap-2">{children}</div>;
+function DirectoryActionRow({ children, compact = false }: { children: ReactNode; compact?: boolean }) {
+  return <div className={compact ? "directory-actions mt-4 grid grid-cols-3 gap-2" : "directory-actions mt-4 flex flex-wrap gap-2"}>{children}</div>;
 }
 
 function HiddenListingInputs({ listingId }: { listingId: string }) {
@@ -142,11 +142,7 @@ export function ListingDirectoryCard({
         {kind === "SERVICE" && ratings.length > 0 && <span>Рейтинг: {averageRating.toFixed(1)} ({ratings.length})</span>}
       </div>
 
-      {isService ? (
-        <div className="mt-3">
-          <ContactReveal contact={listing.contact} signedIn={isSignedIn} />
-        </div>
-      ) : (
+      {!isService && (
         <div className="mt-3 text-sm text-zinc-700">
           <span className="font-medium text-zinc-900">Контакт: </span>
           {isSignedIn ? listing.contact : maskContact(listing.contact)}
@@ -154,7 +150,8 @@ export function ListingDirectoryCard({
         </div>
       )}
 
-      <DirectoryActionRow>
+      <DirectoryActionRow compact={isService}>
+        {isService && <ContactReveal contact={listing.contact} signedIn={isSignedIn} compact />}
         {!isService && (
           <form action={respondToListingAction}>
             <HiddenListingInputs listingId={listing.id} />
@@ -166,8 +163,8 @@ export function ListingDirectoryCard({
         <form action={saveListingAction}>
           <HiddenListingInputs listingId={listing.id} />
           <input type="hidden" name="next" value={currentPath} />
-          <button className="btn btn-muted w-full" type="submit">
-            {isService ? (isSaved ? "★ Убрать из избранного" : "☆ Добавить в избранное") : "Сохранить"}
+          <button className={isService ? "btn btn-muted h-10 w-full px-2 text-xs" : "btn btn-muted w-full"} type="submit">
+            {isService ? (isSaved ? "Убрать" : "В избранное") : "Сохранить"}
           </button>
         </form>
         <form action={reportContentAction}>
@@ -175,7 +172,7 @@ export function ListingDirectoryCard({
           <input type="hidden" name="targetId" value={listing.id} />
           <input type="hidden" name="reason" value={reportReason} />
           <input type="hidden" name="next" value={currentPath} />
-          <button className="btn btn-danger w-full" type="submit">
+          <button className={isService ? "btn btn-danger h-10 w-full px-2 text-xs" : "btn btn-danger w-full"} type="submit">
             Жалоба
           </button>
         </form>
