@@ -82,7 +82,9 @@ export default async function HomePage() {
         title: true,
         category: true,
         priceRub: true,
-        city: true
+        city: true,
+        description: true,
+        imageUrl: true
       },
       orderBy: { createdAt: "desc" },
       take: 3
@@ -98,9 +100,7 @@ export default async function HomePage() {
   const mainCoverImage = "coverImage" in mainArticle ? safeImageUrl(mainArticle.coverImage) : null;
   const secondaryArticles = articles.length > 1 ? articles.slice(1, 4) : [];
   const popularArticles = [...articles].sort((a, b) => b.viewCount + b.repostCount - (a.viewCount + a.repostCount)).slice(0, 4);
-  const discussedArticles = [...articles]
-    .sort((a, b) => b.comments.length + b.responseCount - (a.comments.length + a.responseCount))
-    .slice(0, 4);
+  const featuredProduct = products[0];
   const feedArticles = articles.slice(1);
   const vacancyListings = listings.filter((listing) => listing.type === "VACANCY").slice(0, 2);
   const serviceListings = listings.filter((listing) => listing.type === "SERVICE").slice(0, 2);
@@ -158,39 +158,71 @@ export default async function HomePage() {
           </div>
         </Link>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 lg:grid-rows-2">
-          {[
-            ["Популярное", popularArticles[0] || secondaryArticles[0]],
-            ["Обсуждаемое", discussedArticles[0] || secondaryArticles[2]]
-          ].filter(([, article]) => article).map(([label, article]) => (
-            <Link key={`${label}-${typeof article === "object" ? article.id : label}`} href={typeof article === "object" && "createdBy" in article ? `/articles/${article.id}` : "/articles"} className="media-card flex min-h-[190px] flex-col lg:min-h-0">
-              <p className="badge-format">{String(label)}</p>
-              {typeof article === "object" && (
-                <>
-                  <h3 className="section-title mt-2">{article.title}</h3>
-                  <p className="mt-2 line-clamp-4 text-sm leading-5 text-zinc-600">{previewText(article.summary, 220)}</p>
-                </>
-              )}
+          {(popularArticles[0] || secondaryArticles[0]) && (
+            <Link href={`/articles/${(popularArticles[0] || secondaryArticles[0]).id}`} className="media-card flex min-h-[190px] flex-col lg:min-h-0">
+              <p className="badge-format">Популярное</p>
+              <h3 className="section-title mt-2">{(popularArticles[0] || secondaryArticles[0]).title}</h3>
+              <p className="mt-2 line-clamp-4 text-sm leading-5 text-zinc-600">{previewText((popularArticles[0] || secondaryArticles[0]).summary, 220)}</p>
             </Link>
-          ))}
+          )}
+          <Link href={featuredProduct ? `/products/${featuredProduct.id}` : "/products"} className="media-card flex min-h-[190px] flex-col lg:min-h-0">
+            <p className="badge-format">Товар</p>
+            {featuredProduct ? (
+              <>
+                <h3 className="section-title mt-2">{featuredProduct.title}</h3>
+                <p className="mt-2 text-base font-semibold text-ink">{formatPrice(featuredProduct.priceRub)} ₽</p>
+                <p className="mt-2 line-clamp-3 text-sm leading-5 text-zinc-600">{previewText(featuredProduct.description, 180)}</p>
+              </>
+            ) : (
+              <>
+                <h3 className="section-title mt-2">Товары сообщества</h3>
+                <p className="mt-2 text-sm leading-5 text-zinc-600">Оборудование, свет, камеры и полезные вещи участников.</p>
+              </>
+            )}
+          </Link>
         </div>
       </section>
 
       <section className="grid gap-3 md:grid-cols-2">
-        <div className="content-card">
+        <div className="content-card flex flex-col">
           <div className="flex items-center justify-between gap-3">
             <h2 className="section-title">Товары</h2>
             <Link href="/products" className="text-sm font-medium text-accent">Все</Link>
           </div>
-          <div className="mt-3 space-y-3">
-            {products.map((product) => (
-              <Link key={product.id} href={`/products/${product.id}`} className="block border-b border-zinc-100 pb-3 last:border-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-hot">{product.category}</p>
-                <p className="mt-1 font-medium leading-snug line-clamp-2">{product.title}</p>
-                <p className="mt-1 text-sm font-semibold text-ink">{formatPrice(product.priceRub)} ₽</p>
-                <p className="mt-1 text-xs text-zinc-500">{product.city || "город не указан"}</p>
+          <div className="mt-4 grid flex-1 gap-3">
+            {products.map((product, index) => {
+              const productImage = safeImageUrl(product.imageUrl);
+
+              return (
+                <Link
+                  key={product.id}
+                  href={`/products/${product.id}`}
+                  className={
+                    index === 0
+                      ? "flex min-h-[260px] flex-col rounded-lg border border-zinc-200 bg-zinc-50 p-4 transition hover:border-hot hover:bg-white"
+                      : "flex flex-col rounded-lg border border-zinc-100 p-4 transition hover:border-hot"
+                  }
+                >
+                  <div>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-hot">{product.category}</p>
+                      <p className="shrink-0 rounded-lg bg-zinc-900 px-2.5 py-1 text-sm font-bold text-white">{formatPrice(product.priceRub)} ₽</p>
+                    </div>
+                    {index === 0 && productImage && (
+                      <SafeImage className="mt-3 aspect-[16/9] w-full rounded-lg object-cover" src={productImage} alt={product.title} fallback={null} />
+                    )}
+                    <p className={index === 0 ? "mt-4 text-2xl font-semibold leading-tight text-ink" : "mt-3 text-lg font-semibold leading-snug text-ink"}>{product.title}</p>
+                    <p className={index === 0 ? "mt-2 line-clamp-4 text-sm leading-6 text-zinc-600" : "mt-2 line-clamp-2 text-sm leading-5 text-zinc-600"}>{previewText(product.description, index === 0 ? 260 : 120)}</p>
+                  </div>
+                  <p className="mt-auto pt-4 text-xs text-zinc-500">{product.city || "город не указан"}</p>
+                </Link>
+              );
+            })}
+            {products.length === 0 && (
+              <Link href="/products" className="block rounded-lg border border-dashed border-zinc-300 p-4 text-sm text-zinc-600 hover:border-hot">
+                Пока нет активных товаров. Раздел готов для новых объявлений.
               </Link>
-            ))}
-            {products.length === 0 && <p className="text-sm text-zinc-500">Пока нет активных товаров.</p>}
+            )}
           </div>
         </div>
         <div className="content-card">
