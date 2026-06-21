@@ -202,7 +202,12 @@ export default async function ModelOperatorPage({
             </div>
 
             <h2 className="mt-3 text-xl font-semibold leading-tight text-ink">{profile.title}</h2>
-            <p className="mt-2 line-clamp-4 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{profile.bio}</p>
+            {profile.operatorPercent && (
+              <p className="mt-3 inline-flex rounded-lg bg-zinc-900 px-3 py-2 text-base font-bold text-white">
+                Оператору: {profile.operatorPercent}
+              </p>
+            )}
+            <p className="mt-3 line-clamp-4 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{profile.bio}</p>
 
             <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500">
               <span>{profile.city || "Город не указан"}</span>
@@ -210,7 +215,6 @@ export default async function ModelOperatorPage({
               <span>{profile.timezone || "Часовой пояс не указан"}</span>
               <span>Опыт: {profile.experience}</span>
               <span>График: {profile.schedule}</span>
-              {profile.operatorPercent && <span>Оператору: {profile.operatorPercent}</span>}
               {profile.currentCheck && <span>Чек: {profile.currentCheck}</span>}
               {profile.niche && <span>Ниша: {profile.niche}</span>}
               <span>Просмотры: {profile.viewCount + 1}</span>

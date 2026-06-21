@@ -82,17 +82,58 @@ function structuredValue(text: string, label: string) {
   return line ? line.slice(line.indexOf(":") + 1).trim() : "";
 }
 
-function serviceSummary(description: string) {
+function firstStructuredValue(text: string, labels: string[]) {
+  for (const label of labels) {
+    const value = structuredValue(text, label);
+    if (value) return value;
+  }
+  return "";
+}
+
+function stripStructuredLines(text: string, labels: string[]) {
+  const normalizedLabels = labels.map((label) => label.toLowerCase());
+  return text
+    .split("\n")
+    .map((part) => part.trim())
+    .filter((part) => part && !normalizedLabels.some((label) => part.toLowerCase().startsWith(`${label}:`)))
+    .join("\n\n");
+}
+
+function listingSummary(description: string, kind: "VACANCY" | "SERVICE") {
   const summary = structuredValue(description, "Коротко");
   if (summary) return summary;
+
+  const ignoredLabels =
+    kind === "SERVICE"
+      ? ["Категория", "Цена", "Комментарий к цене", "Что входит", "Опыт", "Портфолио", "Срок", "Доступность", "Ограничения"]
+      : ["Роль", "Оплата", "Комментарий к оплате", "График", "Занятость", "Требования", "Условия", "Дополнительные условия", "Кто не подойдет"];
 
   return (
     description
       .split("\n")
       .map((part) => part.trim())
-      .find((part) => part && !/^(категория|цена|комментарий к цене|что входит|опыт|портфолио|срок|доступность|ограничения):/i.test(part)) ||
+      .find((part) => part && !ignoredLabels.some((label) => part.toLowerCase().startsWith(`${label.toLowerCase()}:`))) ||
     description
   );
+}
+
+function resumeMoneyValue(bio: string) {
+  const minimumPercent = structuredValue(bio, "Минимальный процент");
+  const minimumIncome = structuredValue(bio, "Минимальный доход в месяц");
+  if (minimumIncome && minimumPercent) return `от ${minimumIncome} / ${minimumPercent}`;
+  if (minimumIncome) return `от ${minimumIncome}`;
+  if (minimumPercent) return `от ${minimumPercent}`;
+  return firstStructuredValue(bio, ["Желаемый доход", "Желаемая зарплата", "Зарплата", "Ставка", "Доход"]);
+}
+
+function resumeSummary(bio: string) {
+  const aboutIndex = bio.indexOf("О СЕБЕ");
+  if (aboutIndex >= 0) {
+    const afterAbout = bio.slice(aboutIndex + "О СЕБЕ".length).trim();
+    const [about] = afterAbout.split("\n\n");
+    if (about?.trim()) return about.trim();
+  }
+  return stripStructuredLines(bio, ["Минимальный процент", "Минимальный доход в месяц", "Желаемый доход", "Желаемая зарплата", "Зарплата", "Ставка", "Доход"]);
 }
 
 export function ListingDirectoryCard({
@@ -114,8 +155,8 @@ export function ListingDirectoryCard({
   const ratings = (listing.reviews || []).map((review) => review.rating).filter((rating): rating is number => typeof rating === "number");
   const averageRating = ratings.length ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length : 0;
   const isService = kind === "SERVICE";
-  const price = isService ? structuredValue(listing.description, "Цена") : "";
-  const shortDescription = isService ? serviceSummary(listing.description) : listing.description;
+  const price = isService ? structuredValue(listing.description, "Цена") : firstStructuredValue(listing.description, ["Оплата", "Зарплата", "Ставка", "Доход"]);
+  const shortDescription = listingSummary(listing.description, kind);
   const isSaved = Boolean(listing.savedBy?.length);
   const compactListing = kind === "VACANCY" || isService;
   const compactButtonClass = "btn h-10 w-full whitespace-nowrap px-1 text-[11px]";
@@ -187,6 +228,8 @@ export function ResumeDirectoryCard({
 }) {
   const contact = [resume.contactEmail, resume.contactTelegram].filter(Boolean).join(" • ") || "Контакт не указан";
   const isSaved = Boolean(resume.savedBy?.length);
+  const moneyValue = resumeMoneyValue(resume.bio);
+  const shortBio = resumeSummary(resume.bio);
 
   return (
     <article className="directory-card bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5">
@@ -197,7 +240,12 @@ export function ResumeDirectoryCard({
       </div>
 
       <h3 className="mt-3 text-xl font-semibold leading-tight text-ink">{resume.title}</h3>
-      <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{resume.bio}</p>
+      {moneyValue && (
+        <p className="mt-3 inline-flex rounded-lg bg-zinc-900 px-3 py-2 text-base font-bold text-white">
+          {moneyValue}
+        </p>
+      )}
+      <p className="mt-3 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{shortBio}</p>
 
       <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500">
         <span>{resume.city || "Город не указан"}</span>

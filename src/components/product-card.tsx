@@ -71,11 +71,9 @@ export function ProductDirectoryCard({
 
       <Link href={`/products/${product.id}`} className="mt-3 block">
         {product.imageUrl && <img className="aspect-[4/3] w-full rounded-lg object-cover" src={product.imageUrl} alt={product.title} />}
-        <div className="mt-3 flex items-start justify-between gap-3">
-          <h3 className="min-w-0 text-xl font-semibold leading-tight text-ink">{product.title}</h3>
-          <p className="shrink-0 rounded-lg bg-zinc-900 px-2.5 py-1.5 text-sm font-bold text-white">{formatPrice(product.priceRub)} ₽</p>
-        </div>
-        <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{product.description}</p>
+        <h3 className="mt-3 text-xl font-semibold leading-tight text-ink">{product.title}</h3>
+        <p className="mt-3 inline-flex rounded-lg bg-zinc-900 px-3 py-2 text-base font-bold text-white">{formatPrice(product.priceRub)} ₽</p>
+        <p className="mt-3 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{product.description}</p>
       </Link>
 
       <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500">
