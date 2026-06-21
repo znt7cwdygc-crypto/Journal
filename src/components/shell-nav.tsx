@@ -42,7 +42,7 @@ export function ShellNav() {
                   <Link
                     key={`${label}-${href}`}
                     href={href}
-                    className="block rounded-xl px-2 py-2.5 text-lg font-semibold leading-tight text-ink hover:bg-zinc-100"
+                    className="block rounded-lg px-2 py-2 text-sm text-zinc-700 hover:bg-zinc-100"
                   >
                     {label}
                   </Link>
