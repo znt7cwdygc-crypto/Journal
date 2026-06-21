@@ -16,12 +16,16 @@ const createItems = [
 const workItems = [
   ["Вакансии", "/vacancies"],
   ["Резюме", "/resumes"],
-  ["Услуги", "/services"],
-  ["Товары", "/products"],
   ["Модель оператор", "/model-operator"]
 ] as const;
 
+const marketItems = [
+  ["Услуги", "/services"],
+  ["Товары", "/products"]
+] as const;
+
 const workPaths = workItems.map(([, href]) => href);
+const marketPaths = marketItems.map(([, href]) => href);
 
 function isPathActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -52,8 +56,9 @@ function QuickMenu({
 
 export function MobileBottomNav() {
   const pathname = usePathname() ?? "";
-  const [openMenu, setOpenMenu] = useState<"create" | "work" | null>(null);
+  const [openMenu, setOpenMenu] = useState<"create" | "work" | "market" | null>(null);
   const workActive = workPaths.some((href) => isPathActive(pathname, href));
+  const marketActive = marketPaths.some((href) => isPathActive(pathname, href));
 
   useEffect(() => {
     setOpenMenu(null);
@@ -65,17 +70,10 @@ export function MobileBottomNav() {
 
       {openMenu === "create" && <QuickMenu title="Создать" items={createItems} onClose={() => setOpenMenu(null)} />}
       {openMenu === "work" && <QuickMenu title="Работа" items={workItems} onClose={() => setOpenMenu(null)} />}
+      {openMenu === "market" && <QuickMenu title="Маркет" items={marketItems} onClose={() => setOpenMenu(null)} />}
 
       <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-200 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),0.35rem)] pt-1.5 shadow-[0_-8px_24px_rgba(24,24,27,0.08)] backdrop-blur lg:hidden">
         <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
-          <Link
-            href="/"
-            className={`flex min-h-12 items-center justify-center rounded-lg px-1 text-center text-[11px] font-semibold leading-tight ${
-              pathname === "/" ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
-            }`}
-          >
-            Главная
-          </Link>
           <Link
             href="/articles"
             className={`flex min-h-12 items-center justify-center rounded-lg px-1 text-center text-[11px] font-semibold leading-tight ${
@@ -84,6 +82,16 @@ export function MobileBottomNav() {
           >
             Лента
           </Link>
+          <button
+            className={`flex min-h-12 items-center justify-center rounded-lg px-1 text-center text-[11px] font-semibold leading-tight ${
+              openMenu === "work" || workActive ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
+            }`}
+            type="button"
+            aria-expanded={openMenu === "work"}
+            onClick={() => setOpenMenu((value) => (value === "work" ? null : "work"))}
+          >
+            Работа
+          </button>
           <button
             className={`flex min-h-12 items-center justify-center rounded-lg px-1 text-center text-[11px] font-semibold leading-tight shadow-sm shadow-red-200 ${
               openMenu === "create" ? "bg-zinc-900 text-white" : "bg-hot text-white"
@@ -96,13 +104,13 @@ export function MobileBottomNav() {
           </button>
           <button
             className={`flex min-h-12 items-center justify-center rounded-lg px-1 text-center text-[11px] font-semibold leading-tight ${
-              openMenu === "work" || workActive ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
+              openMenu === "market" || marketActive ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
             }`}
             type="button"
-            aria-expanded={openMenu === "work"}
-            onClick={() => setOpenMenu((value) => (value === "work" ? null : "work"))}
+            aria-expanded={openMenu === "market"}
+            onClick={() => setOpenMenu((value) => (value === "market" ? null : "market"))}
           >
-            Работа
+            Маркет
           </button>
           <Link
             href="/cabinet"
