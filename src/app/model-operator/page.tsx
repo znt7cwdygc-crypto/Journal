@@ -47,28 +47,17 @@ function normalizeSort(value?: string) {
   return sortOptions.some((option) => option.key === value) ? String(value) : "new";
 }
 
-function isRemoteProfile(profile: { city: string | null; workFormat: string }) {
-  const city = (profile.city || "").toLowerCase();
-  return profile.workFormat === "REMOTE" || city === "remote" || city.includes("удален");
-}
-
 export default async function ModelOperatorPage({
   searchParams
 }: {
-  searchParams?: { role?: string; city?: string; format?: string; experience?: string; sort?: string; reported?: string; favorite?: string };
+  searchParams?: { lookingFor?: string; sort?: string; reported?: string; favorite?: string };
 }) {
   const session = await auth();
   const now = new Date();
-  const role = ["MODEL", "OPERATOR"].includes(cleanFilter(searchParams?.role)) ? cleanFilter(searchParams?.role) : "";
-  const format = ["REMOTE", "OFFICE", "HYBRID"].includes(cleanFilter(searchParams?.format)) ? cleanFilter(searchParams?.format) : "";
-  const city = cleanFilter(searchParams?.city);
-  const experience = cleanFilter(searchParams?.experience);
+  const lookingFor = ["MODEL", "OPERATOR"].includes(cleanFilter(searchParams?.lookingFor)) ? cleanFilter(searchParams?.lookingFor) : "";
   const sort = normalizeSort(searchParams?.sort);
   const currentParams = new URLSearchParams();
-  if (role) currentParams.set("role", role);
-  if (format) currentParams.set("format", format);
-  if (city) currentParams.set("city", city);
-  if (experience) currentParams.set("experience", experience);
+  if (lookingFor) currentParams.set("lookingFor", lookingFor);
   if (sort !== "new") currentParams.set("sort", sort);
   const currentQuery = currentParams.toString();
   const currentPath = `/model-operator${currentQuery ? `?${currentQuery}` : ""}`;
@@ -85,25 +74,7 @@ export default async function ModelOperatorPage({
     orderBy: sort === "views" ? { viewCount: "desc" } : sort === "responses" ? { responseCount: "desc" } : { updatedAt: "desc" }
   });
 
-  const hasRemote = allProfiles.some(isRemoteProfile);
-  const cities = Array.from(
-    new Set(
-      allProfiles
-        .filter((profile) => !isRemoteProfile(profile))
-        .map((profile) => profile.city?.trim())
-        .filter((item): item is string => Boolean(item))
-    )
-  ).sort((a, b) => a.localeCompare(b, "ru"));
-  const experienceOptions = Array.from(new Set(allProfiles.map((profile) => profile.experience).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ru"));
-  const profiles = allProfiles.filter((profile) => {
-    const remote = isRemoteProfile(profile);
-    return (
-      (!role || profile.seekerRole === role) &&
-      (!format || profile.workFormat === format) &&
-      (!city || (city === "remote" ? remote : remote || profile.city?.trim() === city)) &&
-      (!experience || profile.experience === experience)
-    );
-  });
+  const profiles = allProfiles.filter((profile) => !lookingFor || profile.lookingFor === lookingFor);
 
   if (profiles.length > 0) {
     await prisma.matchProfile.updateMany({ where: { id: { in: profiles.map((profile) => profile.id) } }, data: { viewCount: { increment: 1 } } });
@@ -130,36 +101,14 @@ export default async function ModelOperatorPage({
         basePath="/model-operator"
         filters={[
           {
-            name: "role",
-            label: "Кто",
-            value: role,
+            name: "lookingFor",
+            label: "Ищу",
+            value: lookingFor,
             options: [
               { value: "", label: "Все" },
-              { value: "MODEL", label: "Модели" },
-              { value: "OPERATOR", label: "Операторы" }
+              { value: "MODEL", label: "Модель" },
+              { value: "OPERATOR", label: "Оператор" }
             ]
-          },
-          {
-            name: "city",
-            label: "Город",
-            value: city,
-            options: [
-              { value: "", label: "Все" },
-              ...(hasRemote ? [{ value: "remote", label: "Удаленно" }] : []),
-              ...cities.map((item) => ({ value: item, label: item }))
-            ]
-          },
-          {
-            name: "format",
-            label: "Формат",
-            value: format,
-            options: [{ value: "", label: "Любой" }, ...Object.entries(formatLabels).map(([value, label]) => ({ value, label }))]
-          },
-          {
-            name: "experience",
-            label: "Опыт",
-            value: experience,
-            options: [{ value: "", label: "Любой" }, ...experienceOptions.map((item) => ({ value: item, label: item }))]
           },
           {
             name: "sort",
