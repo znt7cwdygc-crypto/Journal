@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { auth } from "@/auth";
-import { ProductFilterForm } from "@/components/product-filter-form";
+import { CatalogFilterForm } from "@/components/catalog-filter-form";
 import { ProductDirectoryCard } from "@/components/product-card";
 import { prisma } from "@/lib/prisma";
 
@@ -100,7 +100,30 @@ export default async function ProductsPage({ searchParams }: { searchParams?: { 
         <a className="btn btn-primary" href="/cabinet#products">Продать товар</a>
       </div>
 
-      <ProductFilterForm cityValue={cityValue} categoryValue={categoryValue} sortValue={sort} cities={cities} categories={categories} sortOptions={sortOptions} />
+      <CatalogFilterForm
+        basePath="/products"
+        filters={[
+          {
+            name: "city",
+            label: "Город",
+            value: cityValue,
+            options: [{ value: "", label: "Все" }, ...cities.map((city) => ({ value: city, label: city }))]
+          },
+          {
+            name: "category",
+            label: "Категория",
+            value: categoryValue,
+            options: [{ value: "", label: "Все" }, ...categories.map((category) => ({ value: category, label: category }))]
+          },
+          {
+            name: "sort",
+            label: "Сортировка",
+            value: sort,
+            defaultValue: "new",
+            options: sortOptions.map((option) => ({ value: option.key, label: option.label }))
+          }
+        ]}
+      />
 
       {searchParams?.reported && (
         <section className="rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800">

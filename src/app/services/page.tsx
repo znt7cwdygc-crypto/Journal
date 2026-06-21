@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { CatalogFilterForm } from "@/components/catalog-filter-form";
 import { ListingDirectoryCard } from "@/components/directory-card";
-import { ServiceFilterForm } from "@/components/service-filter-form";
 import { serviceTopic } from "@/lib/topics";
 import type { Metadata } from "next";
 
@@ -99,7 +99,27 @@ export default async function ServicesPage({ searchParams }: { searchParams?: { 
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Услуги</h1>
-      <ServiceFilterForm cityValue={cityValue} categoryValue={categoryValue} hasRemote={hasRemote} cities={cities} categories={categories} />
+      <CatalogFilterForm
+        basePath="/services"
+        filters={[
+          {
+            name: "city",
+            label: "Город",
+            value: cityValue,
+            options: [
+              { value: "", label: "Все" },
+              ...(hasRemote ? [{ value: "remote", label: "Удаленно" }] : []),
+              ...cities.map((city) => ({ value: city, label: city }))
+            ]
+          },
+          {
+            name: "category",
+            label: "Категория",
+            value: categoryValue,
+            options: [{ value: "", label: "Все" }, ...categories.map((category) => ({ value: category, label: category }))]
+          }
+        ]}
+      />
       {searchParams?.reported && (
         <section className="rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800">
           Жалоба отправлена в модерацию.

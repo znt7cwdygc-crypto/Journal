@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { respondToResumeAction, saveListingAction } from "@/app/actions";
+import { saveListingAction, saveResumeAction } from "@/app/actions";
 import { ContactReveal } from "@/components/contact-reveal";
 import { ReportButton } from "@/components/report-button";
 import { maskContact } from "@/lib/validation";
@@ -43,6 +43,7 @@ type DirectoryResume = {
   responseCount: number;
   updatedAt: Date;
   user: DirectoryUser;
+  savedBy?: { userId: string }[];
 };
 
 function authorName(author: DirectoryUser) {
@@ -177,11 +178,16 @@ export function ListingDirectoryCard({
 
 export function ResumeDirectoryCard({
   resume,
-  canSeeContacts
+  canSeeContacts,
+  currentPath
 }: {
   resume: DirectoryResume;
   canSeeContacts: boolean;
+  currentPath: string;
 }) {
+  const contact = [resume.contactEmail, resume.contactTelegram].filter(Boolean).join(" • ") || "Контакт не указан";
+  const isSaved = Boolean(resume.savedBy?.length);
+
   return (
     <article className="directory-card bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5">
       <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -200,33 +206,21 @@ export function ResumeDirectoryCard({
         <span>Отклики: {resume.responseCount}</span>
       </div>
 
-      <div className="mt-3 text-sm text-zinc-700">
-        {canSeeContacts ? (
-          <>
-            <p>
-              <span className="font-medium text-zinc-900">Email: </span>
-              {resume.contactEmail || "-"}
-            </p>
-            <p>
-              <span className="font-medium text-zinc-900">Telegram: </span>
-              {resume.contactTelegram || "-"}
-            </p>
-          </>
-        ) : (
-          <p className="rounded-lg bg-zinc-50 p-3 text-sm text-zinc-700">Войдите, чтобы видеть контакт полностью.</p>
-        )}
-      </div>
-
-      <DirectoryActionRow>
-        <form action={respondToResumeAction}>
+      <DirectoryActionRow columns={3}>
+        <ContactReveal contact={contact} signedIn={canSeeContacts} compact />
+        <form action={saveResumeAction}>
           <input type="hidden" name="resumeId" value={resume.id} />
-          <button className="btn btn-primary w-full" type="submit">
-            Откликнуться
+          <input type="hidden" name="next" value={currentPath} />
+          <button className="btn btn-muted h-10 w-full whitespace-nowrap px-1 text-[11px]" type="submit">
+            {isSaved ? "Убрать" : "В избранное"}
           </button>
         </form>
-        <Link className="btn btn-ghost" href={`/profiles/${resume.userId}`}>
-          Профиль
-        </Link>
+        <ReportButton
+          targetType="RESUME"
+          targetId={resume.id}
+          next={currentPath}
+          buttonClassName="btn btn-danger h-10 w-full whitespace-nowrap px-1 text-[11px]"
+        />
       </DirectoryActionRow>
 
       <AuthorFooter author={resume.user} />

@@ -1,6 +1,6 @@
 import { reportContentAction } from "@/app/actions";
 
-type ReportTargetType = "ARTICLE" | "COMMENT" | "PROFILE" | "LISTING" | "PRODUCT";
+type ReportTargetType = "ARTICLE" | "COMMENT" | "PROFILE" | "LISTING" | "PRODUCT" | "RESUME" | "MATCH_PROFILE";
 
 export function ReportButton({
   targetType,

@@ -64,7 +64,7 @@ export default async function ResumeLandingPage({ params }: { params: { slug: st
         <div className="mt-4 grid gap-3">
           {resumes.length === 0 && <p className="text-sm text-zinc-600">Пока нет точных совпадений. Можно открыть общий раздел резюме или разместить свое.</p>}
           {resumes.map((item) => (
-            <ResumeDirectoryCard key={item.id} resume={item} canSeeContacts={Boolean(session?.user)} />
+            <ResumeDirectoryCard key={item.id} resume={item} canSeeContacts={Boolean(session?.user)} currentPath={landing.path} />
           ))}
         </div>
       </section>

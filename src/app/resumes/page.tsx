@@ -1,9 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { ContentSort } from "@/components/content-sort";
-import { CityFilter } from "@/components/city-filter";
+import { CatalogFilterForm } from "@/components/catalog-filter-form";
 import { ResumeDirectoryCard } from "@/components/directory-card";
-import { CITY_OPTIONS, type CityValue } from "@/lib/city-constants";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -26,47 +24,54 @@ const sortOptions = [
   { key: "responses", label: "По откликам" }
 ];
 
-function normalizeCity(value?: string): CityValue | "" {
-  return CITY_OPTIONS.some((city) => city.value === value) ? (value as CityValue) : "";
+function cleanFilter(value?: string) {
+  return String(value ?? "").trim().slice(0, 120);
 }
 
-function cityWhere(cityValue: CityValue | "") {
-  const cityMeta = CITY_OPTIONS.find((city) => city.value === cityValue);
-  if (!cityMeta) return {};
-
-  const remote = [
-    { city: { equals: "Удаленно", mode: "insensitive" as const } },
-    { city: { equals: "remote", mode: "insensitive" as const } },
-    { city: { contains: "удален", mode: "insensitive" as const } }
-  ];
-
-  if (cityMeta.value === "remote") return { OR: remote };
-
-  return {
-    OR: [
-      { city: { equals: cityMeta.label, mode: "insensitive" as const } },
-      { city: { equals: cityMeta.value, mode: "insensitive" as const } },
-      ...remote
-    ]
-  };
+function normalizeSort(value?: string) {
+  return sortOptions.some((option) => option.key === value) ? String(value) : "new";
 }
 
-export default async function ResumesPage({ searchParams }: { searchParams?: { sort?: string; city?: string } }) {
+function isRemoteResume(resume: { city: string | null }) {
+  const city = (resume.city || "").toLowerCase();
+  return city === "remote" || city.includes("удален");
+}
+
+export default async function ResumesPage({ searchParams }: { searchParams?: { sort?: string; city?: string; reported?: string; favorite?: string } }) {
   const session = await auth();
   const now = new Date();
-  const sort = searchParams?.sort || "new";
-  const cityValue = normalizeCity(searchParams?.city);
-  const cityMeta = CITY_OPTIONS.find((city) => city.value === cityValue);
+  const sort = normalizeSort(searchParams?.sort);
+  const cityValue = cleanFilter(searchParams?.city);
+  const currentParams = new URLSearchParams();
+  if (cityValue) currentParams.set("city", cityValue);
+  if (sort !== "new") currentParams.set("sort", sort);
+  const currentQuery = currentParams.toString();
+  const currentPath = `/resumes${currentQuery ? `?${currentQuery}` : ""}`;
 
-  const resumes = await prisma.resume.findMany({
+  const allResumes = await prisma.resume.findMany({
     where: {
       isPublic: true,
       hiddenByInactivity: false,
-      expiresAt: { gt: now },
-      ...(cityValue ? cityWhere(cityValue) : {})
+      expiresAt: { gt: now }
     },
-    include: { user: true },
+    include: {
+      user: true,
+      savedBy: session?.user?.id ? { where: { userId: session.user.id }, select: { userId: true } } : { where: { userId: "__guest__" }, select: { userId: true } }
+    },
     orderBy: sort === "views" ? { viewCount: "desc" } : sort === "responses" ? { responseCount: "desc" } : { updatedAt: "desc" }
+  });
+  const hasRemote = allResumes.some(isRemoteResume);
+  const cities = Array.from(
+    new Set(
+      allResumes
+        .filter((resume) => !isRemoteResume(resume))
+        .map((resume) => resume.city?.trim())
+        .filter((city): city is string => Boolean(city))
+    )
+  ).sort((a, b) => a.localeCompare(b, "ru"));
+  const resumes = allResumes.filter((resume) => {
+    const remote = isRemoteResume(resume);
+    return !cityValue || (cityValue === "remote" ? remote : remote || resume.city?.trim() === cityValue);
   });
 
   if (resumes.length > 0) {
@@ -81,15 +86,51 @@ export default async function ResumesPage({ searchParams }: { searchParams?: { s
     const key = resume.roleGoal || "Без цели";
     grouped.set(key, [...(grouped.get(key) || []), resume]);
   }
+  const favoriteMessage =
+    searchParams?.favorite === "added"
+      ? "Резюме добавлено в избранное."
+      : searchParams?.favorite === "removed"
+        ? "Резюме убрано из избранного."
+        : null;
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Резюме{cityMeta ? ` • ${cityMeta.label}` : ""}</h1>
-      <CityFilter basePath="/resumes" active={cityValue} sort={sort} />
-      <ContentSort basePath="/resumes" active={sort} options={sortOptions} params={{ city: cityValue || undefined }} />
+      <h1 className="text-2xl font-semibold">Резюме{cityValue && cityValue !== "remote" ? ` • ${cityValue}` : cityValue === "remote" ? " • Удаленно" : ""}</h1>
+      <CatalogFilterForm
+        basePath="/resumes"
+        filters={[
+          {
+            name: "city",
+            label: "Город",
+            value: cityValue,
+            options: [
+              { value: "", label: "Все" },
+              ...(hasRemote ? [{ value: "remote", label: "Удаленно" }] : []),
+              ...cities.map((city) => ({ value: city, label: city }))
+            ]
+          },
+          {
+            name: "sort",
+            label: "Сортировка",
+            value: sort,
+            defaultValue: "new",
+            options: sortOptions.map((option) => ({ value: option.key, label: option.label }))
+          }
+        ]}
+      />
+      {searchParams?.reported && (
+        <section className="rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800">
+          Жалоба отправлена в модерацию.
+        </section>
+      )}
+      {favoriteMessage && (
+        <section className="rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+          {favoriteMessage}
+        </section>
+      )}
       {resumes.length === 0 && (
         <section className="border border-zinc-200 bg-white p-5">
-          <h2 className="font-medium">{cityMeta ? `Для города ${cityMeta.label} резюме пока нет` : "Резюме пока нет"}</h2>
+          <h2 className="font-medium">{cityValue ? "Для выбранного фильтра резюме пока нет" : "Резюме пока нет"}</h2>
           <p className="mt-2 text-sm text-zinc-600">Можно сменить город или разместить собственное резюме из кабинета.</p>
           <div className="mt-3 flex flex-wrap gap-2 text-sm">
             <Link className="rounded-lg bg-hot px-3 py-2 font-medium text-white" href="/cabinet">
@@ -106,7 +147,7 @@ export default async function ResumesPage({ searchParams }: { searchParams?: { s
             const isAdmin = role === "ADMIN";
             const canSeeContacts = Boolean(session?.user) || isOwner || isAdmin;
             return (
-              <ResumeDirectoryCard key={resume.id} resume={resume} canSeeContacts={canSeeContacts} />
+              <ResumeDirectoryCard key={resume.id} resume={resume} canSeeContacts={canSeeContacts} currentPath={currentPath} />
             );
           })}
         </section>

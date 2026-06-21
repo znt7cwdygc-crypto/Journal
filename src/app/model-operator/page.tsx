@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { respondToMatchProfileAction } from "@/app/actions";
+import { saveMatchProfileAction } from "@/app/actions";
 import { auth } from "@/auth";
+import { CatalogFilterForm } from "@/components/catalog-filter-form";
+import { ContactReveal } from "@/components/contact-reveal";
+import { ReportButton } from "@/components/report-button";
 import { prisma } from "@/lib/prisma";
-import { maskContact } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -30,36 +32,29 @@ const formatLabels: Record<string, string> = {
   HYBRID: "Гибрид"
 };
 
-const roles = [
-  ["", "Все"],
-  ["MODEL", "Модели"],
-  ["OPERATOR", "Операторы"]
-] as const;
-
-const formats = [
-  ["", "Любой формат"],
-  ["REMOTE", "Удаленно"],
-  ["OFFICE", "В студии"],
-  ["HYBRID", "Гибрид"]
-] as const;
+const sortOptions = [
+  { key: "new", label: "Новые" },
+  { key: "views", label: "Популярные" },
+  { key: "responses", label: "По откликам" }
+];
 
 function cleanFilter(value?: string) {
   return (value || "").trim().slice(0, 80);
 }
 
-function filterHref(params: Record<string, string | undefined>) {
-  const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (value) query.set(key, value);
-  }
-  const suffix = query.toString();
-  return `/model-operator${suffix ? `?${suffix}` : ""}`;
+function normalizeSort(value?: string) {
+  return sortOptions.some((option) => option.key === value) ? String(value) : "new";
+}
+
+function isRemoteProfile(profile: { city: string | null; workFormat: string }) {
+  const city = (profile.city || "").toLowerCase();
+  return profile.workFormat === "REMOTE" || city === "remote" || city.includes("удален");
 }
 
 export default async function ModelOperatorPage({
   searchParams
 }: {
-  searchParams?: { role?: string; city?: string; format?: string; experience?: string };
+  searchParams?: { role?: string; city?: string; format?: string; experience?: string; sort?: string; reported?: string; favorite?: string };
 }) {
   const session = await auth();
   const now = new Date();
@@ -67,25 +62,58 @@ export default async function ModelOperatorPage({
   const format = ["REMOTE", "OFFICE", "HYBRID"].includes(cleanFilter(searchParams?.format)) ? cleanFilter(searchParams?.format) : "";
   const city = cleanFilter(searchParams?.city);
   const experience = cleanFilter(searchParams?.experience);
+  const sort = normalizeSort(searchParams?.sort);
+  const currentParams = new URLSearchParams();
+  if (role) currentParams.set("role", role);
+  if (format) currentParams.set("format", format);
+  if (city) currentParams.set("city", city);
+  if (experience) currentParams.set("experience", experience);
+  if (sort !== "new") currentParams.set("sort", sort);
+  const currentQuery = currentParams.toString();
+  const currentPath = `/model-operator${currentQuery ? `?${currentQuery}` : ""}`;
 
-  const profiles = await prisma.matchProfile.findMany({
+  const allProfiles = await prisma.matchProfile.findMany({
     where: {
       status: "PUBLISHED",
-      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
-      ...(role ? { seekerRole: role } : {}),
-      ...(format ? { workFormat: format } : {}),
-      ...(city ? { city: { contains: city, mode: "insensitive" } } : {}),
-      ...(experience ? { experience } : {})
+      OR: [{ expiresAt: null }, { expiresAt: { gt: now } }]
     },
-    include: { user: true },
-    orderBy: { updatedAt: "desc" }
+    include: {
+      user: true,
+      savedBy: session?.user?.id ? { where: { userId: session.user.id }, select: { userId: true } } : { where: { userId: "__guest__" }, select: { userId: true } }
+    },
+    orderBy: sort === "views" ? { viewCount: "desc" } : sort === "responses" ? { responseCount: "desc" } : { updatedAt: "desc" }
+  });
+
+  const hasRemote = allProfiles.some(isRemoteProfile);
+  const cities = Array.from(
+    new Set(
+      allProfiles
+        .filter((profile) => !isRemoteProfile(profile))
+        .map((profile) => profile.city?.trim())
+        .filter((item): item is string => Boolean(item))
+    )
+  ).sort((a, b) => a.localeCompare(b, "ru"));
+  const experienceOptions = Array.from(new Set(allProfiles.map((profile) => profile.experience).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ru"));
+  const profiles = allProfiles.filter((profile) => {
+    const remote = isRemoteProfile(profile);
+    return (
+      (!role || profile.seekerRole === role) &&
+      (!format || profile.workFormat === format) &&
+      (!city || (city === "remote" ? remote : remote || profile.city?.trim() === city)) &&
+      (!experience || profile.experience === experience)
+    );
   });
 
   if (profiles.length > 0) {
     await prisma.matchProfile.updateMany({ where: { id: { in: profiles.map((profile) => profile.id) } }, data: { viewCount: { increment: 1 } } });
   }
 
-  const experienceOptions = Array.from(new Set(profiles.map((profile) => profile.experience))).filter(Boolean);
+  const favoriteMessage =
+    searchParams?.favorite === "added"
+      ? "Анкета добавлена в избранное."
+      : searchParams?.favorite === "removed"
+        ? "Анкета убрана из избранного."
+        : null;
 
   return (
     <div className="space-y-4">
@@ -100,30 +128,61 @@ export default async function ModelOperatorPage({
         </div>
       </section>
 
-      <section className="rounded-lg bg-white p-3 shadow-sm">
-        <div className="flex flex-wrap gap-2 text-xs font-semibold">
-          {roles.map(([value, label]) => (
-            <Link key={value || "all"} className={`rounded-full px-3 py-1.5 ${role === value ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-700"}`} href={filterHref({ role: value, city, format, experience })}>
-              {label}
-            </Link>
-          ))}
-          {formats.map(([value, label]) => (
-            <Link key={value || "format-all"} className={`rounded-full px-3 py-1.5 ${format === value ? "bg-hot text-white" : "bg-zinc-100 text-zinc-700"}`} href={filterHref({ role, city, format: value, experience })}>
-              {label}
-            </Link>
-          ))}
-        </div>
-        <form className="mt-3 grid gap-2 sm:grid-cols-3" action="/model-operator">
-          <input type="hidden" name="role" value={role} />
-          <input type="hidden" name="format" value={format} />
-          <input className="form-field" name="city" defaultValue={city} placeholder="Город или удаленно" />
-          <select className="form-field" name="experience" defaultValue={experience}>
-            <option value="">Любой опыт</option>
-            {experienceOptions.map((item) => <option key={item}>{item}</option>)}
-          </select>
-          <button className="btn btn-secondary" type="submit">Применить</button>
-        </form>
-      </section>
+      <CatalogFilterForm
+        basePath="/model-operator"
+        filters={[
+          {
+            name: "role",
+            label: "Кто",
+            value: role,
+            options: [
+              { value: "", label: "Все" },
+              { value: "MODEL", label: "Модели" },
+              { value: "OPERATOR", label: "Операторы" }
+            ]
+          },
+          {
+            name: "city",
+            label: "Город",
+            value: city,
+            options: [
+              { value: "", label: "Все" },
+              ...(hasRemote ? [{ value: "remote", label: "Удаленно" }] : []),
+              ...cities.map((item) => ({ value: item, label: item }))
+            ]
+          },
+          {
+            name: "format",
+            label: "Формат",
+            value: format,
+            options: [{ value: "", label: "Любой" }, ...Object.entries(formatLabels).map(([value, label]) => ({ value, label }))]
+          },
+          {
+            name: "experience",
+            label: "Опыт",
+            value: experience,
+            options: [{ value: "", label: "Любой" }, ...experienceOptions.map((item) => ({ value: item, label: item }))]
+          },
+          {
+            name: "sort",
+            label: "Сортировка",
+            value: sort,
+            defaultValue: "new",
+            options: sortOptions.map((option) => ({ value: option.key, label: option.label }))
+          }
+        ]}
+      />
+
+      {searchParams?.reported && (
+        <section className="rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800">
+          Жалоба отправлена в модерацию.
+        </section>
+      )}
+      {favoriteMessage && (
+        <section className="rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+          {favoriteMessage}
+        </section>
+      )}
 
       {profiles.length === 0 && (
         <section className="rounded-lg border border-zinc-200 bg-white p-5">
@@ -134,7 +193,7 @@ export default async function ModelOperatorPage({
 
       {profiles.map((profile) => {
         const authorName = profile.user.name || profile.user.email || "Профиль";
-        const canSeeContact = Boolean(session?.user);
+        const isSaved = Boolean(profile.savedBy?.length);
 
         return (
           <article key={profile.id} className="directory-card bg-white p-4 shadow-sm sm:p-5">
@@ -160,18 +219,21 @@ export default async function ModelOperatorPage({
               <span>Отклики: {profile.responseCount}</span>
             </div>
 
-            <div className="mt-3 text-sm text-zinc-700">
-              <span className="font-medium text-zinc-900">Контакт: </span>
-              {canSeeContact ? profile.contact : maskContact(profile.contact)}
-              {!canSeeContact && <p className="mt-1 text-xs text-zinc-500">Войдите, чтобы видеть контакт полностью.</p>}
-            </div>
-
-            <div className="directory-actions mt-4 flex flex-wrap gap-2">
-              <form action={respondToMatchProfileAction}>
+            <div className="directory-actions mt-4 grid grid-cols-3 gap-2">
+              <ContactReveal contact={profile.contact} signedIn={Boolean(session?.user)} compact />
+              <form action={saveMatchProfileAction}>
                 <input type="hidden" name="matchProfileId" value={profile.id} />
-                <button className="btn btn-primary w-full" type="submit">Откликнуться</button>
+                <input type="hidden" name="next" value={currentPath} />
+                <button className="btn btn-muted h-10 w-full whitespace-nowrap px-1 text-[11px]" type="submit">
+                  {isSaved ? "Убрать" : "В избранное"}
+                </button>
               </form>
-              <Link className="btn btn-ghost" href={`/profiles/${profile.userId}`}>Профиль</Link>
+              <ReportButton
+                targetType="MATCH_PROFILE"
+                targetId={profile.id}
+                next={currentPath}
+                buttonClassName="btn btn-danger h-10 w-full whitespace-nowrap px-1 text-[11px]"
+              />
             </div>
 
             <Link href={`/profiles/${profile.userId}`} className="mt-4 flex min-w-0 items-center gap-2 border-t border-zinc-100 pt-3 text-xs text-zinc-600 hover:text-hot">

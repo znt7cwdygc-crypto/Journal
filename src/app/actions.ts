@@ -1022,6 +1022,50 @@ export async function saveProductAction(formData: FormData) {
   redirect(withStatusParam(next, "favorite", existing ? "removed" : "added"));
 }
 
+export async function saveResumeAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const resumeId = cleanText(formData.get("resumeId"), 120);
+  const next = safeInternalPath(cleanText(formData.get("next"), 500), "/resumes");
+  if (!resumeId) throw new Error("Resume ID missing");
+  const existing = await prisma.savedResume.findUnique({
+    where: { userId_resumeId: { userId: session.user.id, resumeId } }
+  });
+
+  if (existing) {
+    await prisma.savedResume.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.savedResume.create({ data: { userId: session.user.id, resumeId } });
+  }
+
+  revalidatePath("/resumes");
+  revalidatePath("/cabinet");
+  redirect(withStatusParam(next, "favorite", existing ? "removed" : "added"));
+}
+
+export async function saveMatchProfileAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const matchProfileId = cleanText(formData.get("matchProfileId"), 120);
+  const next = safeInternalPath(cleanText(formData.get("next"), 500), "/model-operator");
+  if (!matchProfileId) throw new Error("Match profile ID missing");
+  const existing = await prisma.savedMatchProfile.findUnique({
+    where: { userId_matchProfileId: { userId: session.user.id, matchProfileId } }
+  });
+
+  if (existing) {
+    await prisma.savedMatchProfile.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.savedMatchProfile.create({ data: { userId: session.user.id, matchProfileId } });
+  }
+
+  revalidatePath("/model-operator");
+  revalidatePath("/cabinet");
+  redirect(withStatusParam(next, "favorite", existing ? "removed" : "added"));
+}
+
 export async function addListingReviewAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
@@ -1116,7 +1160,7 @@ export async function reportContentAction(formData: FormData) {
   const targetId = String(formData.get("targetId") ?? "");
   const reason = cleanText(formData.get("reason"), 500);
   const next = safeInternalPath(cleanText(formData.get("next"), 500), "/articles");
-  if (!["ARTICLE", "COMMENT", "PROFILE", "LISTING", "PRODUCT"].includes(targetType) || !targetId) throw new Error("Некорректная жалоба");
+  if (!["ARTICLE", "COMMENT", "PROFILE", "LISTING", "PRODUCT", "RESUME", "MATCH_PROFILE"].includes(targetType) || !targetId) throw new Error("Некорректная жалоба");
   if (reason.length < 10) throw new Error("Опишите причину жалобы");
 
   await prisma.report.create({
@@ -1134,6 +1178,8 @@ export async function reportContentAction(formData: FormData) {
   revalidatePath("/vacancies");
   revalidatePath("/services");
   revalidatePath("/products");
+  revalidatePath("/resumes");
+  revalidatePath("/model-operator");
   redirect(withStatusParam(next, "reported", "1"));
 }
 
@@ -1164,6 +1210,12 @@ export async function reviewReportAction(formData: FormData) {
     }
     if (report.targetType === "PRODUCT") {
       await prisma.product.update({ where: { id: report.targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: report.reason } }).catch(() => null);
+    }
+    if (report.targetType === "RESUME") {
+      await prisma.resume.update({ where: { id: report.targetId }, data: { isPublic: false } }).catch(() => null);
+    }
+    if (report.targetType === "MATCH_PROFILE") {
+      await prisma.matchProfile.update({ where: { id: report.targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: report.reason } }).catch(() => null);
     }
   }
 

@@ -74,6 +74,8 @@ enum ReportTargetType {
   PROFILE
   LISTING
   PRODUCT
+  RESUME
+  MATCH_PROFILE
 }
 
 enum ProductCondition {
@@ -127,9 +129,11 @@ model User {
   followingAuthors Follow[]              @relation("AuthorFollowing")
   topicFollows     TopicFollow[]
   savedListings    SavedListing[]
+  savedResumes     SavedResume[]
   products         Product[]
   savedProducts    SavedProduct[]
-  matchProfile      MatchProfile?
+  matchProfile     MatchProfile?
+  savedMatchProfiles SavedMatchProfile[]
 
   accounts Account[]
   sessions Session[]
@@ -387,8 +391,21 @@ model Resume {
   updatedAt          DateTime  @updatedAt
 
   unlocks ResumeContactUnlock[]
+  savedBy SavedResume[]
 
   @@index([isPublic, hiddenByInactivity, expiresAt])
+}
+
+model SavedResume {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumeId  String
+  resume    Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, resumeId])
+  @@index([resumeId])
 }
 
 model MatchProfile {
@@ -415,10 +432,23 @@ model MatchProfile {
   expiresAt       DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  savedBy         SavedMatchProfile[]
 
   @@index([status, updatedAt])
   @@index([seekerRole, lookingFor, status])
   @@index([city, status])
+}
+
+model SavedMatchProfile {
+  id             String       @id @default(cuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchProfileId String
+  matchProfile   MatchProfile @relation(fields: [matchProfileId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([userId, matchProfileId])
+  @@index([matchProfileId])
 }
 
 model ResumeContactUnlock {

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { CatalogFilterForm } from "@/components/catalog-filter-form";
 import { ListingDirectoryCard } from "@/components/directory-card";
-import { VacancyFilterForm } from "@/components/vacancy-filter-form";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -102,7 +102,28 @@ export default async function VacanciesPage({ searchParams }: { searchParams?: {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Вакансии</h1>
-      <VacancyFilterForm cityValue={cityValue} sortValue={sort} hasRemote={hasRemote} cities={cities} sortOptions={sortOptions} />
+      <CatalogFilterForm
+        basePath="/vacancies"
+        filters={[
+          {
+            name: "city",
+            label: "Город",
+            value: cityValue,
+            options: [
+              { value: "", label: "Все" },
+              ...(hasRemote ? [{ value: "remote", label: "Удаленно" }] : []),
+              ...cities.map((city) => ({ value: city, label: city }))
+            ]
+          },
+          {
+            name: "sort",
+            label: "Сортировка",
+            value: sort,
+            defaultValue: "new",
+            options: sortOptions.map((option) => ({ value: option.key, label: option.label }))
+          }
+        ]}
+      />
       {searchParams?.reported && (
         <section className="rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800">
           Жалоба отправлена в модерацию.

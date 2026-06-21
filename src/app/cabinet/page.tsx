@@ -107,7 +107,7 @@ export default async function CabinetPage({
 }) {
   const user = await requireUser();
 
-  const [dbUser, myArticles, myListings, myProducts, myResume, myMatchProfile, draftArticle, followedAuthors, followedTopics, savedListings, savedProducts] = await Promise.all([
+  const [dbUser, myArticles, myListings, myProducts, myResume, myMatchProfile, draftArticle, followedAuthors, followedTopics, savedListings, savedProducts, savedResumes, savedMatchProfiles] = await Promise.all([
     prisma.user.findUnique({
       where: { id: user.id },
       include: {
@@ -146,6 +146,37 @@ export default async function CabinetPage({
             title: true,
             category: true,
             priceRub: true,
+            city: true
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" },
+      take: 6
+    }),
+    prisma.savedResume.findMany({
+      where: { userId: user.id },
+      include: {
+        resume: {
+          select: {
+            id: true,
+            title: true,
+            roleGoal: true,
+            city: true
+          }
+        }
+      },
+      orderBy: { createdAt: "desc" },
+      take: 6
+    }),
+    prisma.savedMatchProfile.findMany({
+      where: { userId: user.id },
+      include: {
+        matchProfile: {
+          select: {
+            id: true,
+            title: true,
+            seekerRole: true,
+            lookingFor: true,
             city: true
           }
         }
@@ -786,6 +817,44 @@ export default async function CabinetPage({
                 </a>
               ))}
               {savedProducts.length === 0 && <p className="text-xs text-zinc-500">Пока нет сохраненных товаров.</p>}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">Избранные резюме</h3>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600">{savedResumes.length}</span>
+            </div>
+            <div className="mt-3 space-y-2">
+              {savedResumes.map((item) => (
+                <a key={item.id} className="block rounded-lg bg-white p-3 text-sm hover:text-hot" href="/resumes">
+                  <p className="truncate font-medium">{item.resume.title}</p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {item.resume.roleGoal}
+                    {item.resume.city ? ` • ${item.resume.city}` : ""}
+                  </p>
+                </a>
+              ))}
+              {savedResumes.length === 0 && <p className="text-xs text-zinc-500">Пока нет сохраненных резюме.</p>}
+            </div>
+          </div>
+
+          <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">Избранное модель оператор</h3>
+              <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-zinc-600">{savedMatchProfiles.length}</span>
+            </div>
+            <div className="mt-3 space-y-2">
+              {savedMatchProfiles.map((item) => (
+                <a key={item.id} className="block rounded-lg bg-white p-3 text-sm hover:text-hot" href="/model-operator">
+                  <p className="truncate font-medium">{item.matchProfile.title}</p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {item.matchProfile.seekerRole === "MODEL" ? "Модель" : "Оператор"} ищет {item.matchProfile.lookingFor === "MODEL" ? "модель" : item.matchProfile.lookingFor === "OPERATOR" ? "оператора" : "связку"}
+                    {item.matchProfile.city ? ` • ${item.matchProfile.city}` : ""}
+                  </p>
+                </a>
+              ))}
+              {savedMatchProfiles.length === 0 && <p className="text-xs text-zinc-500">Пока нет сохраненных анкет модель-оператор.</p>}
             </div>
           </div>
           </div>
