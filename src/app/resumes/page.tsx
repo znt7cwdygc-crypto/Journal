@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { CatalogFilterForm } from "@/components/catalog-filter-form";
+import { CatalogPageHeader } from "@/components/catalog-page-header";
 import { ResumeDirectoryCard } from "@/components/directory-card";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -95,7 +96,13 @@ export default async function ResumesPage({ searchParams }: { searchParams?: { s
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Резюме{cityValue && cityValue !== "remote" ? ` • ${cityValue}` : cityValue === "remote" ? " • Удаленно" : ""}</h1>
+      <CatalogPageHeader
+        eyebrow="Работа"
+        title="Резюме"
+        description="Анкеты моделей и специалистов с опытом, городом, графиком и контактами."
+        actionLabel="Разместить резюме"
+        actionHref="/cabinet#resume"
+      />
       <CatalogFilterForm
         basePath="/resumes"
         filters={[

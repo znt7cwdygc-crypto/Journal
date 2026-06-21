@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { CatalogFilterForm } from "@/components/catalog-filter-form";
+import { CatalogPageHeader } from "@/components/catalog-page-header";
 import { ProductDirectoryCard } from "@/components/product-card";
 import { prisma } from "@/lib/prisma";
 
@@ -91,14 +92,13 @@ export default async function ProductsPage({ searchParams }: { searchParams?: { 
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="eyebrow">Маркет</p>
-          <h1 className="page-title mt-1">Товары</h1>
-          <p className="mt-2 text-sm leading-6 text-zinc-600">Оборудование, свет, камеры, мебель и полезные вещи от участников сообщества.</p>
-        </div>
-        <a className="btn btn-primary" href="/cabinet#products">Продать товар</a>
-      </div>
+      <CatalogPageHeader
+        eyebrow="Маркет"
+        title="Товары"
+        description="Оборудование, свет, камеры, мебель и полезные вещи от участников сообщества."
+        actionLabel="Продать товар"
+        actionHref="/cabinet#products"
+      />
 
       <CatalogFilterForm
         basePath="/products"

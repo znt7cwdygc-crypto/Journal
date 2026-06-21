@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { CatalogFilterForm } from "@/components/catalog-filter-form";
+import { CatalogPageHeader } from "@/components/catalog-page-header";
 import { ListingDirectoryCard } from "@/components/directory-card";
 import type { Metadata } from "next";
 
@@ -101,7 +102,13 @@ export default async function VacanciesPage({ searchParams }: { searchParams?: {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Вакансии</h1>
+      <CatalogPageHeader
+        eyebrow="Работа"
+        title="Вакансии"
+        description="Предложения для администраторов, операторов, управляющих и других специалистов индустрии."
+        actionLabel="Разместить вакансию"
+        actionHref="/cabinet#vacancy"
+      />
       <CatalogFilterForm
         basePath="/vacancies"
         filters={[

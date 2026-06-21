@@ -3,6 +3,7 @@ import Link from "next/link";
 import { saveMatchProfileAction } from "@/app/actions";
 import { auth } from "@/auth";
 import { CatalogFilterForm } from "@/components/catalog-filter-form";
+import { CatalogPageHeader } from "@/components/catalog-page-header";
 import { ContactReveal } from "@/components/contact-reveal";
 import { ReportButton } from "@/components/report-button";
 import { prisma } from "@/lib/prisma";
@@ -117,16 +118,13 @@ export default async function ModelOperatorPage({
 
   return (
     <div className="space-y-4">
-      <section className="rounded-lg bg-white p-4 shadow-sm sm:p-5">
-        <p className="eyebrow">Связки</p>
-        <h1 className="page-title mt-1">Модель оператор</h1>
-        <p className="mt-2 text-sm leading-6 text-zinc-600">
-          Бесплатные анкеты на 14 дней: модели ищут операторов, операторы ищут моделей или обе стороны открыты к связке.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <Link className="btn btn-primary" href="/cabinet#match">Разместить анкету</Link>
-        </div>
-      </section>
+      <CatalogPageHeader
+        eyebrow="Связки"
+        title="Модель оператор"
+        description="Бесплатные анкеты на 14 дней: модели ищут операторов, операторы ищут моделей или обе стороны открыты к связке."
+        actionLabel="Разместить анкету"
+        actionHref="/cabinet#match"
+      />
 
       <CatalogFilterForm
         basePath="/model-operator"

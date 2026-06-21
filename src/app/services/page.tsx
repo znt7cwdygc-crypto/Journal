@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { CatalogFilterForm } from "@/components/catalog-filter-form";
+import { CatalogPageHeader } from "@/components/catalog-page-header";
 import { ListingDirectoryCard } from "@/components/directory-card";
 import { serviceTopic } from "@/lib/topics";
 import type { Metadata } from "next";
@@ -98,7 +99,13 @@ export default async function ServicesPage({ searchParams }: { searchParams?: { 
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-semibold">Услуги</h1>
+      <CatalogPageHeader
+        eyebrow="Услуги"
+        title="Услуги"
+        description="Эксперты, сервисы и консультации для моделей, студий и команд."
+        actionLabel="Предложить услугу"
+        actionHref="/cabinet#service"
+      />
       <CatalogFilterForm
         basePath="/services"
         filters={[
