@@ -4,13 +4,12 @@ import type { Metadata } from "next";
 import {
   addListingReviewAction,
   deleteOwnListingReviewAction,
-  reportContentAction,
-  respondToListingAction,
   saveListingAction,
   updateOwnListingReviewAction
 } from "@/app/actions";
 import { auth } from "@/auth";
 import { ContactReveal } from "@/components/contact-reveal";
+import { ReportButton } from "@/components/report-button";
 import { prisma } from "@/lib/prisma";
 import { siteUrl, truncateSeo } from "@/lib/seo";
 
@@ -95,7 +94,6 @@ export default async function ListingDetailsPage({
   const averageRating = visibleRatings.length ? visibleRatings.reduce((sum, rating) => sum + rating, 0) / visibleRatings.length : 0;
   const isServiceOwner = Boolean(session?.user?.id && session.user.id === listing.createdById);
   const isService = listing.type === "SERVICE";
-  const isVacancy = listing.type === "VACANCY";
   const isSaved = Boolean(session?.user?.id && listing.savedBy.some((item) => item.userId === session.user.id));
   const price = isService ? structuredValue(listing.description, "Цена") : "";
   const summary = isService ? serviceSummary(listing.description) : listing.description;
@@ -167,11 +165,15 @@ export default async function ListingDetailsPage({
         <span>{listing.savedBy.length} в избранном</span>
         {listing.type === "SERVICE" && visibleRatings.length > 0 && <span>Рейтинг: {averageRating.toFixed(1)} из 5</span>}
       </div>
-      <div className={isVacancy ? "mt-5 grid grid-cols-4 gap-2 sm:flex sm:flex-wrap" : "mt-5 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap"}>
+      <div className="mt-5 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
         <ContactReveal contact={listing.contact} signedIn={Boolean(session?.user)} compact />
-        {isVacancy && <form action={respondToListingAction}><input type="hidden" name="listingId" value={listing.id} /><button className="h-10 w-full rounded-lg bg-accent px-1 text-[11px] font-semibold text-white" type="submit">Отклик</button></form>}
         <form action={saveListingAction}><input type="hidden" name="listingId" value={listing.id} /><input type="hidden" name="next" value={listingPath} /><button className="h-10 w-full rounded-lg bg-zinc-100 px-1 text-[11px] font-semibold text-zinc-800" type="submit">{isSaved ? "Убрать" : "В избранное"}</button></form>
-        <form action={reportContentAction}><input type="hidden" name="targetType" value="LISTING" /><input type="hidden" name="targetId" value={listing.id} /><input type="hidden" name="reason" value="Жалоба на размещение" /><input type="hidden" name="next" value={listingPath} /><button className="h-10 w-full rounded-lg bg-red-50 px-1 text-[11px] font-semibold text-red-700" type="submit">Жалоба</button></form>
+        <ReportButton
+          targetType="LISTING"
+          targetId={listing.id}
+          next={listingPath}
+          buttonClassName="h-10 w-full rounded-lg bg-red-50 px-1 text-[11px] font-semibold text-red-700"
+        />
       </div>
 
       <Link href={`/profiles/${listing.createdById}`} className="mt-6 flex items-center gap-3 rounded-lg bg-zinc-50 p-3 text-sm hover:bg-zinc-100">

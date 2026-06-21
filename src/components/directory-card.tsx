@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { reportContentAction, respondToListingAction, respondToResumeAction, saveListingAction } from "@/app/actions";
+import { respondToResumeAction, saveListingAction } from "@/app/actions";
 import { ContactReveal } from "@/components/contact-reveal";
+import { ReportButton } from "@/components/report-button";
 import { maskContact } from "@/lib/validation";
 
 type DirectoryUser = {
@@ -107,7 +108,6 @@ export function ListingDirectoryCard({
   isSignedIn: boolean;
 }) {
   const typeLabel = kind === "VACANCY" ? "Вакансия" : "Услуга";
-  const reportReason = kind === "VACANCY" ? "Жалоба на вакансию" : "Жалоба на услугу";
   const kindClass = kind === "VACANCY" ? "bg-hot text-white" : "bg-sky text-white";
   const formatLabel = listing.employmentType || "Формат не указан";
   const ratings = (listing.reviews || []).map((review) => review.rating).filter((rating): rating is number => typeof rating === "number");
@@ -153,16 +153,8 @@ export function ListingDirectoryCard({
         </div>
       )}
 
-      <DirectoryActionRow columns={isService ? 3 : kind === "VACANCY" ? 4 : undefined}>
+      <DirectoryActionRow columns={compactListing ? 3 : undefined}>
         {compactListing && <ContactReveal contact={listing.contact} signedIn={isSignedIn} compact />}
-        {kind === "VACANCY" && (
-          <form action={respondToListingAction}>
-            <HiddenListingInputs listingId={listing.id} />
-            <button className={`${compactButtonClass} btn-primary`} type="submit">
-              Отклик
-            </button>
-          </form>
-        )}
         <form action={saveListingAction}>
           <HiddenListingInputs listingId={listing.id} />
           <input type="hidden" name="next" value={currentPath} />
@@ -170,15 +162,12 @@ export function ListingDirectoryCard({
             {compactListing ? (isSaved ? "Убрать" : "В избранное") : "Сохранить"}
           </button>
         </form>
-        <form action={reportContentAction}>
-          <input type="hidden" name="targetType" value="LISTING" />
-          <input type="hidden" name="targetId" value={listing.id} />
-          <input type="hidden" name="reason" value={reportReason} />
-          <input type="hidden" name="next" value={currentPath} />
-          <button className={compactListing ? `${compactButtonClass} btn-danger` : "btn btn-danger w-full"} type="submit">
-            Жалоба
-          </button>
-        </form>
+        <ReportButton
+          targetType="LISTING"
+          targetId={listing.id}
+          next={currentPath}
+          buttonClassName={compactListing ? `${compactButtonClass} btn-danger` : "btn btn-danger w-full"}
+        />
       </DirectoryActionRow>
 
       <AuthorFooter author={listing.createdBy} />

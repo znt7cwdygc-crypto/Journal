@@ -1114,9 +1114,10 @@ export async function reportContentAction(formData: FormData) {
 
   const targetType = String(formData.get("targetType") ?? "");
   const targetId = String(formData.get("targetId") ?? "");
-  const reason = cleanText(formData.get("reason"), 600) || "Проверить материал";
+  const reason = cleanText(formData.get("reason"), 500);
   const next = safeInternalPath(cleanText(formData.get("next"), 500), "/articles");
   if (!["ARTICLE", "COMMENT", "PROFILE", "LISTING", "PRODUCT"].includes(targetType) || !targetId) throw new Error("Некорректная жалоба");
+  if (reason.length < 10) throw new Error("Опишите причину жалобы");
 
   await prisma.report.create({
     data: {

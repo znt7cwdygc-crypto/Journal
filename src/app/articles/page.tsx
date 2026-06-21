@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Prisma } from "@prisma/client";
-import { followTopicAction, reportContentAction } from "@/app/actions";
+import { followTopicAction } from "@/app/actions";
 import { auth } from "@/auth";
+import { ReportButton } from "@/components/report-button";
 import { SafeImage } from "@/components/safe-image";
 import { stripArticleHtml } from "@/lib/article-html";
 import { safeImageUrl } from "@/lib/media";
@@ -261,15 +262,12 @@ export default async function ArticlesPage({
                   {followedTopicSet.has(topic) ? "Отписаться от рубрики" : "Подписаться на рубрику"}
                 </button>
               </form>
-              <form action={reportContentAction} className="contents sm:block">
-                <input type="hidden" name="targetType" value="ARTICLE" />
-                <input type="hidden" name="targetId" value={article.id} />
-                <input type="hidden" name="reason" value="Жалоба на статью" />
-                <input type="hidden" name="next" value={currentPath} />
-                <button className="btn btn-danger w-full sm:w-auto" type="submit">
-                  Жалоба
-                </button>
-              </form>
+              <ReportButton
+                targetType="ARTICLE"
+                targetId={article.id}
+                next={currentPath}
+                buttonClassName="btn btn-danger w-full sm:w-auto"
+              />
             </div>
           </article>
         );

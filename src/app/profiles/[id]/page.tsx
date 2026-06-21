@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { followAuthorAction, reportContentAction } from "@/app/actions";
+import { followAuthorAction } from "@/app/actions";
 import { auth } from "@/auth";
+import { ReportButton } from "@/components/report-button";
 import { SafeImage } from "@/components/safe-image";
 import { safeImageUrl } from "@/lib/media";
 import { prisma } from "@/lib/prisma";
@@ -172,13 +173,13 @@ export default async function ProfilePage({
                       {isFollowing ? "Отписаться" : "Подписаться"}
                     </button>
                   </form>
-                  <form action={reportContentAction}>
-                    <input type="hidden" name="targetType" value="PROFILE" />
-                    <input type="hidden" name="targetId" value={user.id} />
-                    <input type="hidden" name="reason" value="Жалоба на профиль" />
-                    <input type="hidden" name="next" value={profilePath} />
-                    <button className="rounded-lg bg-zinc-100 px-3 py-2 text-sm font-semibold text-zinc-700" type="submit">Пожаловаться</button>
-                  </form>
+                  <ReportButton
+                    targetType="PROFILE"
+                    targetId={user.id}
+                    next={profilePath}
+                    buttonLabel="Пожаловаться"
+                    buttonClassName="rounded-lg bg-zinc-100 px-3 py-2 text-sm font-semibold text-zinc-700"
+                  />
                 </>
               )}
             </div>

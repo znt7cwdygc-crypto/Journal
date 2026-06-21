@@ -7,10 +7,10 @@ import {
   followAuthorAction,
   followTopicAction,
   likeCommentAction,
-  rateArticleAction,
-  reportContentAction
+  rateArticleAction
 } from "@/app/actions";
 import { auth } from "@/auth";
+import { ReportButton } from "@/components/report-button";
 import { ShareArticleButton } from "@/components/share-article-button";
 import { SafeImage } from "@/components/safe-image";
 import { isHtmlArticleBody, sanitizeArticleHtml, stripArticleHtml } from "@/lib/article-html";
@@ -331,13 +331,13 @@ export default async function ArticleDetailsPage({
             </Link>
 
             <ShareArticleButton url={shareUrl} repostCount={article.repostCount} />
-            <form action={reportContentAction} className="flex gap-2">
-              <input type="hidden" name="targetType" value="ARTICLE" />
-              <input type="hidden" name="targetId" value={article.id} />
-              <input type="hidden" name="next" value={canonicalPath} />
-              <input className="w-44 rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="reason" placeholder="Причина жалобы" />
-              <button className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-700" type="submit">Пожаловаться</button>
-            </form>
+            <ReportButton
+              targetType="ARTICLE"
+              targetId={article.id}
+              next={canonicalPath}
+              buttonLabel="Пожаловаться"
+              buttonClassName="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-700"
+            />
           </div>
         ) : (
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -377,13 +377,12 @@ export default async function ArticleDetailsPage({
                     <input type="hidden" name="commentId" value={comment.id} />
                     <button className="rounded bg-white px-2 py-1 text-xs font-medium text-hot" type="submit">Лайк {comment.likes.length}</button>
                   </form>
-                  <form action={reportContentAction} className="flex gap-1">
-                    <input type="hidden" name="targetType" value="COMMENT" />
-                    <input type="hidden" name="targetId" value={comment.id} />
-                    <input type="hidden" name="reason" value="Жалоба на комментарий" />
-                    <input type="hidden" name="next" value={`${canonicalPath}#comments`} />
-                    <button className="rounded bg-white px-2 py-1 text-xs text-zinc-600" type="submit">Жалоба</button>
-                  </form>
+                  <ReportButton
+                    targetType="COMMENT"
+                    targetId={comment.id}
+                    next={`${canonicalPath}#comments`}
+                    buttonClassName="rounded bg-white px-2 py-1 text-xs text-zinc-600"
+                  />
                 </>
               )}
             </div>

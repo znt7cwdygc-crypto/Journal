@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { reportContentAction, saveProductAction } from "@/app/actions";
+import { saveProductAction } from "@/app/actions";
 import { auth } from "@/auth";
 import { ContactReveal } from "@/components/contact-reveal";
+import { ReportButton } from "@/components/report-button";
 import { prisma } from "@/lib/prisma";
 import { siteUrl, truncateSeo } from "@/lib/seo";
 
@@ -142,13 +143,12 @@ export default async function ProductDetailsPage({
             {isSaved ? "Убрать" : "В избранное"}
           </button>
         </form>
-        <form action={reportContentAction}>
-          <input type="hidden" name="targetType" value="PRODUCT" />
-          <input type="hidden" name="targetId" value={product.id} />
-          <input type="hidden" name="reason" value="Жалоба на товар" />
-          <input type="hidden" name="next" value={productPath} />
-          <button className="h-10 w-full rounded-lg bg-red-50 px-1 text-[11px] font-semibold text-red-700" type="submit">Жалоба</button>
-        </form>
+        <ReportButton
+          targetType="PRODUCT"
+          targetId={product.id}
+          next={productPath}
+          buttonClassName="h-10 w-full rounded-lg bg-red-50 px-1 text-[11px] font-semibold text-red-700"
+        />
       </div>
 
       <Link href={`/profiles/${product.createdById}`} className="mt-6 flex items-center gap-3 rounded-lg bg-zinc-50 p-3 text-sm hover:bg-zinc-100">

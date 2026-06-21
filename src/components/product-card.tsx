@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { reportContentAction, saveProductAction } from "@/app/actions";
+import { saveProductAction } from "@/app/actions";
 import { ContactReveal } from "@/components/contact-reveal";
+import { ReportButton } from "@/components/report-button";
 
 type ProductUser = {
   id: string;
@@ -93,13 +94,12 @@ export function ProductDirectoryCard({
             {isSaved ? "Убрать" : "В избранное"}
           </button>
         </form>
-        <form action={reportContentAction}>
-          <input type="hidden" name="targetType" value="PRODUCT" />
-          <input type="hidden" name="targetId" value={product.id} />
-          <input type="hidden" name="reason" value="Жалоба на товар" />
-          <input type="hidden" name="next" value={currentPath} />
-          <button className="btn btn-danger h-10 w-full whitespace-nowrap px-1 text-[11px]" type="submit">Жалоба</button>
-        </form>
+        <ReportButton
+          targetType="PRODUCT"
+          targetId={product.id}
+          next={currentPath}
+          buttonClassName="btn btn-danger h-10 w-full whitespace-nowrap px-1 text-[11px]"
+        />
       </div>
 
       <Link href={`/profiles/${product.createdBy.id}`} className="mt-4 flex min-w-0 items-center gap-2 border-t border-zinc-100 pt-3 text-xs text-zinc-600 hover:text-hot">
