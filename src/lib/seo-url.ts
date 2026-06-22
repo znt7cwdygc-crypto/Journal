@@ -148,9 +148,9 @@ export function idFromSeoParam(param: string) {
   const directId = clean.match(/^c[a-z0-9]{8,}$/i)?.[0];
   if (directId) return { id: directId, shortId: null };
 
-  const articlePrefix = clean.match(/^([a-z0-9]{8})-/)?.[1];
   const suffix = clean.match(/-([a-z0-9]{8})(?:$|[?#])/)?.[1];
-  return { id: null, shortId: articlePrefix || suffix || null };
+  const articlePrefix = clean.match(/^([a-z0-9]{8})-/)?.[1];
+  return { id: null, shortId: suffix || articlePrefix || null };
 }
 
 export function pathTail(path: string) {
