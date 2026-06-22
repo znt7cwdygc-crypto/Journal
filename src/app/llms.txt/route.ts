@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { siteDescription, siteName, siteUrl } from "@/lib/seo";
 import { seoLandings } from "@/lib/seo-landings";
-import { articleSeoPath, listingSeoPath, productSeoPath } from "@/lib/seo-url";
+import { articleSeoPath, listingSeoPath, matchProfileSeoPath, productSeoPath } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
 
@@ -102,7 +102,7 @@ export async function GET() {
       ? matchProfiles.map((profile) =>
           line(
             profile.title,
-            "/model-operator",
+            matchProfileSeoPath(profile),
             ["Match profile", profile.seekerRole, `looking for ${profile.lookingFor}`, profile.city, profile.experience, profile.workFormat].filter(Boolean).join(": ")
           )
         )

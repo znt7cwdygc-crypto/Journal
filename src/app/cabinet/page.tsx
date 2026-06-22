@@ -29,7 +29,7 @@ import { ProductForm } from "@/components/product-form";
 import { ProductPublishCleanup } from "@/components/product-publish-cleanup";
 import { ResumeQuizDisclosure } from "@/components/resume-quiz-disclosure";
 import { prisma } from "@/lib/prisma";
-import { articleSeoPath, listingSeoPath, productSeoPath, resumeSeoPath } from "@/lib/seo-url";
+import { articleSeoPath, listingSeoPath, matchProfileSeoPath, productSeoPath, resumeSeoPath } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
 
@@ -847,7 +847,7 @@ export default async function CabinetPage({
             </div>
             <div className="mt-3 space-y-2">
               {savedMatchProfiles.map((item) => (
-                <a key={item.id} className="block rounded-lg bg-white p-3 text-sm hover:text-hot" href="/model-operator">
+                <a key={item.id} className="block rounded-lg bg-white p-3 text-sm hover:text-hot" href={matchProfileSeoPath(item.matchProfile)}>
                   <p className="truncate font-medium">{item.matchProfile.title}</p>
                   <p className="mt-1 text-xs text-zinc-500">
                     {item.matchProfile.seekerRole === "MODEL" ? "Модель" : "Оператор"} ищет {item.matchProfile.lookingFor === "MODEL" ? "модель" : item.matchProfile.lookingFor === "OPERATOR" ? "оператора" : "связку"}

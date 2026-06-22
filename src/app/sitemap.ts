@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { seoLandings } from "@/lib/seo-landings";
 import { siteUrl } from "@/lib/seo";
-import { articleSeoPath, listingSeoPath, productSeoPath, resumeSeoPath } from "@/lib/seo-url";
+import { articleSeoPath, listingSeoPath, matchProfileSeoPath, productSeoPath, resumeSeoPath } from "@/lib/seo-url";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
@@ -35,7 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   try {
-    const [articles, profiles, listings, products, resumes] = await Promise.all([
+    const [articles, profiles, listings, products, resumes, matchProfiles] = await Promise.all([
       prisma.article.findMany({
         where: { status: "PUBLISHED" },
         select: { id: true, title: true, updatedAt: true, publishedAt: true },
@@ -68,6 +68,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       prisma.resume.findMany({
         where: { isPublic: true, hiddenByInactivity: false, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
         select: { id: true, title: true, city: true, roleGoal: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+        take: 1000
+      }),
+      prisma.matchProfile.findMany({
+        where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+        select: { id: true, title: true, city: true, seekerRole: true, lookingFor: true, updatedAt: true },
         orderBy: { updatedAt: "desc" },
         take: 1000
       })
@@ -103,6 +109,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...resumes.map((resume) => ({
         url: siteUrl(resumeSeoPath(resume)).toString(),
         lastModified: resume.updatedAt || now,
+        priority: 0.65,
+        changeFrequency: "weekly" as const
+      })),
+      ...matchProfiles.map((profile) => ({
+        url: siteUrl(matchProfileSeoPath(profile)).toString(),
+        lastModified: profile.updatedAt || now,
         priority: 0.65,
         changeFrequency: "weekly" as const
       }))

@@ -7,6 +7,7 @@ import { CatalogPageHeader } from "@/components/catalog-page-header";
 import { ContactReveal } from "@/components/contact-reveal";
 import { ReportButton } from "@/components/report-button";
 import { prisma } from "@/lib/prisma";
+import { matchProfileSeoPath } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
 
@@ -141,22 +142,25 @@ export default async function ModelOperatorPage({
       {profiles.map((profile) => {
         const authorName = profile.user.name || profile.user.email || "Профиль";
         const isSaved = Boolean(profile.savedBy?.length);
+        const profilePath = matchProfileSeoPath(profile);
 
         return (
           <article key={profile.id} className="directory-card bg-white p-4 shadow-sm sm:p-5">
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="rounded-full bg-mint px-2.5 py-1 font-semibold text-ink">{roleLabels[profile.seekerRole] || profile.seekerRole}</span>
-              <span className="rounded-full bg-zinc-100 px-2.5 py-1 font-semibold text-zinc-700">Ищу: {roleLabels[profile.lookingFor] || profile.lookingFor}</span>
-              <span className="text-zinc-500">до {profile.expiresAt?.toLocaleDateString("ru-RU") || "срок не указан"}</span>
-            </div>
+            <Link href={profilePath} className="block">
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="rounded-full bg-mint px-2.5 py-1 font-semibold text-ink">{roleLabels[profile.seekerRole] || profile.seekerRole}</span>
+                <span className="rounded-full bg-zinc-100 px-2.5 py-1 font-semibold text-zinc-700">Ищу: {roleLabels[profile.lookingFor] || profile.lookingFor}</span>
+                <span className="text-zinc-500">до {profile.expiresAt?.toLocaleDateString("ru-RU") || "срок не указан"}</span>
+              </div>
 
-            <h2 className="mt-3 text-xl font-semibold leading-tight text-ink">{profile.title}</h2>
-            {profile.operatorPercent && (
-              <p className="mt-3 inline-flex rounded-lg bg-zinc-900 px-3 py-2 text-base font-bold text-white">
-                Оператору: {profile.operatorPercent}
-              </p>
-            )}
-            <p className="mt-3 line-clamp-4 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{profile.bio}</p>
+              <h2 className="mt-3 text-xl font-semibold leading-tight text-ink">{profile.title}</h2>
+              {profile.operatorPercent && (
+                <p className="mt-3 inline-flex rounded-lg bg-zinc-900 px-3 py-2 text-base font-bold text-white">
+                  Оператору: {profile.operatorPercent}
+                </p>
+              )}
+              <p className="mt-3 line-clamp-4 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{profile.bio}</p>
+            </Link>
 
             <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500">
               <span>{profile.city || "Город не указан"}</span>
