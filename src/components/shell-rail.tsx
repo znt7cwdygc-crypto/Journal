@@ -5,7 +5,6 @@ import { serviceTopic } from "@/lib/topics";
 type TopicItem = {
   label: string;
   href: string;
-  count: number;
 };
 
 type QueryItem = {
@@ -23,15 +22,11 @@ const topicColors = [
 ];
 
 const fallbackTopics: TopicItem[] = [
-  { label: "Истории", href: "/articles?topic=Истории", count: 0 },
-  { label: "Деньги", href: "/articles?topic=Деньги", count: 0 },
-  { label: "Безопасность", href: "/articles?topic=Безопасность", count: 0 },
-  { label: "Работа", href: "/articles?topic=Работа", count: 0 }
+  { label: "Истории", href: "/articles?topic=Истории" },
+  { label: "Деньги", href: "/articles?topic=Деньги" },
+  { label: "Безопасность", href: "/articles?topic=Безопасность" },
+  { label: "Работа", href: "/articles?topic=Работа" }
 ];
-
-function compactCount(count: number) {
-  return count > 99 ? "99+" : String(count);
-}
 
 function addQuery(items: QueryItem[], item: QueryItem | null) {
   if (!item) return;
@@ -118,8 +113,7 @@ async function getRailData() {
     .slice(0, 10)
     .map((item) => ({
       label: item.topic || "Без темы",
-      href: `/articles?topic=${encodeURIComponent(item.topic || "")}`,
-      count: item._count._all
+      href: `/articles?topic=${encodeURIComponent(item.topic || "")}`
     }));
 
   const queries: QueryItem[] = [];
@@ -213,7 +207,6 @@ export async function ShellRail() {
                 href={topic.href}
               >
                 {topic.label}
-                {topic.count > 0 && <span className="ml-1 opacity-70">{compactCount(topic.count)}</span>}
               </Link>
             ))}
           </div>
