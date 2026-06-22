@@ -1153,16 +1153,24 @@ export async function deleteListingReviewAction(formData: FormData) {
   revalidatePath("/admin");
 }
 
-export async function reportContentAction(formData: FormData) {
+export type ReportContentState = {
+  status: "idle" | "success" | "error";
+  message: string;
+};
+
+export async function reportContentAction(_state: ReportContentState, formData: FormData): Promise<ReportContentState> {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
 
   const targetType = String(formData.get("targetType") ?? "");
   const targetId = String(formData.get("targetId") ?? "");
   const reason = cleanText(formData.get("reason"), 500);
-  const next = safeInternalPath(cleanText(formData.get("next"), 500), "/articles");
-  if (!["ARTICLE", "COMMENT", "PROFILE", "LISTING", "PRODUCT", "RESUME", "MATCH_PROFILE"].includes(targetType) || !targetId) throw new Error("Некорректная жалоба");
-  if (reason.length < 10) throw new Error("Опишите причину жалобы");
+  if (!["ARTICLE", "COMMENT", "PROFILE", "LISTING", "PRODUCT", "RESUME", "MATCH_PROFILE"].includes(targetType) || !targetId) {
+    return { status: "error", message: "Некорректная жалоба." };
+  }
+  if (reason.length < 10) {
+    return { status: "error", message: "Опишите причину жалобы." };
+  }
 
   await prisma.report.create({
     data: {
@@ -1181,7 +1189,7 @@ export async function reportContentAction(formData: FormData) {
   revalidatePath("/products");
   revalidatePath("/resumes");
   revalidatePath("/model-operator");
-  redirect(withStatusParam(next, "reported", "1"));
+  return { status: "success", message: "Жалоба отправлена в модерацию." };
 }
 
 export async function reviewReportAction(formData: FormData) {
