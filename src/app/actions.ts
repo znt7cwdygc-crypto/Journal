@@ -248,15 +248,48 @@ function normalizeMatchOption<T extends readonly string[]>(value: FormDataEntryV
 function buildMatchProfileBio(formData: FormData) {
   const workFormat = String(formData.get("workFormat") ?? "REMOTE");
   const workFormatLabel = workFormat === "OFFICE" ? "В студии" : workFormat === "HYBRID" ? "Гибрид" : "Удаленно";
+  const needHelp = listValues(formData, "needHelp");
+  const specialization = listValues(formData, "specialization");
+  const platforms = listValues(formData, "platforms");
+  const load = listValues(formData, "load");
+  const payFormat = cleanText(formData.get("payFormat"), 160);
+  const portfolio = cleanText(formData.get("portfolio"), 240);
+  const requirementFields = [
+    ["expReqM", "Опыт оператора"],
+    ["skillsReqM", "Навыки оператора"],
+    ["availReqM", "Доступность оператора"],
+    ["ndaReqM", "Конфиденциальность"],
+    ["genderReqM", "Пол оператора"],
+    ["categoryReqO", "Категория модели"],
+    ["expReqO", "Опыт модели"],
+    ["volumeReqO", "Объем контента"],
+    ["termReqO", "Долгосрочность"],
+    ["genderReqO", "Пол модели"]
+  ] as const;
+  const requirementLines = requirementFields
+    .map(([field, label]) => {
+      const values = listValues(formData, field);
+      const level = cleanText(formData.get(`${field}Importance`), 20);
+      const levelLabel = level === "must" ? "обязательно" : level === "nice" ? "желательно" : "не важно";
+      return values.length ? `${label}: ${values.join(", ")} (${levelLabel})` : null;
+    })
+    .filter(Boolean);
 
   return [
+    needHelp.length ? listLine("Нужна помощь", needHelp) : null,
+    specialization.length ? listLine("Специализация", specialization) : null,
+    platforms.length ? listLine("Платформы", platforms) : null,
+    load.length ? listLine("Загрузка / занятость", load) : null,
+    structuredLine("Формат оплаты", payFormat),
+    requirementLines.length ? ["ТРЕБОВАНИЯ", ...requirementLines].join("\n") : null,
     structuredLine("Опыт", requireText(formData.get("experience"), "опыт", 120)),
     structuredLine("График", requireText(formData.get("schedule"), "график", 180)),
     structuredLine("Часовой пояс", cleanText(formData.get("timezone"), 80)),
-    structuredLine("Процент оператору", cleanText(formData.get("operatorPercent"), 80)),
+    structuredLine("Процент от и до", cleanText(formData.get("operatorPercent"), 80)),
     structuredLine("Текущий чек", cleanText(formData.get("currentCheck"), 120)),
     structuredLine("Ниша", cleanText(formData.get("niche"), 160)),
     structuredLine("Формат работы", workFormatLabel),
+    structuredLine("Портфолио", portfolio),
     structuredLine("О себе / ожидания", requireMultiline(formData.get("bio"), "описание", 2000))
   ].filter(Boolean).join("\n\n");
 }
@@ -1303,14 +1336,84 @@ function buildModelResumeBio(formData: FormData) {
   ].join("\n").slice(0, 6000);
 }
 
+function importanceText(formData: FormData, field: string) {
+  const level = cleanText(formData.get(`${field}Importance`), 20);
+  if (level === "must") return "обязательно";
+  if (level === "nice") return "желательно";
+  return "не важно";
+}
+
+function textLineWithImportance(formData: FormData, label: string, value: FormDataEntryValue | null, field: string) {
+  return `${textLine(label, value)} (${importanceText(formData, field)})`;
+}
+
+function listLineWithImportance(formData: FormData, label: string, values: string[], field: string) {
+  return `${listLine(label, values)} (${importanceText(formData, field)})`;
+}
+
+function buildModelResumeQuizBio(formData: FormData) {
+  if (formData.get("resumeConfirm") !== "on") throw new Error("Нужно подтвердить актуальность требований");
+
+  const categories = cleanList(formData, "categories", 12);
+  const experience = cleanList(formData, "modelExperience", 2);
+  const status = cleanList(formData, "modelSearchStatus", 2);
+  const workFormat = cleanList(formData, "workFormatModel", 2);
+  const sites = cleanList(formData, "sites", 12);
+  const languages = cleanList(formData, "languages", 8);
+  const quickWishes = cleanList(formData, "quickWishes", 8);
+  const wishesText = cleanMultiline(formData.get("wishesText"), 1200);
+  const location = cleanText(formData.get("city"), 120);
+
+  return [
+    "О СЕБЕ",
+    listLine("Категории", categories),
+    listLine("Опыт", experience),
+    listLine("Статус поиска", status),
+    listLine("Формат работы", workFormat),
+    textLine("Смен в неделю", formData.get("shiftsPerWeek")),
+    textLine("Длительность смены", formData.get("shiftLength")),
+    listLine("Средний доход за смену", cleanList(formData, "incomePerShift", 3)),
+    listLine("Сайты", sites),
+    listLine("Языки", languages),
+    "",
+    "ФИНАНСЫ",
+    textLineWithImportance(formData, "Минимальный процент", formData.get("minimumPercent"), "minimumPercent"),
+    listLineWithImportance(formData, "Формат расчета", cleanList(formData, "payFormat", 4), "payFormat"),
+    listLineWithImportance(formData, "Частота выплат", cleanList(formData, "payoutFrequency", 4), "payoutFrequency"),
+    listLineWithImportance(formData, "Способ выплаты", cleanList(formData, "payMethod", 6), "payMethod"),
+    listLineWithImportance(formData, "Бонусная система", cleanList(formData, "bonus", 2), "bonus"),
+    listLineWithImportance(formData, "Штрафы и удержания", cleanList(formData, "penalty", 3), "penalty"),
+    "",
+    "ТРЕБОВАНИЯ К СТУДИИ",
+    listLineWithImportance(formData, "Комната", cleanList(formData, "roomRequirements", 4), "room"),
+    listLineWithImportance(formData, "Оборудование", cleanList(formData, "equipmentRequirements", 8), "equipmentRequirements"),
+    listLineWithImportance(formData, "График студии", cleanList(formData, "studioSchedule", 4), "studioSchedule"),
+    listLineWithImportance(formData, "Безопасность", cleanList(formData, "security", 6), "security"),
+    textLineWithImportance(formData, "Локация", location, "location"),
+    listLineWithImportance(formData, "Удобства", cleanList(formData, "amenities", 8), "amenities"),
+    "",
+    "КОМАНДА",
+    listLineWithImportance(formData, "Состав моделей", cleanList(formData, "modelsTeam", 4), "modelsTeam"),
+    listLineWithImportance(formData, "Пол администраторов/коучей", cleanList(formData, "adminsGender", 4), "adminsGender"),
+    listLineWithImportance(formData, "Пол управляющего", cleanList(formData, "managerGender", 4), "managerGender"),
+    "",
+    "ДОП. ПОЖЕЛАНИЯ",
+    listLine("Быстрый выбор", quickWishes),
+    `Своими словами: ${wishesText || "не указано"}`
+  ].join("\n").slice(0, 6000);
+}
+
 export async function createResumeAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
 
   const title = requireText(formData.get("title"), "заголовок резюме", 140);
   const roleGoal = requireText(formData.get("roleGoal"), "желаемая роль", 120);
+  const resumeTemplate = cleanText(formData.get("resumeTemplate"), 80);
   const bio =
-    cleanText(formData.get("resumeTemplate"), 80) === "model-v1"
+    resumeTemplate === "model-quiz-v2"
+      ? buildModelResumeQuizBio(formData)
+      : resumeTemplate === "model-v1"
       ? buildModelResumeBio(formData)
       : requireMultiline(formData.get("bio"), "о себе", 6000);
 

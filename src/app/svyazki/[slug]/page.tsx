@@ -137,7 +137,7 @@ export default async function MatchProfileDetailsPage({
       <h1 className="mt-4 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">{profile.title}</h1>
       {profile.operatorPercent && (
         <p className="mt-4 inline-flex rounded-lg bg-zinc-900 px-4 py-2 text-lg font-bold text-white">
-          Оператору: {profile.operatorPercent}
+          Оплата: {profile.operatorPercent}
         </p>
       )}
 

@@ -156,7 +156,7 @@ export default async function ModelOperatorPage({
               <h2 className="mt-3 text-xl font-semibold leading-tight text-ink">{profile.title}</h2>
               {profile.operatorPercent && (
                 <p className="mt-3 inline-flex rounded-lg bg-zinc-900 px-3 py-2 text-base font-bold text-white">
-                  Оператору: {profile.operatorPercent}
+                  Оплата: {profile.operatorPercent}
                 </p>
               )}
               <p className="mt-3 line-clamp-4 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{profile.bio}</p>
