@@ -194,6 +194,37 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function ImportanceBadge({ level }: { level: Importance }) {
+  const label = level === "must" ? "обязательно" : level === "nice" ? "желательно" : "не важно";
+  const className =
+    level === "must"
+      ? "border-red-200 bg-red-50 text-red-800"
+      : level === "nice"
+        ? "border-amber-200 bg-amber-50 text-amber-800"
+        : "border-zinc-200 bg-zinc-100 text-zinc-700";
+  return <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] ${className}`}>{label}</span>;
+}
+
+function RequirementSummaryRow({
+  label,
+  value,
+  level
+}: {
+  label: string;
+  value: string;
+  level: Importance;
+}) {
+  return (
+    <div className="flex justify-between gap-3 border-b border-[#E4E4E1] py-2 text-sm">
+      <span className="text-zinc-500">{label}</span>
+      <span className="flex max-w-[62%] flex-wrap items-center justify-end gap-1.5 text-right font-semibold text-ink">
+        <span>{value || "—"}</span>
+        <ImportanceBadge level={level} />
+      </span>
+    </div>
+  );
+}
+
 export function MatchProfileForm({
   action,
   profile,
@@ -420,6 +451,17 @@ export function MatchProfileForm({
             <SummaryRow label="Платформы" value={join(platformsValue)} />
             <SummaryRow label={isModel ? "Загрузка" : "Занятость"} value={join(load)} />
             <SummaryRow label="Оплата" value={[join(payFormat), payAmount].filter(Boolean).join(" · ")} />
+          </div>
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">Требования</p>
+            {selectedRequirements.map((requirement) => (
+              <RequirementSummaryRow
+                key={requirement.field}
+                label={requirement.label}
+                value={join(requirements[requirement.field] || [])}
+                level={importance[requirement.field] || "none"}
+              />
+            ))}
           </div>
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">О себе</p>

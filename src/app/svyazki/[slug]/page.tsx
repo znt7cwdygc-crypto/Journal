@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { saveMatchProfileAction } from "@/app/actions";
 import { auth } from "@/auth";
 import { ContactReveal } from "@/components/contact-reveal";
+import { ImportanceBio } from "@/components/importance-bio";
 import { ReportButton } from "@/components/report-button";
 import { prisma } from "@/lib/prisma";
 import { siteName, siteUrl, truncateSeo } from "@/lib/seo";
@@ -141,7 +142,7 @@ export default async function MatchProfileDetailsPage({
         </p>
       )}
 
-      <p className="mt-5 whitespace-pre-wrap text-base leading-8 text-zinc-800">{profile.bio}</p>
+      <ImportanceBio text={profile.bio} />
 
       <div className="mt-5 grid gap-2 text-sm text-zinc-600 sm:grid-cols-2">
         <span>Формат: {formatLabels[profile.workFormat] || profile.workFormat}</span>

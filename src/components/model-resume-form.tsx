@@ -183,6 +183,29 @@ function SummaryRow({ label, value }: { label: string; value: string | number })
   );
 }
 
+function ImportanceBadge({ level }: { level: Importance }) {
+  const label = level === "must" ? "обязательно" : level === "nice" ? "желательно" : "не важно";
+  const className =
+    level === "must"
+      ? "border-red-200 bg-red-50 text-red-800"
+      : level === "nice"
+        ? "border-amber-200 bg-amber-50 text-amber-800"
+        : "border-zinc-200 bg-zinc-100 text-zinc-700";
+  return <span className={`inline-flex rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.04em] ${className}`}>{label}</span>;
+}
+
+function RequirementSummaryRow({ label, value, level }: { label: string; value: string | number; level: Importance }) {
+  return (
+    <div className="flex justify-between gap-3 border-b border-[#E4E4E1] py-2 text-sm">
+      <span className="text-zinc-500">{label}</span>
+      <span className="flex max-w-[62%] flex-wrap items-center justify-end gap-1.5 text-right font-semibold text-ink">
+        <span>{String(value || "—")}</span>
+        <ImportanceBadge level={level} />
+      </span>
+    </div>
+  );
+}
+
 export function ModelResumeForm({ action, resume }: ModelResumeFormProps) {
   const [step, setStep] = useState(0);
   const [categoryValue, setCategoryValue] = useState<string[]>([]);
@@ -430,11 +453,16 @@ export function ModelResumeForm({ action, resume }: ModelResumeFormProps) {
           </div>
           <div>
             <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">Требования</p>
-            <SummaryRow label="Минимальный процент" value={`${percent}%`} />
-            <SummaryRow label="Выплаты" value={`${join(payFormatValue)} · ${join(payFrequencyValue)}`} />
-            <SummaryRow label="Комната" value={join(roomValue)} />
-            <SummaryRow label="Оборудование" value={join(equipmentValue)} />
-            <SummaryRow label="Локация" value={location} />
+            <RequirementSummaryRow label="Минимальный процент" value={`${percent}%`} level={importance.minimumPercent || "none"} />
+            <RequirementSummaryRow label="Формат расчета" value={join(payFormatValue)} level={importance.payFormat || "none"} />
+            <RequirementSummaryRow label="Частота выплат" value={join(payFrequencyValue)} level={importance.payoutFrequency || "none"} />
+            <RequirementSummaryRow label="Способ выплаты" value={join(payMethodValue)} level={importance.payMethod || "none"} />
+            <RequirementSummaryRow label="Комната" value={join(roomValue)} level={importance.room || "none"} />
+            <RequirementSummaryRow label="Оборудование" value={join(equipmentValue)} level={importance.equipmentRequirements || "none"} />
+            <RequirementSummaryRow label="График студии" value={join(scheduleValue)} level={importance.studioSchedule || "none"} />
+            <RequirementSummaryRow label="Безопасность" value={join(securityValue)} level={importance.security || "none"} />
+            <RequirementSummaryRow label="Локация" value={location} level={importance.location || "none"} />
+            <RequirementSummaryRow label="Удобства" value={join(amenitiesValue)} level={importance.amenities || "none"} />
           </div>
         </div>
 

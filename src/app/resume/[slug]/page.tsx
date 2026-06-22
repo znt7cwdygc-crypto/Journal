@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { saveResumeAction } from "@/app/actions";
 import { auth } from "@/auth";
 import { ContactReveal } from "@/components/contact-reveal";
+import { ImportanceBio } from "@/components/importance-bio";
 import { ReportButton } from "@/components/report-button";
 import { prisma } from "@/lib/prisma";
 import { siteName, siteUrl, truncateSeo } from "@/lib/seo";
@@ -135,7 +136,7 @@ export default async function ResumeDetailsPage({
         <span>до {resume.expiresAt?.toLocaleDateString("ru-RU") || "срок не указан"}</span>
       </div>
 
-      <p className="mt-5 whitespace-pre-wrap text-base leading-8 text-zinc-800">{resume.bio}</p>
+      <ImportanceBio text={resume.bio} />
 
       {searchParams?.reported && (
         <div className="mt-4 rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800">
