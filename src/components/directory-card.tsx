@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { saveListingAction, saveResumeAction } from "@/app/actions";
 import { ContactReveal } from "@/components/contact-reveal";
 import { ReportButton } from "@/components/report-button";
+import { listingSeoPath, resumeSeoPath } from "@/lib/seo-url";
 import { maskContact } from "@/lib/validation";
 
 type DirectoryUser = {
@@ -160,6 +161,7 @@ export function ListingDirectoryCard({
   const isSaved = Boolean(listing.savedBy?.length);
   const compactListing = kind === "VACANCY" || isService;
   const compactButtonClass = "btn h-10 w-full whitespace-nowrap px-1 text-[11px]";
+  const listingPath = listingSeoPath({ ...listing, type: kind });
 
   return (
     <article className="directory-card bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5">
@@ -169,7 +171,7 @@ export function ListingDirectoryCard({
         <span className="text-zinc-500">{listing.createdAt.toLocaleDateString("ru-RU")}</span>
       </div>
 
-      <Link href={`/listings/${listing.id}`} className="block">
+      <Link href={listingPath} className="block">
         <h3 className="mt-3 text-xl font-semibold leading-tight text-ink">{listing.title}</h3>
         {price && (
           <p className="mt-3 inline-flex rounded-lg bg-zinc-900 px-3 py-2 text-base font-bold text-white">
@@ -230,6 +232,7 @@ export function ResumeDirectoryCard({
   const isSaved = Boolean(resume.savedBy?.length);
   const moneyValue = resumeMoneyValue(resume.bio);
   const shortBio = resumeSummary(resume.bio);
+  const resumePath = resumeSeoPath(resume);
 
   return (
     <article className="directory-card bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5">
@@ -239,13 +242,15 @@ export function ResumeDirectoryCard({
         <span className="text-zinc-500">{resume.updatedAt.toLocaleDateString("ru-RU")}</span>
       </div>
 
-      <h3 className="mt-3 text-xl font-semibold leading-tight text-ink">{resume.title}</h3>
-      {moneyValue && (
-        <p className="mt-3 inline-flex rounded-lg bg-zinc-900 px-3 py-2 text-base font-bold text-white">
-          {moneyValue}
-        </p>
-      )}
-      <p className="mt-3 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{shortBio}</p>
+      <Link href={resumePath} className="block">
+        <h3 className="mt-3 text-xl font-semibold leading-tight text-ink">{resume.title}</h3>
+        {moneyValue && (
+          <p className="mt-3 inline-flex rounded-lg bg-zinc-900 px-3 py-2 text-base font-bold text-white">
+            {moneyValue}
+          </p>
+        )}
+        <p className="mt-3 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{shortBio}</p>
+      </Link>
 
       <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500">
         <span>{resume.city || "Город не указан"}</span>

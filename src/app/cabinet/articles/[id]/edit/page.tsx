@@ -10,6 +10,7 @@ import {
 import { ArticleEditorForm } from "@/components/article-editor-form";
 import { requireUser } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
+import { articleSeoPath } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,7 @@ export default async function EditArticlePage({ params }: { params: { id: string
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
             {article.status !== "DRAFT" && (
-              <Link className="btn btn-ghost" href={`/articles/${article.id}`}>
+              <Link className="btn btn-ghost" href={articleSeoPath(article)}>
                 Открыть
               </Link>
             )}

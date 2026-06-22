@@ -29,6 +29,7 @@ import { ProductForm } from "@/components/product-form";
 import { ProductPublishCleanup } from "@/components/product-publish-cleanup";
 import { ResumeQuizDisclosure } from "@/components/resume-quiz-disclosure";
 import { prisma } from "@/lib/prisma";
+import { articleSeoPath, listingSeoPath, productSeoPath, resumeSeoPath } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
 
@@ -522,7 +523,7 @@ export default async function CabinetPage({
                         {article.status === "DRAFT" ? "Продолжить" : "Редактировать"}
                       </a>
                       {article.status !== "DRAFT" && (
-                        <a className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-800" href={`/articles/${article.id}`}>
+                        <a className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-800" href={articleSeoPath(article)}>
                           Открыть
                         </a>
                       )}
@@ -688,7 +689,7 @@ export default async function CabinetPage({
                           </p>
                         </div>
                         <div className="mt-3 flex flex-wrap gap-1">
-                          <a className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-800" href={`/products/${product.id}`}>
+                          <a className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-800" href={productSeoPath(product)}>
                             Открыть
                           </a>
                           <a className="rounded-lg bg-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-700" href={`/cabinet/products/${product.id}/edit`}>
@@ -748,7 +749,7 @@ export default async function CabinetPage({
                           </p>
                         </div>
                         <div className="flex shrink-0 flex-wrap justify-end gap-1">
-                          <a className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-800" href={`/listings/${listing.id}`}>
+                          <a className="rounded-lg border border-zinc-200 px-3 py-2 text-xs font-semibold text-zinc-800" href={listingSeoPath(listing)}>
                             Открыть
                           </a>
                           <a className="rounded-lg bg-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-700" href={`/cabinet/listings/${listing.id}/edit`}>
@@ -793,7 +794,7 @@ export default async function CabinetPage({
             </div>
             <div className="mt-3 space-y-2">
               {savedListings.map((item) => (
-                <a key={item.id} className="block rounded-lg bg-white p-3 text-sm hover:text-hot" href={`/listings/${item.listingId}`}>
+                <a key={item.id} className="block rounded-lg bg-white p-3 text-sm hover:text-hot" href={listingSeoPath(item.listing)}>
                   <p className="truncate font-medium">{item.listing.title}</p>
                   <p className="mt-1 text-xs text-zinc-500">{item.listing.type === "VACANCY" ? "Вакансия" : "Услуга"}</p>
                 </a>
@@ -809,7 +810,7 @@ export default async function CabinetPage({
             </div>
             <div className="mt-3 space-y-2">
               {savedProducts.map((item) => (
-                <a key={item.id} className="flex items-center gap-3 rounded-lg bg-white p-3 text-sm hover:text-hot" href={`/products/${item.productId}`}>
+                <a key={item.id} className="flex items-center gap-3 rounded-lg bg-white p-3 text-sm hover:text-hot" href={productSeoPath(item.product)}>
                   <span className="min-w-0">
                     <span className="block truncate font-medium">{item.product.title}</span>
                     <span className="mt-1 block text-xs text-zinc-500">{item.product.category}</span>
@@ -827,7 +828,7 @@ export default async function CabinetPage({
             </div>
             <div className="mt-3 space-y-2">
               {savedResumes.map((item) => (
-                <a key={item.id} className="block rounded-lg bg-white p-3 text-sm hover:text-hot" href="/resumes">
+                <a key={item.id} className="block rounded-lg bg-white p-3 text-sm hover:text-hot" href={resumeSeoPath(item.resume)}>
                   <p className="truncate font-medium">{item.resume.title}</p>
                   <p className="mt-1 text-xs text-zinc-500">
                     {item.resume.roleGoal}

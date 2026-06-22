@@ -8,6 +8,7 @@ import { SafeImage } from "@/components/safe-image";
 import { safeImageUrl } from "@/lib/media";
 import { prisma } from "@/lib/prisma";
 import { siteUrl, truncateSeo } from "@/lib/seo";
+import { articleSeoPath, listingSeoPath, productSeoPath, resumeSeoPath } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
 
@@ -210,7 +211,7 @@ export default async function ProfilePage({
       {user.resume && (
         <section id="resume" className="rounded-xl bg-white p-5 shadow-sm">
           <h2 className="font-medium">Резюме</h2>
-          <p className="mt-2">{user.resume.title}</p>
+          <Link href={resumeSeoPath(user.resume)} className="mt-2 block font-medium hover:text-hot">{user.resume.title}</Link>
           <p className="mt-1 text-sm text-zinc-700 whitespace-pre-wrap">{user.resume.bio}</p>
         </section>
       )}
@@ -220,7 +221,7 @@ export default async function ProfilePage({
         <div className="mt-3 space-y-2 text-sm">
           {user.articles.length === 0 && <p className="text-zinc-500">Пока нет опубликованных статей.</p>}
           {user.articles.map((article) => (
-            <Link key={article.id} href={`/articles/${article.id}`} className="block rounded border p-3 hover:bg-zinc-50">
+            <Link key={article.id} href={articleSeoPath(article)} className="block rounded border p-3 hover:bg-zinc-50">
               <span className="font-medium">{article.title}</span>
               <span className="mt-1 block text-xs text-zinc-500">{article.comments.length} комментариев • {article.ratings.filter((rating) => rating.value >= 4).length} полезных реакций</span>
             </Link>
@@ -233,7 +234,7 @@ export default async function ProfilePage({
         <div className="mt-3 space-y-2 text-sm">
           {user.articleComments.length === 0 && <p className="text-zinc-500">Пока нет комментариев.</p>}
           {user.articleComments.map((comment) => (
-            <Link key={comment.id} href={`/articles/${comment.article.id}#comments`} className="block rounded border p-3 hover:bg-zinc-50">
+            <Link key={comment.id} href={`${articleSeoPath(comment.article)}#comments`} className="block rounded border p-3 hover:bg-zinc-50">
               <span className="font-medium">{comment.article.title}</span>
               <span className="mt-1 block text-xs text-zinc-500">{comment.body}</span>
             </Link>
@@ -246,7 +247,7 @@ export default async function ProfilePage({
         <div className="mt-3 space-y-2 text-sm">
           {user.listings.filter((listing) => listing.type === "VACANCY").length === 0 && <p className="text-zinc-500">Пока нет вакансий.</p>}
           {user.listings.filter((listing) => listing.type === "VACANCY").map((listing) => (
-            <Link key={listing.id} href={`/listings/${listing.id}`} className="block rounded border p-2 hover:bg-zinc-50">
+            <Link key={listing.id} href={listingSeoPath(listing)} className="block rounded border p-2 hover:bg-zinc-50">
               <p className="font-medium">{listing.title}</p>
               <p className="text-xs text-zinc-500">{listing.city || "Удаленно"}</p>
             </Link>
@@ -259,7 +260,7 @@ export default async function ProfilePage({
         <div className="mt-3 space-y-2 text-sm">
           {user.listings.filter((listing) => listing.type === "SERVICE").length === 0 && <p className="text-zinc-500">Пока нет услуг.</p>}
           {user.listings.filter((listing) => listing.type === "SERVICE").map((listing) => (
-            <Link key={listing.id} href={`/listings/${listing.id}`} className="block rounded border p-2 hover:bg-zinc-50">
+            <Link key={listing.id} href={listingSeoPath(listing)} className="block rounded border p-2 hover:bg-zinc-50">
               <p className="font-medium">{listing.title}</p>
               <p className="text-xs text-zinc-500">{listing.city || "Удаленно"}</p>
             </Link>
@@ -272,7 +273,7 @@ export default async function ProfilePage({
         <div className="mt-3 space-y-2 text-sm">
           {user.products.length === 0 && <p className="text-zinc-500">Пока нет товаров.</p>}
           {user.products.map((product) => (
-            <Link key={product.id} href={`/products/${product.id}`} className="flex items-center gap-3 rounded border p-2 hover:bg-zinc-50">
+            <Link key={product.id} href={productSeoPath(product)} className="flex items-center gap-3 rounded border p-2 hover:bg-zinc-50">
               <span className="min-w-0">
                 <span className="block truncate font-medium">{product.title}</span>
                 <span className="text-xs text-zinc-500">{product.category} • {new Intl.NumberFormat("ru-RU").format(product.priceRub)} ₽</span>

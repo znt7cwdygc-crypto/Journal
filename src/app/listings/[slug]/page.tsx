@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import {
   addListingReviewAction,
@@ -11,16 +11,25 @@ import { auth } from "@/auth";
 import { ContactReveal } from "@/components/contact-reveal";
 import { ReportButton } from "@/components/report-button";
 import { prisma } from "@/lib/prisma";
-import { siteUrl, truncateSeo } from "@/lib/seo";
+import { siteName, siteUrl, truncateSeo } from "@/lib/seo";
+import { idFromSeoParam, listingSeoPath, pathTail } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
 
 async function findListing(slug: string) {
+  const resolved = idFromSeoParam(slug);
   return prisma.listing.findFirst({
     where: {
       status: "PUBLISHED",
       AND: [
-        { OR: [{ slug }, { id: slug }] },
+        {
+          OR: [
+            { slug },
+            ...(resolved.id ? [{ id: resolved.id }] : []),
+            ...(resolved.shortId ? [{ id: { endsWith: resolved.shortId } }] : []),
+            { id: slug }
+          ]
+        },
         { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] }
       ]
     },
@@ -66,12 +75,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   if (!listing) return { title: "Размещение не найдено", robots: { index: false, follow: false } };
   const title = `${listing.title} — ${listing.type === "VACANCY" ? "вакансия" : "услуга"}`;
   const description = truncateSeo(listing.description);
+  const canonicalPath = listingSeoPath(listing);
 
   return {
     title,
     description,
-    alternates: { canonical: `/listings/${listing.id}` },
-    openGraph: { title, description, url: `/listings/${listing.id}` }
+    alternates: { canonical: canonicalPath },
+    openGraph: { title, description, url: canonicalPath }
   };
 }
 
@@ -86,10 +96,14 @@ export default async function ListingDetailsPage({
   const listing = await findListing(params.slug);
   if (!listing) notFound();
 
+  const listingPath = listingSeoPath(listing);
+  if (pathTail(listingPath) !== params.slug) {
+    redirect(listingPath);
+  }
+
   await prisma.listing.update({ where: { id: listing.id }, data: { viewCount: { increment: 1 } } });
 
   const typeLabel = listing.type === "VACANCY" ? "Вакансия" : "Услуга";
-  const listingPath = `/listings/${listing.id}`;
   const visibleRatings = listing.reviews.map((review) => review.rating).filter((rating): rating is number => typeof rating === "number");
   const averageRating = visibleRatings.length ? visibleRatings.reduce((sum, rating) => sum + rating, 0) / visibleRatings.length : 0;
   const isServiceOwner = Boolean(session?.user?.id && session.user.id === listing.createdById);
@@ -97,6 +111,64 @@ export default async function ListingDetailsPage({
   const isSaved = Boolean(session?.user?.id && listing.savedBy.some((item) => item.userId === session.user.id));
   const price = isService ? structuredValue(listing.description, "Цена") : "";
   const summary = isService ? serviceSummary(listing.description) : listing.description;
+  const listingJsonLd = isService
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        name: listing.title,
+        description: summary,
+        areaServed: listing.city || (listing.employmentType === "REMOTE" ? "Online" : "Russia"),
+        provider: {
+          "@type": "Person",
+          name: listing.createdBy.name || listing.createdBy.email || "Автор WebcamExpert"
+        },
+        offers: {
+          "@type": "Offer",
+          priceCurrency: "RUB",
+          price: price ? price.replace(/[^\d]/g, "") || undefined : undefined,
+          availability: "https://schema.org/InStock",
+          url: siteUrl(listingPath).toString()
+        }
+      }
+    : {
+        "@context": "https://schema.org",
+        "@type": "JobPosting",
+        title: listing.title,
+        description: listing.description,
+        datePosted: listing.createdAt.toISOString(),
+        validThrough: listing.expiresAt?.toISOString(),
+        employmentType: listing.employmentType || undefined,
+        identifier: {
+          "@type": "PropertyValue",
+          name: siteName,
+          value: listing.id
+        },
+        url: siteUrl(listingPath).toString(),
+        hiringOrganization: {
+          "@type": "Organization",
+          name: listing.createdBy.name || listing.createdBy.email || "Автор WebcamExpert",
+          sameAs: siteUrl("/").toString()
+        },
+        jobLocationType: listing.employmentType === "REMOTE" ? "TELECOMMUTE" : undefined,
+        applicantLocationRequirements:
+          listing.employmentType === "REMOTE"
+            ? {
+                "@type": "Country",
+                name: "RU"
+              }
+            : undefined,
+        jobLocation:
+          listing.employmentType === "REMOTE"
+            ? undefined
+            : {
+                "@type": "Place",
+                address: {
+                  "@type": "PostalAddress",
+                  addressLocality: listing.city || "Россия",
+                  addressCountry: "RU"
+                }
+              }
+      };
   const reviewMessage =
     searchParams?.review === "added"
       ? "Отзыв опубликован."
@@ -123,17 +195,7 @@ export default async function ListingDetailsPage({
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "JobPosting",
-            title: listing.title,
-            description: listing.description,
-            datePosted: listing.createdAt.toISOString(),
-            url: siteUrl(`/listings/${listing.id}`).toString(),
-            hiringOrganization: {
-              "@type": "Organization",
-              name: listing.createdBy.name || listing.createdBy.email || "Автор WebcamExpert"
-            },
-            jobLocationType: listing.employmentType === "REMOTE" ? "TELECOMMUTE" : undefined
+            ...listingJsonLd
           })
         }}
       />

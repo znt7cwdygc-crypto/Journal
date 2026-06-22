@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { articleSeoPath } from "@/lib/seo-url";
 
 export async function TopicLanding({ topic, title, description }: { topic: string; title: string; description: string }) {
   const articles = await prisma.article.findMany({
@@ -22,7 +23,7 @@ export async function TopicLanding({ topic, title, description }: { topic: strin
       </section>
       <section className="grid gap-3">
         {articles.map((article) => (
-          <Link key={article.id} href={`/articles/${article.id}`} className="block bg-white p-5 shadow-sm hover:shadow-md">
+          <Link key={article.id} href={articleSeoPath(article)} className="block bg-white p-5 shadow-sm hover:shadow-md">
             <div className="flex flex-wrap gap-2 text-xs text-zinc-500">
               <span className="rounded-full bg-hot px-2.5 py-1 font-semibold text-white">{article.topic || topic}</span>
               <span>{article.createdBy.name || article.createdBy.email || "Автор"}</span>

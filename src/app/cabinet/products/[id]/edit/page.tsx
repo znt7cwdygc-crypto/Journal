@@ -5,6 +5,7 @@ import { deleteProductAction, toggleProductVisibilityAction, updateProductAction
 import { ProductForm } from "@/components/product-form";
 import { requireUser } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
+import { productSeoPath } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ export default async function EditProductPage({ params }: { params: { id: string
             <p className="mt-2 text-sm leading-6 text-zinc-600">Можно обновить фото, цену, описание, город, доставку и контакт.</p>
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
-            <Link className="btn btn-ghost" href={`/products/${product.id}`}>Открыть</Link>
+            <Link className="btn btn-ghost" href={productSeoPath(product)}>Открыть</Link>
             <form action={toggleProductVisibilityAction}>
               <input type="hidden" name="productId" value={product.id} />
               <button className="btn btn-muted" type="submit">{isPublished ? "Скрыть" : "Опубликовать"}</button>

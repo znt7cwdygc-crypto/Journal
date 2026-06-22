@@ -8,6 +8,7 @@ import { SafeImage } from "@/components/safe-image";
 import { stripArticleHtml } from "@/lib/article-html";
 import { safeImageUrl } from "@/lib/media";
 import { prisma } from "@/lib/prisma";
+import { articleSeoPath } from "@/lib/seo-url";
 import { demoArticles, topicNav } from "@/lib/ugc-demo";
 import { articleTopic as inferArticleTopic } from "@/lib/topics";
 
@@ -200,15 +201,16 @@ export default async function ArticlesPage({
         const topic = article.topic || inferArticleTopic(article.title, `${article.summary} ${stripArticleHtml(article.body)}`);
         const coverImage = safeImageUrl(article.coverImage);
         const authorImage = safeImageUrl(article.createdBy.image);
+        const articlePath = articleSeoPath(article);
 
         return (
           <article key={article.id} className="media-card overflow-hidden">
-            <Link href={`/articles/${article.id}`} className="mb-3 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+            <Link href={articlePath} className="mb-3 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
               <span className="badge-topic">{topic}</span>
               {article.format && <span className="badge-format">{article.format}</span>}
             </Link>
             {coverImage && (
-              <Link href={`/articles/${article.id}`} className="block">
+              <Link href={articlePath} className="block">
                 <SafeImage
                   className="media-frame sm:aspect-[16/6]"
                   src={coverImage}
@@ -217,7 +219,7 @@ export default async function ArticlesPage({
                 />
               </Link>
             )}
-            <Link href={`/articles/${article.id}`} className="block">
+            <Link href={articlePath} className="block">
               <div className="meta-row pt-4">
                 {authorImage ? (
                   <SafeImage

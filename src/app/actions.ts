@@ -10,6 +10,7 @@ import { normalizeArticleBody, stripArticleHtml } from "@/lib/article-html";
 import { prisma } from "@/lib/prisma";
 import { listingExpiresAt, matchProfileExpiresAt, productExpiresAt, resumeExpiresAt } from "@/lib/publication-periods";
 import { safeInternalPath } from "@/lib/safe-redirect";
+import { articleSeoPath } from "@/lib/seo-url";
 import { articleTopic } from "@/lib/topics";
 import { isUploadedFile, saveUploadedImage } from "@/lib/uploaded-image";
 import { cleanMultiline, cleanNumber, cleanText, makeSlug, optionalUrl, requireMultiline, requireText } from "@/lib/validation";
@@ -665,7 +666,7 @@ export async function submitArticleAction(formData: FormData) {
 
   revalidatePath("/articles");
   revalidatePath("/cabinet");
-  redirect(`/articles/${article.id}`);
+  redirect(articleSeoPath(article));
 }
 
 export async function submitListingAction(formData: FormData) {

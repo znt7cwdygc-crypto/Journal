@@ -2,6 +2,7 @@ import Link from "next/link";
 import { saveProductAction } from "@/app/actions";
 import { ContactReveal } from "@/components/contact-reveal";
 import { ReportButton } from "@/components/report-button";
+import { productSeoPath } from "@/lib/seo-url";
 
 type ProductUser = {
   id: string;
@@ -60,6 +61,7 @@ export function ProductDirectoryCard({
   isSignedIn: boolean;
 }) {
   const isSaved = Boolean(product.savedBy?.length);
+  const productPath = productSeoPath(product);
 
   return (
     <article className="directory-card bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5">
@@ -69,7 +71,7 @@ export function ProductDirectoryCard({
         <span className="text-zinc-500">{product.createdAt.toLocaleDateString("ru-RU")}</span>
       </div>
 
-      <Link href={`/products/${product.id}`} className="mt-3 block">
+      <Link href={productPath} className="mt-3 block">
         {product.imageUrl && <img className="aspect-[4/3] w-full rounded-lg object-cover" src={product.imageUrl} alt={product.title} />}
         <h3 className="mt-3 text-xl font-semibold leading-tight text-ink">{product.title}</h3>
         <p className="mt-3 inline-flex rounded-lg bg-zinc-900 px-3 py-2 text-base font-bold text-white">{formatPrice(product.priceRub)} ₽</p>

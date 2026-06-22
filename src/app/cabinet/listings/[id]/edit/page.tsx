@@ -5,6 +5,7 @@ import { deleteListingAction, toggleListingVisibilityAction, updateListingAction
 import { ListingQuizForm } from "@/components/listing-quiz-form";
 import { requireUser } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
+import { listingSeoPath } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
 
@@ -85,7 +86,7 @@ export default async function EditListingPage({ params }: { params: { id: string
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap gap-2">
-            <Link className="btn btn-ghost" href={`/listings/${listing.id}`}>
+            <Link className="btn btn-ghost" href={listingSeoPath(listing)}>
               Открыть
             </Link>
             <form action={toggleListingVisibilityAction}>

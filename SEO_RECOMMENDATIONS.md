@@ -13,28 +13,28 @@ Production: https://journal-bice-seven.vercel.app
 - У основных страниц есть `title`, `description`, `canonical`.
 - Есть `llms.txt` для LLM-краулеров.
 - Товары, вакансии, услуги, резюме, статьи и профили попадают в sitemap.
+- С 2026-06-21 публичные детальные страницы используют SEO URL с транслитом и коротким ID:
+  - статьи: `/articles/{shortId}-{translit-title}`;
+  - вакансии: `/rabota/{title}-vebcam-studii-{city}-{shortId}`;
+  - услуги: `/uslugi/{title}-dlya-vebcam-{city}-{shortId}`;
+  - товары: `/tovar/{title}-{category}-dlya-vebcam-modeli-{city}-{shortId}`;
+  - резюме: `/resume/{role-title}-vebcam-model-{city}-{shortId}`.
+- Старые ID-ссылки остаются рабочими и редиректят на новый canonical.
 - Поиск `site:journal-bice-seven.vercel.app` пока не показывает стабильной индексации, значит сайт, скорее всего, еще не успел нормально попасть в индекс.
 
 ## Главные проблемы
 
-1. Услуги сейчас размечаются как `JobPosting`, потому что общая страница `/listings/[id]` использует `JobPosting` для всех listing.
-   - Для вакансий это нормально.
-   - Для услуг это ошибка.
-   - Услуги нужно размечать как `Service` + `Offer`.
+1. Услуги больше не должны размечаться как `JobPosting`: для них добавлена базовая schema `Service` + `Offer`.
+   Что можно улучшить позже:
+   - добавить рейтинг услуги в schema после накопления отзывов;
+   - добавить более чистую числовую цену, если в форме цены появится отдельное поле.
 
-2. Вакансии размечены неполным `JobPosting`.
+2. Вакансии размечены `JobPosting`, но schema еще можно расширять.
    Нужно добавить:
-   - `validThrough` из `expiresAt`;
-   - `employmentType`;
-   - `jobLocation.address.addressCountry`, минимум `RU`;
-   - `addressLocality` для города;
-   - для удаленки `jobLocationType: TELECOMMUTE`;
-   - для удаленки `applicantLocationRequirements`;
    - `baseSalary`, если в вакансии указана зарплата;
-   - `identifier`;
    - `hiringOrganization.logo` и `sameAs`, если появятся.
 
-3. Товары размечены базово, но не полностью.
+3. Товары размечены базово и дополнены `image`, `category`, `sku`, `itemCondition`, `seller`, `priceValidUntil`.
    Сейчас есть:
    - `Product`;
    - `Offer`;
@@ -43,40 +43,19 @@ Production: https://journal-bice-seven.vercel.app
    - availability;
    - URL.
 
-   Нужно добавить:
-   - `image`;
-   - `itemCondition`;
-   - `priceValidUntil`;
-   - `seller`;
-   - `category`;
-   - `sku` или внутренний `identifier`;
+   Нужно добавить позже:
    - `aggregateRating` и `review`, когда появятся отзывы.
 
-4. Резюме пока индексируются только через общий каталог и SEO-лендинги.
-   Лучше добавить отдельные публичные страницы резюме:
-   - `/resumes/{id}`;
-   - schema `ProfilePage` + `Person`;
-   - `jobTitle`;
-   - город/регион;
-   - опыт;
-   - языки;
-   - описание;
-   - canonical;
-   - добавление в sitemap.
+4. Для резюме добавлены отдельные публичные SEO-страницы `/resume/...` со schema `ProfilePage` + `Person` и добавлением в sitemap.
+   Позже можно добавить более структурированные поля: языки, график, желаемая зарплата отдельным полем.
 
 ## Приоритеты
 
-1. Исправить schema для `/listings/[id]`:
-   - вакансии: `JobPosting`;
-   - услуги: `Service` + `Offer`.
+1. Доработать `JobPosting` для вакансий под Google Jobs: отдельная зарплата, logo/sameAs организации, Indexing API.
 
-2. Доработать `JobPosting` для вакансий под Google Jobs.
+2. Доработать отзывы/рейтинг для услуг и товаров в schema.
 
-3. Доработать `Product` schema для товаров.
-
-4. Сделать индивидуальные страницы резюме и schema `ProfilePage`/`Person`.
-
-5. Подключить:
+3. Подключить:
    - Google Search Console;
    - Яндекс Вебмастер;
    - отправку sitemap;

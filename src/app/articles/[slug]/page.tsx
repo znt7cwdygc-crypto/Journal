@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
@@ -16,13 +16,20 @@ import { SafeImage } from "@/components/safe-image";
 import { isHtmlArticleBody, sanitizeArticleHtml, stripArticleHtml } from "@/lib/article-html";
 import { safeImageUrl } from "@/lib/media";
 import { siteName, siteUrl, truncateSeo } from "@/lib/seo";
+import { articleSeoPath, idFromSeoParam, pathTail } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
 
 async function findPublishedArticle(slug: string, commentSort = "new") {
+  const resolved = idFromSeoParam(slug);
   return prisma.article.findFirst({
     where: {
-      OR: [{ slug }, { id: slug }],
+      OR: [
+        { slug },
+        ...(resolved.id ? [{ id: resolved.id }] : []),
+        ...(resolved.shortId ? [{ id: { endsWith: resolved.shortId } }] : []),
+        { id: slug }
+      ],
       status: "PUBLISHED"
     },
     include: {
@@ -110,7 +117,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const article = await findPublishedArticle(params.slug);
   if (!article) return { title: "Материал не найден", robots: { index: false, follow: false } };
 
-  const path = `/articles/${article.id}`;
+  const path = articleSeoPath(article);
   const description = truncateSeo(article.summary || stripArticleHtml(article.body));
 
   return {
@@ -147,6 +154,11 @@ export default async function ArticleDetailsPage({
 
   if (!article) notFound();
 
+  const canonicalPath = articleSeoPath(article);
+  if (pathTail(canonicalPath) !== params.slug) {
+    redirect(canonicalPath);
+  }
+
   await prisma.article.update({
     where: { id: article.id },
     data: { viewCount: { increment: 1 } }
@@ -164,7 +176,6 @@ export default async function ArticleDetailsPage({
     ...article.comments.flatMap((comment) => comment.replies.map((reply) => reply.userId))
   ]).size;
   const commentCount = article.comments.length + replyCount;
-  const canonicalPath = `/articles/${article.id}`;
   const shareUrl = siteUrl(canonicalPath).toString();
   const coverImage = safeImageUrl(article.coverImage);
   const authorImage = safeImageUrl(article.createdBy.image);
@@ -201,7 +212,7 @@ export default async function ArticleDetailsPage({
             description: truncateSeo(article.summary || stripArticleHtml(article.body)),
             datePublished: article.publishedAt?.toISOString(),
             dateModified: article.updatedAt.toISOString(),
-            mainEntityOfPage: siteUrl(`/articles/${article.id}`).toString(),
+            mainEntityOfPage: siteUrl(canonicalPath).toString(),
             author: {
               "@type": "Person",
               name: article.createdBy.name || article.createdBy.email || "Автор WebcamExpert",
@@ -353,8 +364,8 @@ export default async function ArticleDetailsPage({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="font-medium">Обсуждение ({commentCount}) • участников: {participantCount}</p>
           <div className="flex gap-2">
-            <Link className={`rounded px-3 py-1 ${searchParams?.comments === "popular" ? "bg-zinc-100" : "bg-ink text-white"}`} href={`/articles/${article.id}?comments=new#comments`}>Новые</Link>
-            <Link className={`rounded px-3 py-1 ${searchParams?.comments === "popular" ? "bg-ink text-white" : "bg-zinc-100"}`} href={`/articles/${article.id}?comments=popular#comments`}>Популярные</Link>
+            <Link className={`rounded px-3 py-1 ${searchParams?.comments === "popular" ? "bg-zinc-100" : "bg-ink text-white"}`} href={`${canonicalPath}?comments=new#comments`}>Новые</Link>
+            <Link className={`rounded px-3 py-1 ${searchParams?.comments === "popular" ? "bg-ink text-white" : "bg-zinc-100"}`} href={`${canonicalPath}?comments=popular#comments`}>Популярные</Link>
           </div>
         </div>
         {session?.user && (

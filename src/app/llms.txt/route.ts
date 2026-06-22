@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { siteDescription, siteName, siteUrl } from "@/lib/seo";
 import { seoLandings } from "@/lib/seo-landings";
+import { articleSeoPath, listingSeoPath, productSeoPath } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export async function GET() {
     }),
     prisma.listing.findMany({
       where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
-      select: { id: true, title: true, description: true, type: true, city: true, updatedAt: true },
+      select: { id: true, title: true, description: true, type: true, city: true, employmentType: true, updatedAt: true },
       orderBy: { updatedAt: "desc" },
       take: 20
     }),
@@ -68,7 +69,7 @@ export async function GET() {
     "## Recent public articles",
     "",
     ...(articles.length
-      ? articles.map((article) => line(article.title, `/articles/${article.id}`, [article.topic, article.summary].filter(Boolean).join(": ")))
+      ? articles.map((article) => line(article.title, articleSeoPath(article), [article.topic, article.summary].filter(Boolean).join(": ")))
       : ["- No public articles yet."]),
     "",
     "## Recent public listings",
@@ -77,7 +78,7 @@ export async function GET() {
       ? listings.map((listing) =>
           line(
             listing.title,
-            `/listings/${listing.id}`,
+            listingSeoPath(listing),
             [listing.type === "VACANCY" ? "Vacancy" : "Service", listing.city, listing.description.slice(0, 180)].filter(Boolean).join(": ")
           )
         )
@@ -89,7 +90,7 @@ export async function GET() {
       ? products.map((product) =>
           line(
             product.title,
-            `/products/${product.id}`,
+            productSeoPath(product),
             ["Product", product.category, product.city, `${product.priceRub} RUB`, product.description.slice(0, 160)].filter(Boolean).join(": ")
           )
         )
@@ -110,7 +111,7 @@ export async function GET() {
     "## Crawling notes",
     "",
     "- Private areas are not intended for indexing: /cabinet, /admin, /auth, /api.",
-    "- Canonical URLs use article and listing IDs for stable MVP links.",
+    "- Canonical URLs use transliterated SEO slugs with a short stable ID suffix.",
     "- Public article pages include Schema.org Article JSON-LD.",
     "- Sitemap: " + siteUrl("/sitemap.xml").toString(),
     "- Robots: " + siteUrl("/robots.txt").toString(),

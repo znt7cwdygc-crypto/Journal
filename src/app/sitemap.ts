@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { seoLandings } from "@/lib/seo-landings";
 import { siteUrl } from "@/lib/seo";
+import { articleSeoPath, listingSeoPath, productSeoPath, resumeSeoPath } from "@/lib/seo-url";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
@@ -34,16 +35,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   try {
-    const [articles, profiles, listings, products] = await Promise.all([
+    const [articles, profiles, listings, products, resumes] = await Promise.all([
       prisma.article.findMany({
         where: { status: "PUBLISHED" },
-        select: { id: true, slug: true, updatedAt: true, publishedAt: true },
+        select: { id: true, title: true, updatedAt: true, publishedAt: true },
         orderBy: { updatedAt: "desc" },
         take: 1000
       }),
       prisma.user.findMany({
         where: {
-          OR: [{ articles: { some: { status: "PUBLISHED" } } }, { resume: { is: { isPublic: true, hiddenByInactivity: false, expiresAt: { gt: now } } } }]
+          OR: [
+            { articles: { some: { status: "PUBLISHED" } } },
+            { resume: { is: { isPublic: true, hiddenByInactivity: false, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] } } }
+          ]
         },
         select: { id: true, updatedAt: true },
         orderBy: { updatedAt: "desc" },
@@ -51,13 +55,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }),
       prisma.listing.findMany({
         where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
-        select: { id: true, slug: true, updatedAt: true },
+        select: { id: true, type: true, title: true, city: true, employmentType: true, updatedAt: true },
         orderBy: { updatedAt: "desc" },
         take: 1000
       }),
       prisma.product.findMany({
         where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
-        select: { id: true, updatedAt: true },
+        select: { id: true, title: true, category: true, city: true, updatedAt: true },
+        orderBy: { updatedAt: "desc" },
+        take: 1000
+      }),
+      prisma.resume.findMany({
+        where: { isPublic: true, hiddenByInactivity: false, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+        select: { id: true, title: true, city: true, roleGoal: true, updatedAt: true },
         orderBy: { updatedAt: "desc" },
         take: 1000
       })
@@ -67,7 +77,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...staticRoutes,
       ...seoRoutes,
       ...articles.map((article) => ({
-        url: siteUrl(`/articles/${article.id}`).toString(),
+        url: siteUrl(articleSeoPath(article)).toString(),
         lastModified: article.updatedAt || article.publishedAt || now,
         priority: 0.85,
         changeFrequency: "weekly" as const
@@ -79,14 +89,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "weekly" as const
       })),
       ...listings.map((listing) => ({
-        url: siteUrl(`/listings/${listing.id}`).toString(),
+        url: siteUrl(listingSeoPath(listing)).toString(),
         lastModified: listing.updatedAt || now,
         priority: 0.7,
         changeFrequency: "weekly" as const
       })),
       ...products.map((product) => ({
-        url: siteUrl(`/products/${product.id}`).toString(),
+        url: siteUrl(productSeoPath(product)).toString(),
         lastModified: product.updatedAt || now,
+        priority: 0.65,
+        changeFrequency: "weekly" as const
+      })),
+      ...resumes.map((resume) => ({
+        url: siteUrl(resumeSeoPath(resume)).toString(),
+        lastModified: resume.updatedAt || now,
         priority: 0.65,
         changeFrequency: "weekly" as const
       }))

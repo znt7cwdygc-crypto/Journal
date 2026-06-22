@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { prisma } from "@/lib/prisma";
+import { articleSeoPath, listingSeoPath, productSeoPath, resumeSeoPath } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
 
@@ -140,7 +141,7 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
       {articles.length > 0 && (
         <SearchSection title="Статьи">
           {articles.map((article) => (
-            <Link key={article.id} href={`/articles/${article.id}`} className="block border border-zinc-200 bg-white p-4 hover:border-hot">
+            <Link key={article.id} href={articleSeoPath(article)} className="block border border-zinc-200 bg-white p-4 hover:border-hot">
               <p className="text-xs text-zinc-500">{article.createdBy.name || article.createdBy.email || "Автор"}</p>
               <h2 className="mt-1 font-semibold">{article.title}</h2>
               <p className="mt-2 text-sm text-zinc-600">{article.summary}</p>
@@ -163,7 +164,7 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
       {listings.length > 0 && (
         <SearchSection title="Вакансии и услуги">
           {listings.map((listing) => (
-            <Link key={listing.id} href={listing.type === "VACANCY" ? "/vacancies" : "/services"} className="block border border-zinc-200 bg-white p-4 hover:border-hot">
+            <Link key={listing.id} href={listingSeoPath(listing)} className="block border border-zinc-200 bg-white p-4 hover:border-hot">
               <p className="text-xs text-zinc-500">{listing.type === "VACANCY" ? "Вакансия" : "Услуга"} • {listing.city || "город не указан"}</p>
               <h2 className="mt-1 font-semibold">{listing.title}</h2>
               <p className="mt-2 text-sm text-zinc-600">{listing.description}</p>
@@ -175,7 +176,7 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
       {resumes.length > 0 && (
         <SearchSection title="Резюме">
           {resumes.map((resume) => (
-            <Link key={resume.id} href={`/profiles/${resume.userId}`} className="block border border-zinc-200 bg-white p-4 hover:border-hot">
+            <Link key={resume.id} href={resumeSeoPath(resume)} className="block border border-zinc-200 bg-white p-4 hover:border-hot">
               <p className="text-xs text-zinc-500">{resume.user.name || resume.user.email || "Профиль"} • {resume.city || "город не указан"}</p>
               <h2 className="mt-1 font-semibold">{resume.title}</h2>
               <p className="mt-2 text-sm text-zinc-600">{resume.bio}</p>
@@ -187,7 +188,7 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
       {products.length > 0 && (
         <SearchSection title="Товары">
           {products.map((product) => (
-            <Link key={product.id} href={`/products/${product.id}`} className="block border border-zinc-200 bg-white p-4 hover:border-hot">
+            <Link key={product.id} href={productSeoPath(product)} className="block border border-zinc-200 bg-white p-4 hover:border-hot">
               <p className="text-xs text-zinc-500">{product.category} • {product.city || "город не указан"} • {new Intl.NumberFormat("ru-RU").format(product.priceRub)} ₽</p>
               <h2 className="mt-1 font-semibold">{product.title}</h2>
               <p className="mt-2 text-sm text-zinc-600">{product.description}</p>

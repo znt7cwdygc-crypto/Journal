@@ -4,6 +4,7 @@ import { SafeImage } from "@/components/safe-image";
 import { PLATFORM_DISCLAIMER } from "@/lib/disclaimer";
 import { safeImageUrl } from "@/lib/media";
 import { prisma } from "@/lib/prisma";
+import { articleSeoPath, listingSeoPath, productSeoPath } from "@/lib/seo-url";
 import { siteDescription, siteName } from "@/lib/seo";
 import { seoLandings } from "@/lib/seo-landings";
 import { demoArticles } from "@/lib/ugc-demo";
@@ -134,7 +135,7 @@ export default async function HomePage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)] lg:items-stretch">
-        <Link href={realMainArticle ? `/articles/${realMainArticle.id}` : "/articles"} className="media-card flex min-h-[360px] flex-col lg:min-h-[440px]">
+        <Link href={realMainArticle ? articleSeoPath(realMainArticle) : "/articles"} className="media-card flex min-h-[360px] flex-col lg:min-h-[440px]">
           <p className="badge-topic mb-3">
             {mainArticleSection}
           </p>
@@ -163,7 +164,7 @@ export default async function HomePage() {
             ["Популярное", popularArticles[0] || secondaryArticles[0]],
             ["Обсуждаемое", discussedArticles[0] || secondaryArticles[2]]
           ].filter(([, article]) => article).map(([label, article]) => (
-            <Link key={`${label}-${typeof article === "object" ? article.id : label}`} href={typeof article === "object" && "createdBy" in article ? `/articles/${article.id}` : "/articles"} className="media-card flex min-h-[190px] flex-col lg:min-h-0">
+            <Link key={`${label}-${typeof article === "object" ? article.id : label}`} href={typeof article === "object" && "createdBy" in article ? articleSeoPath(article) : "/articles"} className="media-card flex min-h-[190px] flex-col lg:min-h-0">
               <p className="badge-format">{String(label)}</p>
               {typeof article === "object" && (
                 <>
@@ -184,7 +185,7 @@ export default async function HomePage() {
           </div>
           <div className="mt-3 space-y-3">
             {products.map((product) => (
-              <Link key={product.id} href={`/products/${product.id}`} className="block border-b border-zinc-100 pb-3 last:border-0">
+              <Link key={product.id} href={productSeoPath(product)} className="block border-b border-zinc-100 pb-3 last:border-0">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-medium leading-snug line-clamp-2">{product.title}</p>
@@ -208,7 +209,7 @@ export default async function HomePage() {
                 </div>
                 <div className="mt-3 space-y-3">
                   {items.map((listing) => (
-                    <Link key={listing.id} href={`/listings/${listing.id}`} className="block border-b border-zinc-100 pb-3 last:border-0">
+                    <Link key={listing.id} href={listingSeoPath(listing)} className="block border-b border-zinc-100 pb-3 last:border-0">
                       <p className="font-medium leading-snug line-clamp-2">{listing.title}</p>
                       <p className="mt-1 text-xs text-zinc-500">{listing.createdBy.name || listing.createdBy.email || "Автор"} • {listing.city || "без города"}</p>
                     </Link>
@@ -282,7 +283,7 @@ export default async function HomePage() {
             const coverImage = safeImageUrl(article.coverImage);
 
             return (
-              <Link key={article.id} href={`/articles/${article.id}`} className="grid gap-3 py-4 first:pt-0 last:pb-0 sm:grid-cols-[150px_minmax(0,1fr)]">
+              <Link key={article.id} href={articleSeoPath(article)} className="grid gap-3 py-4 first:pt-0 last:pb-0 sm:grid-cols-[150px_minmax(0,1fr)]">
                 {coverImage ? (
                   <SafeImage className="aspect-[16/10] w-full rounded-lg object-cover" src={coverImage} alt={article.title} fallback={null} />
                 ) : (

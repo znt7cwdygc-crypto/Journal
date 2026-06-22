@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { saveProductAction } from "@/app/actions";
 import { auth } from "@/auth";
@@ -7,6 +7,7 @@ import { ContactReveal } from "@/components/contact-reveal";
 import { ReportButton } from "@/components/report-button";
 import { prisma } from "@/lib/prisma";
 import { siteUrl, truncateSeo } from "@/lib/seo";
+import { idFromSeoParam, pathTail, productSeoPath } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +24,21 @@ const conditionLabels: Record<string, string> = {
   NEEDS_REPAIR: "Нужен ремонт"
 };
 
-async function findProduct(id: string) {
+async function findProduct(idOrSlug: string) {
+  const resolved = idFromSeoParam(idOrSlug);
   return prisma.product.findFirst({
     where: {
-      id,
-      status: "PUBLISHED",
-      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }]
+      AND: [
+        {
+          OR: [
+            ...(resolved.id ? [{ id: resolved.id }] : []),
+            ...(resolved.shortId ? [{ id: { endsWith: resolved.shortId } }] : []),
+            { id: idOrSlug }
+          ]
+        },
+        { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] }
+      ],
+      status: "PUBLISHED"
     },
     include: { createdBy: true, savedBy: true }
   });
@@ -43,12 +53,13 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   if (!product) return { title: "Товар не найден", robots: { index: false, follow: false } };
   const title = `${product.title} — товар`;
   const description = truncateSeo(product.description);
+  const canonicalPath = productSeoPath(product);
 
   return {
     title,
     description,
-    alternates: { canonical: `/products/${product.id}` },
-    openGraph: { title, description, url: `/products/${product.id}` }
+    alternates: { canonical: canonicalPath },
+    openGraph: { title, description, url: canonicalPath }
   };
 }
 
@@ -63,9 +74,13 @@ export default async function ProductDetailsPage({
   const product = await findProduct(params.id);
   if (!product) notFound();
 
+  const productPath = productSeoPath(product);
+  if (pathTail(productPath) !== params.id) {
+    redirect(productPath);
+  }
+
   await prisma.product.update({ where: { id: product.id }, data: { viewCount: { increment: 1 } } });
 
-  const productPath = `/products/${product.id}`;
   const authorName = product.createdBy.name || product.createdBy.email || "Продавец";
   const isSaved = Boolean(session?.user?.id && product.savedBy.some((item) => item.userId === session.user.id));
   const favoriteMessage =
@@ -86,11 +101,20 @@ export default async function ProductDetailsPage({
             "@type": "Product",
             name: product.title,
             description: product.description,
+            image: product.imageUrl ? [product.imageUrl] : undefined,
+            category: product.category,
+            sku: product.id,
             offers: {
               "@type": "Offer",
               priceCurrency: "RUB",
               price: product.priceRub,
               availability: "https://schema.org/InStock",
+              itemCondition: `https://schema.org/${product.condition === "NEW" ? "NewCondition" : product.condition === "NEEDS_REPAIR" ? "DamagedCondition" : "UsedCondition"}`,
+              priceValidUntil: product.expiresAt?.toISOString().slice(0, 10),
+              seller: {
+                "@type": "Person",
+                name: authorName
+              },
               url: siteUrl(productPath).toString()
             }
           })
