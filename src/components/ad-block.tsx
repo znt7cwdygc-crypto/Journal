@@ -7,7 +7,7 @@ export async function AdBlock({ placement, variant = "banner" }: { placement: Ad
   if (variant === "card") {
     return (
       <a
-        className="block h-full min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-hot hover:shadow"
+        className="block min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-hot hover:shadow"
         href={`/ads/${ad.id}/click`}
         rel="sponsored noopener noreferrer"
         target="_blank"
@@ -15,11 +15,11 @@ export async function AdBlock({ placement, variant = "banner" }: { placement: Ad
         <span className="inline-flex rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">
           Реклама
         </span>
-        <span className="mt-3 flex aspect-[16/7] w-full items-center justify-center overflow-hidden rounded-lg bg-zinc-950">
+        <span className="mt-3 flex h-16 w-full items-center justify-center overflow-hidden rounded-lg bg-zinc-950">
           <img className="h-full w-full object-contain" src={ad.imageUrl} alt={ad.title} loading="lazy" />
         </span>
-        <span className="mt-3 block text-lg font-semibold leading-snug text-ink">{ad.title}</span>
-        {ad.description && <span className="mt-2 block line-clamp-2 text-sm leading-6 text-zinc-600">{ad.description}</span>}
+        <span className="mt-3 block truncate text-base font-semibold leading-snug text-ink">{ad.title}</span>
+        {ad.description && <span className="mt-1 block truncate text-sm leading-5 text-zinc-600">{ad.description}</span>}
       </a>
     );
   }
