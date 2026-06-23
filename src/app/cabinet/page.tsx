@@ -418,7 +418,7 @@ export default async function CabinetPage({
             <h2 className="font-semibold">Продать товар</h2>
             <p className="mt-1 text-xs text-zinc-500">Объявление как на Авито: фото, цена, город, описание и контакт</p>
           </div>
-          <span className="rounded-full bg-mint px-3 py-1 text-xs font-semibold text-ink">30 дней</span>
+          <span className="shrink-0 whitespace-nowrap rounded-full bg-mint px-3 py-1 text-xs font-semibold text-ink">30 дней</span>
         </summary>
         <div className="border-t border-zinc-100 p-4">
           <ProductForm key={productFormKey} action={submitProductAction} />
