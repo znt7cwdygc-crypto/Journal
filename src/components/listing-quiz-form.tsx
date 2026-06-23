@@ -1,8 +1,37 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { FormSubmitButton } from "@/components/form-submit-button";
 import { serviceQuizOptions, serviceQuizSteps } from "@/lib/quizzes/service-quiz";
+
+type ServiceState = {
+  audience: string;
+  category: string;
+  categoryOther: string;
+  serviceName: string;
+  serviceDesc: string;
+  formatService: string;
+  duration: string;
+  guarantee: string;
+  payFormat: string;
+  priceInput: string;
+  payMethods: string[];
+  prepay: string;
+  prepayImportance: string;
+  minOrder: string;
+  minOrderImportance: string;
+  access: string[];
+  accessImportance: string;
+  nda: string;
+  ndaImportance: string;
+  providerType: string;
+  providerExp: string;
+  portfolio: string;
+  contact: string;
+  city: string;
+  quickWishes: string[];
+  wishesText: string;
+};
 import { vacancyQuizOptions, vacancyQuizSteps } from "@/lib/quizzes/vacancy-quiz";
 
 type ListingKind = "VACANCY" | "SERVICE";
@@ -566,232 +595,448 @@ function VacancyWizard({ action, initialValues, listingId, submitLabel }: Omit<L
   );
 }
 
-export function ListingQuizForm({ action, kind, initialValues, listingId, submitLabel }: ListingQuizFormProps) {
+function serviceEmploymentType(format: string) {
+  if (format === "Очно") return "OFFICE";
+  if (format === "Без разницы") return "HYBRID";
+  return "REMOTE";
+}
+
+function ServiceSummaryRow({ label, value, badge }: { label: string; value: string; badge?: string }) {
+  return (
+    <div className="flex gap-3 border-b border-zinc-100 py-2 text-sm">
+      <span className="min-w-28 shrink-0 text-zinc-500">
+        {label}
+        {badge === "must" && <span className="ml-1.5 inline-block rounded-md bg-red-50 px-1.5 py-0.5 text-[11px] font-bold text-[#C13A1E]">обязательно</span>}
+        {badge === "nice" && <span className="ml-1.5 inline-block rounded-md bg-yellow-50 px-1.5 py-0.5 text-[11px] font-bold text-[#8A6700]">желательно</span>}
+      </span>
+      <span className="font-semibold text-ink">{value || "—"}</span>
+    </div>
+  );
+}
+
+function ServiceWizard({ action, initialValues, listingId, submitLabel }: Omit<ListingQuizFormProps, "kind">) {
   const [step, setStep] = useState(0);
   const quizRef = useRef<HTMLElement | null>(null);
-  const isService = kind === "SERVICE";
-  const steps = useMemo(() => (isService ? serviceQuizSteps : vacancyQuizSteps), [isService]);
-  const lastStep = step === steps.length - 1;
+  const [v, setV] = useState<ServiceState>(() => ({
+    audience: stringValue(initialValues, "audience", ""),
+    category: stringValue(initialValues, "serviceCategory", ""),
+    categoryOther: "",
+    serviceName: stringValue(initialValues, "title", ""),
+    serviceDesc: stringValue(initialValues, "serviceIncludes", ""),
+    formatService: stringValue(initialValues, "formatService", ""),
+    duration: stringValue(initialValues, "duration", ""),
+    guarantee: stringValue(initialValues, "guarantee", ""),
+    payFormat: stringValue(initialValues, "payFormat", ""),
+    priceInput: stringValue(initialValues, "price", ""),
+    payMethods: arrayValue(initialValues, "payMethods"),
+    prepay: stringValue(initialValues, "prepay", ""),
+    prepayImportance: stringValue(initialValues, "prepayImportance", ""),
+    minOrder: stringValue(initialValues, "minOrder", ""),
+    minOrderImportance: stringValue(initialValues, "minOrderImportance", ""),
+    access: arrayValue(initialValues, "access"),
+    accessImportance: stringValue(initialValues, "accessImportance", ""),
+    nda: stringValue(initialValues, "nda", ""),
+    ndaImportance: stringValue(initialValues, "ndaImportance", ""),
+    providerType: stringValue(initialValues, "providerType", ""),
+    providerExp: stringValue(initialValues, "providerExp", ""),
+    portfolio: stringValue(initialValues, "portfolio", ""),
+    contact: stringValue(initialValues, "contact", ""),
+    city: stringValue(initialValues, "city", "Удаленно"),
+    quickWishes: arrayValue(initialValues, "quickWishes"),
+    wishesText: stringValue(initialValues, "wishesText", ""),
+  }));
+
+  const steps = serviceQuizSteps;
   const progress = Math.round(((step + 1) / steps.length) * 100);
-  const stepsPayload = JSON.stringify(steps);
+  const categoryValue = v.category === "Другое" ? v.categoryOther.trim() || "Другое" : v.category;
+  const title = v.serviceName.trim() || categoryValue;
+  const price = [v.payFormat, v.priceInput].filter(Boolean).join(": ") || "Договорная";
 
-  function canLeaveCurrentStep() {
-    const activeStep = quizRef.current?.querySelector('[data-active="true"]');
-    const controls = activeStep?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>("input, textarea, select");
-    if (!controls) return true;
+  const reqFields: [string, string, string, string][] = [
+    ["prepay", "Предоплата", v.prepay, v.prepayImportance],
+    ["minOrder", "Мин. объём заказа", v.minOrder, v.minOrderImportance],
+    ["access", "Нужны доступы/данные", v.access.join(", "), v.accessImportance],
+    ["nda", "Конфиденциальность", v.nda, v.ndaImportance],
+  ];
 
-    for (const control of Array.from(controls)) {
-      if (!control.checkValidity()) {
-        control.reportValidity();
-        return false;
-      }
-    }
+  const mustCriteria = reqFields
+    .filter(([, , , imp]) => imp === "must")
+    .map(([, label, val]) => `${label}: ${val || "—"}`)
+    .join("; ");
 
-    return true;
+  function set<K extends keyof ServiceState>(key: K, value: ServiceState[K]) {
+    setV((c) => ({ ...c, [key]: value }));
   }
 
-  function goToStep(nextStep: number) {
-    if (nextStep > step && !canLeaveCurrentStep()) return;
-    setStep(Math.max(0, Math.min(steps.length - 1, nextStep)));
-    window.setTimeout(() => {
-      quizRef.current?.scrollIntoView({ block: "start", behavior: "smooth" });
-    }, 0);
+  function toggleList(key: "payMethods" | "access" | "quickWishes", value: string) {
+    setV((c) => {
+      const list = c[key];
+      return { ...c, [key]: list.includes(value) ? list.filter((i) => i !== value) : [...list, value] };
+    });
   }
 
-  if (!isService) {
-    return <VacancyWizard action={action} initialValues={initialValues} listingId={listingId} submitLabel={submitLabel} />;
+  function goToStep(n: number) {
+    setStep(Math.max(0, Math.min(steps.length - 1, n)));
+    window.setTimeout(() => quizRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }), 0);
   }
+
+  const descriptionParts = [
+    structuredField("Для кого", v.audience),
+    structuredField("Категория", categoryValue),
+    structuredField("Что входит", v.serviceDesc),
+    structuredField("Формат оказания", v.formatService),
+    structuredField("Срок выполнения", v.duration),
+    structuredField("Гарантии", v.guarantee),
+    structuredField("Формат оплаты", v.payFormat),
+    structuredField("Цена", v.priceInput),
+    structuredField("Способ оплаты", v.payMethods.join(", ")),
+    ...reqFields.map(([, label, val, imp]) =>
+      structuredField(label, val ? `${val}${imp ? ` (${importanceText[imp] || ""})` : ""}` : "")
+    ),
+    structuredField("Тип исполнителя", v.providerType),
+    structuredField("Опыт", v.providerExp),
+    structuredField("Портфолио", v.portfolio),
+    structuredField("Город", v.city),
+    v.quickWishes.length ? structuredField("Бонусы", v.quickWishes.join(", ")) : "",
+    structuredField("Дополнительно", v.wishesText),
+    structuredField("Кто не подойдет", mustCriteria),
+  ].filter(Boolean).join("\n\n");
 
   return (
-    <section ref={quizRef} className="quiz-shell" data-quiz-root data-quiz-step-current="0" data-quiz-steps={stepsPayload}>
-      <div className="quiz-header">
+    <section ref={quizRef} className="quiz-shell border-[#E4E4E1] bg-white" data-quiz-root>
+      <div className="quiz-header bg-white">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-hot">{isService ? "Квиз-услуга" : "Квиз-вакансия"}</p>
-            <h2 className="mt-1 text-lg font-semibold text-ink">
-              {submitLabel ? (isService ? "Редактировать услугу" : "Редактировать вакансию") : isService ? "Предложить услугу" : "Подать вакансию"}
-            </h2>
+            <p className="text-xs font-bold uppercase tracking-[0.12em] text-hot">Шаг {step + 1} из {steps.length}</p>
+            <h2 className="mt-1 text-lg font-semibold text-ink">{submitLabel ? "Редактировать услугу" : "Предложить услугу"}</h2>
           </div>
           <span className="rounded-full bg-sun px-3 py-1 text-xs font-bold text-ink">бесплатно</span>
         </div>
-        <div className="mt-3">
-          <div className="mb-2 flex items-center justify-between text-xs font-semibold text-zinc-500">
-            <span>
-              Шаг <span data-quiz-current>1</span> из {steps.length}: <span data-quiz-title>{steps[0]}</span>
-            </span>
-            <span data-quiz-progress>{progress}%</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-white">
-            <div className="h-full rounded-full bg-hot transition-all" data-quiz-progress-bar style={{ width: `${progress}%` }} />
-          </div>
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-zinc-100">
+          <div className="h-full rounded-full bg-hot transition-all" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
-      <form action={action} className="quiz-body">
-        <input type="hidden" name="kind" value={kind} />
-        <input type="hidden" name="listingTemplate" value={isService ? "service-v1" : "vacancy-specialist-v1"} />
+      <form action={action} className="quiz-body bg-white">
+        <input type="hidden" name="kind" value="SERVICE" />
+        <input type="hidden" name="listingTemplate" value="service-v2" />
         {listingId && <input type="hidden" name="listingId" value={listingId} />}
+        <input type="hidden" name="title" value={title} />
+        <input type="hidden" name="serviceCategory" value={categoryValue} />
+        <input type="hidden" name="employmentType" value={serviceEmploymentType(v.formatService)} />
+        <input type="hidden" name="city" value={v.city} />
+        <input type="hidden" name="geoCode" value={v.formatService === "Удалённо" || v.city === "Удаленно" ? "remote" : ""} />
+        <input type="hidden" name="price" value={price} />
+        <input type="hidden" name="contact" value={v.contact} />
+        <input type="hidden" name="description" value={descriptionParts} />
+        <input type="hidden" name="audience" value={v.audience} />
+        <input type="hidden" name="serviceIncludes" value={v.serviceDesc} />
+        <input type="hidden" name="formatService" value={v.formatService} />
+        <input type="hidden" name="duration" value={v.duration} />
+        <input type="hidden" name="guarantee" value={v.guarantee} />
+        <input type="hidden" name="payFormat" value={v.payFormat} />
+        <input type="hidden" name="priceComment" value={v.priceInput} />
+        <input type="hidden" name="payMethods" value={v.payMethods.join(", ")} />
+        <input type="hidden" name="prepay" value={v.prepay} />
+        <input type="hidden" name="prepayImportance" value={v.prepayImportance} />
+        <input type="hidden" name="minOrder" value={v.minOrder} />
+        <input type="hidden" name="minOrderImportance" value={v.minOrderImportance} />
+        <input type="hidden" name="access" value={v.access.join(", ")} />
+        <input type="hidden" name="accessImportance" value={v.accessImportance} />
+        <input type="hidden" name="nda" value={v.nda} />
+        <input type="hidden" name="ndaImportance" value={v.ndaImportance} />
+        <input type="hidden" name="providerType" value={v.providerType} />
+        <input type="hidden" name="providerExp" value={v.providerExp} />
+        <input type="hidden" name="portfolio" value={v.portfolio} />
+        <input type="hidden" name="quickWishes" value={v.quickWishes.join(", ")} />
+        <input type="hidden" name="wishesText" value={v.wishesText} />
+        <input type="hidden" name="stopConditions" value={mustCriteria} />
+        <input type="hidden" name="experience" value={v.providerExp} />
+        <input type="hidden" name="deliveryTime" value={v.duration} />
+        <input type="hidden" name="availability" value={v.formatService} />
+        <input type="hidden" name="portfolioUrl" value={v.portfolio} />
 
-        {!isService && (
-          <>
-            <div data-active={step === 0 ? "true" : undefined} data-quiz-step="0" className={step === 0 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Роль" title="Кого ищете?" hint="Вакансии для моделей здесь запрещены: только специалисты команды.">
-                <ChoiceGrid name="vacancyRole" options={vacancyQuizOptions.roles} defaultValue={stringValue(initialValues, "vacancyRole", "Оператор")} />
-              </QuizQuestion>
-            </div>
-            <div data-active={step === 1 ? "true" : undefined} data-quiz-step="1" className={step === 1 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Название" title="Как назвать вакансию?" hint="Коротко: роль, формат и главная причина откликнуться.">
-                <TextInput name="title" defaultValue={stringValue(initialValues, "title")} placeholder="Например: Оператор в студию на вечерние смены" required={step === 1} />
-              </QuizQuestion>
-            </div>
-            <div data-active={step === 2 ? "true" : undefined} data-quiz-step="2" className={step === 2 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Формат" title="Как будет работать специалист?" hint="Формат должен быть понятен до отклика.">
-                <ChoiceGrid name="employmentType" options={vacancyQuizOptions.employmentTypes} defaultValue={stringValue(initialValues, "employmentType", "REMOTE")} />
-              </QuizQuestion>
-            </div>
-            <div data-active={step === 3 ? "true" : undefined} data-quiz-step="3" className={step === 3 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Город" title="Где актуальна вакансия?" hint="Для удаленной вакансии можно выбрать удаленный формат.">
-                <select className="w-full rounded-lg border border-zinc-200 bg-white p-3 text-sm font-semibold text-zinc-700" name="city" defaultValue={stringValue(initialValues, "city", "Москва")}>
-                  {vacancyQuizOptions.cities.map((city) => (
-                    <option key={city} value={city}>{city}</option>
+        <div className="quiz-content space-y-4">
+          {step === 0 && (
+            <div className="space-y-5">
+              <div>
+                <h3 className="text-2xl font-bold leading-tight text-ink">Предложить услугу</h3>
+                <p className="mt-2 text-sm leading-6 text-zinc-600">Опубликуй услугу для моделей и студий — от продвижения профиля до вывода токенов. Сначала укажи, кому она адресована.</p>
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Для кого услуга</p>
+                <div className="flex flex-wrap gap-2">
+                  {serviceQuizOptions.audiences.map((o) => (
+                    <VacancyChip key={o} active={v.audience === o} onClick={() => set("audience", o)}>{o}</VacancyChip>
                   ))}
-                </select>
-                <TextInput name="geoCode" defaultValue={stringValue(initialValues, "geoCode")} placeholder="GEO код, если нужен: moscow, remote" />
-              </QuizQuestion>
+                </div>
+              </div>
             </div>
-            <div data-active={step === 4 ? "true" : undefined} data-quiz-step="4" className={step === 4 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Оплата" title="Какая оплата?" hint="Укажите ставку, процент, оклад или вилку.">
-                <TextInput name="price" defaultValue={stringValue(initialValues, "price")} placeholder="Например: от 70 000 ₽ / 20% / договорная" required={step === 4} />
-                <TextInput name="priceComment" defaultValue={stringValue(initialValues, "priceComment")} placeholder="Выплаты, бонусы, испытательный срок" />
-              </QuizQuestion>
-            </div>
-            <div data-active={step === 5 ? "true" : undefined} data-quiz-step="5" className={step === 5 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="График" title="Какой график и занятость?" hint="Это один из главных фильтров для кандидата.">
-                <TextInput name="schedule" defaultValue={stringValue(initialValues, "schedule")} placeholder="Например: 5/2, вечер, 6 часов, удаленно" required={step === 5} />
-                <ChoiceGrid name="workload" options={vacancyQuizOptions.workload} defaultValue={stringValue(initialValues, "workload", "Сменная")} />
-              </QuizQuestion>
-            </div>
-            <div data-active={step === 6 ? "true" : undefined} data-quiz-step="6" className={step === 6 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Требования" title="Что должен уметь специалист?" hint="Без общих слов: опыт, навыки, языки, инструменты.">
-                <TextArea name="requirements" defaultValue={stringValue(initialValues, "requirements")} placeholder="Опишите опыт, навыки, английский, CRM, графики, ответственность" required={step === 6} />
-              </QuizQuestion>
-            </div>
-            <div data-active={step === 7 ? "true" : undefined} data-quiz-step="7" className={step === 7 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Условия" title="Что вы предоставляете?" hint="Обучение, регламенты, команда, техника, рабочее место, поддержка.">
-                <CheckGrid name="benefits" options={vacancyQuizOptions.benefits} defaultValues={arrayValue(initialValues, "benefits")} />
-                <TextInput name="benefitsOther" defaultValue={stringValue(initialValues, "benefitsOther")} placeholder="Другие условия" />
-              </QuizQuestion>
-            </div>
-            <div data-active={step === 8 ? "true" : undefined} data-quiz-step="8" className={step === 8 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Стоп" title="Кто не подойдет?" hint="Помогает не получать нерелевантные отклики.">
-                <TextArea name="stopConditions" defaultValue={stringValue(initialValues, "stopConditions")} placeholder="Например: без регулярного графика, без базового английского, без готовности учиться" />
-              </QuizQuestion>
-            </div>
-            <div data-active={step === 9 ? "true" : undefined} data-quiz-step="9" className={step === 9 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Контакт" title="Куда отправлять отклик?" hint="Контакт будет виден на странице вакансии.">
-                <TextInput name="contact" defaultValue={stringValue(initialValues, "contact")} placeholder="Telegram, email или другой контакт" required={step === 9} />
-                <TextArea name="description" defaultValue={stringValue(initialValues, "description")} placeholder="Короткое описание вакансии для карточки" required={step === 9} />
-              </QuizQuestion>
-            </div>
-          </>
-        )}
+          )}
 
-        {isService && (
-          <>
-            <div data-active={step === 0 ? "true" : undefined} data-quiz-step="0" className={step === 0 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Категория" title="Какую услугу предлагаете?" hint="Можно выбрать общий тип, а детали раскрыть дальше.">
-                <ChoiceGrid name="serviceCategory" options={serviceQuizOptions.categories} defaultValue={stringValue(initialValues, "serviceCategory", "Консультация")} />
-              </QuizQuestion>
-            </div>
-            <div data-active={step === 1 ? "true" : undefined} data-quiz-step="1" className={step === 1 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Название" title="Как назвать услугу?" hint="Название должно объяснять пользу за пару секунд.">
-                <TextInput name="title" defaultValue={stringValue(initialValues, "title")} placeholder="Например: Настройка OBS, света и камеры за 1 созвон" required={step === 1} />
-              </QuizQuestion>
-            </div>
-            <div data-active={step === 2 ? "true" : undefined} data-quiz-step="2" className={step === 2 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Формат" title="Как оказывается услуга?" hint="Онлайн, в городе или смешанный формат.">
-                <ChoiceGrid name="employmentType" options={serviceQuizOptions.employmentTypes} defaultValue={stringValue(initialValues, "employmentType", "REMOTE")} />
-              </QuizQuestion>
-            </div>
-            <div data-active={step === 3 ? "true" : undefined} data-quiz-step="3" className={step === 3 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Город" title="Где вы работаете?" hint="Для онлайн-услуги можно выбрать удаленно.">
-                <select className="w-full rounded-lg border border-zinc-200 bg-white p-3 text-sm font-semibold text-zinc-700" name="city" defaultValue={stringValue(initialValues, "city", "Удаленно")}>
-                  {serviceQuizOptions.cities.map((city) => (
-                    <option key={city} value={city}>{city}</option>
+          {step === 1 && (
+            <div className="space-y-5">
+              <h3 className="text-2xl font-bold leading-tight text-ink">Какая услуга</h3>
+              <p className="-mt-3 text-sm leading-6 text-zinc-600">Выбери категорию и кратко назови услугу</p>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Категория</p>
+                <div className="flex flex-wrap gap-2">
+                  {serviceQuizOptions.categories.map((o) => (
+                    <VacancyChip key={o} active={v.category === o} onClick={() => set("category", o)}>{o}</VacancyChip>
                   ))}
+                </div>
+                {v.category === "Другое" && (
+                  <VacancyTextInput className="mt-3" value={v.categoryOther} onChange={(e) => set("categoryOther", e.target.value)} placeholder="Уточни категорию" />
+                )}
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Название услуги</p>
+                <VacancyTextInput value={v.serviceName} onChange={(e) => set("serviceName", e.target.value)} placeholder="Например: накрутка лайков на Chaturbate" />
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-5">
+              <h3 className="text-2xl font-bold leading-tight text-ink">Описание услуги</h3>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Что входит в услугу</p>
+                <VacancyTextArea value={v.serviceDesc} onChange={(e) => set("serviceDesc", e.target.value)} placeholder="Опиши, как именно оказывается услуга и что получит заказчик" />
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Формат оказания</p>
+                <div className="flex flex-wrap gap-2">
+                  {serviceQuizOptions.formats.map((o) => (
+                    <VacancyChip key={o} active={v.formatService === o} onClick={() => set("formatService", o)}>{o}</VacancyChip>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Город</p>
+                <select className="w-full rounded-xl border border-zinc-200 bg-white px-3.5 py-3 text-sm outline-none transition focus:border-hot" value={v.city} onChange={(e) => set("city", e.target.value)}>
+                  {serviceQuizOptions.cities.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
-                <TextInput name="geoCode" defaultValue={stringValue(initialValues, "geoCode")} placeholder="GEO код, если нужен: remote, moscow" />
-              </QuizQuestion>
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Срок выполнения</p>
+                <div className="flex flex-wrap gap-2">
+                  {serviceQuizOptions.durations.map((o) => (
+                    <VacancyChip key={o} active={v.duration === o} onClick={() => set("duration", o)}>{o}</VacancyChip>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Гарантии</p>
+                <div className="flex flex-wrap gap-2">
+                  {serviceQuizOptions.guarantees.map((o) => (
+                    <VacancyChip key={o} active={v.guarantee === o} onClick={() => set("guarantee", o)}>{o}</VacancyChip>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div data-active={step === 4 ? "true" : undefined} data-quiz-step="4" className={step === 4 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Цена" title="Сколько стоит услуга?" hint="Цена обязательна: можно указать вилку или договорную стоимость.">
-                <TextInput name="price" defaultValue={stringValue(initialValues, "price")} placeholder="Например: от 5 000 ₽ / 50$ / договорная" required={step === 4} />
-                <TextInput name="priceComment" defaultValue={stringValue(initialValues, "priceComment")} placeholder="Что влияет на цену, есть ли предоплата" />
-              </QuizQuestion>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-5">
+              <h3 className="text-2xl font-bold leading-tight text-ink">Стоимость</h3>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Формат оплаты</p>
+                <div className="flex flex-wrap gap-2">
+                  {serviceQuizOptions.payFormats.map((o) => (
+                    <VacancyChip key={o} active={v.payFormat === o} onClick={() => set("payFormat", o)}>{o}</VacancyChip>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Цена</p>
+                <VacancyTextInput value={v.priceInput} onChange={(e) => set("priceInput", e.target.value)} placeholder="Например: от 500₽ за 1000 лайков" />
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Способ оплаты</p>
+                <div className="flex flex-wrap gap-2">
+                  {serviceQuizOptions.payMethods.map((o) => (
+                    <VacancyChip key={o} active={v.payMethods.includes(o)} onClick={() => toggleList("payMethods", o)}>{o}</VacancyChip>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div data-active={step === 5 ? "true" : undefined} data-quiz-step="5" className={step === 5 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Состав" title="Что входит в услугу?" hint="Конкретный список снижает лишние вопросы в личке.">
-                <TextArea name="serviceIncludes" defaultValue={stringValue(initialValues, "serviceIncludes")} placeholder="Опишите пункты: созвон, аудит, настройка, документы, отчет, поддержка" required={step === 5} />
-              </QuizQuestion>
+          )}
+
+          {step === 4 && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-2xl font-bold leading-tight text-ink">Условия для заказчика</h3>
+                <p className="mt-2 text-sm leading-6 text-zinc-600">Отметь, что обязательно, а что просто пожелание</p>
+              </div>
+              <div className="rounded-xl border border-zinc-200 p-3">
+                <p className="mb-2 text-sm font-bold text-zinc-700">Предоплата</p>
+                <div className="flex flex-wrap gap-2">
+                  {serviceQuizOptions.prepayOptions.map((o) => (
+                    <VacancyChip key={o} active={v.prepay === o} onClick={() => set("prepay", o)}>{o}</VacancyChip>
+                  ))}
+                </div>
+                <ImportancePicker value={v.prepayImportance} onChange={(n) => set("prepayImportance", n)} />
+              </div>
+              <div className="rounded-xl border border-zinc-200 p-3">
+                <p className="mb-2 text-sm font-bold text-zinc-700">Минимальный объём заказа</p>
+                <VacancyTextInput value={v.minOrder} onChange={(e) => set("minOrder", e.target.value)} placeholder="Например: от 10 000 токенов" />
+                <ImportancePicker value={v.minOrderImportance} onChange={(n) => set("minOrderImportance", n)} />
+              </div>
+              <div className="rounded-xl border border-zinc-200 p-3">
+                <p className="mb-2 text-sm font-bold text-zinc-700">Нужны доступы/данные</p>
+                <div className="flex flex-wrap gap-2">
+                  {serviceQuizOptions.accessOptions.map((o) => (
+                    <VacancyChip key={o} active={v.access.includes(o)} onClick={() => toggleList("access", o)}>{o}</VacancyChip>
+                  ))}
+                </div>
+                <ImportancePicker value={v.accessImportance} onChange={(n) => set("accessImportance", n)} />
+              </div>
+              <div className="rounded-xl border border-zinc-200 p-3">
+                <p className="mb-2 text-sm font-bold text-zinc-700">Конфиденциальность</p>
+                <div className="flex flex-wrap gap-2">
+                  {serviceQuizOptions.ndaOptions.map((o) => (
+                    <VacancyChip key={o} active={v.nda === o} onClick={() => set("nda", o)}>{o}</VacancyChip>
+                  ))}
+                </div>
+                <ImportancePicker value={v.ndaImportance} onChange={(n) => set("ndaImportance", n)} />
+              </div>
             </div>
-            <div data-active={step === 6 ? "true" : undefined} data-quiz-step="6" className={step === 6 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Опыт" title="Почему вам можно доверять?" hint="Кейсы, опыт, специализация, портфолио или ссылка.">
-                <TextArea name="experience" defaultValue={stringValue(initialValues, "experience")} placeholder="Опыт, результаты, с кем работали, какие задачи решаете" required={step === 6} />
-                <TextInput name="portfolioUrl" defaultValue={stringValue(initialValues, "portfolioUrl")} placeholder="Ссылка на портфолио или профиль, если есть" />
-              </QuizQuestion>
+          )}
+
+          {step === 5 && (
+            <div className="space-y-5">
+              <h3 className="text-2xl font-bold leading-tight text-ink">Об исполнителе</h3>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Кто оказывает услугу</p>
+                <div className="flex flex-wrap gap-2">
+                  {serviceQuizOptions.providerTypes.map((o) => (
+                    <VacancyChip key={o} active={v.providerType === o} onClick={() => set("providerType", o)}>{o}</VacancyChip>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Опыт</p>
+                <div className="flex flex-wrap gap-2">
+                  {serviceQuizOptions.experienceLevels.map((o) => (
+                    <VacancyChip key={o} active={v.providerExp === o} onClick={() => set("providerExp", o)}>{o}</VacancyChip>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Портфолио/примеры работ (необязательно)</p>
+                <VacancyTextInput value={v.portfolio} onChange={(e) => set("portfolio", e.target.value)} placeholder="Ссылка на примеры или отзывы" />
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Контакт для связи</p>
+                <VacancyTextInput value={v.contact} onChange={(e) => set("contact", e.target.value)} placeholder="Telegram, например @username" />
+              </div>
             </div>
-            <div data-active={step === 7 ? "true" : undefined} data-quiz-step="7" className={step === 7 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Срок" title="Сколько занимает работа?" hint="Помогает понять ожидания до первого сообщения.">
-                <TextInput name="deliveryTime" defaultValue={stringValue(initialValues, "deliveryTime")} placeholder="Например: 1 созвон, 2 дня, неделя сопровождения" required={step === 7} />
-                <ChoiceGrid name="availability" options={serviceQuizOptions.availability} defaultValue={stringValue(initialValues, "availability", "По записи")} />
-              </QuizQuestion>
+          )}
+
+          {step === 6 && (
+            <div className="space-y-5">
+              <div>
+                <h3 className="text-2xl font-bold leading-tight text-ink">Дополнительная информация</h3>
+                <p className="mt-2 text-sm leading-6 text-zinc-600">Необязательный шаг — можно пропустить</p>
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Быстрый выбор</p>
+                <div className="flex flex-wrap gap-2">
+                  {serviceQuizOptions.quickWishes.map((o) => (
+                    <VacancyChip key={o} active={v.quickWishes.includes(o)} onClick={() => toggleList("quickWishes", o)}>{o}</VacancyChip>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="mb-2 text-sm font-bold text-zinc-700">Своими словами</p>
+                <VacancyTextArea value={v.wishesText} onChange={(e) => set("wishesText", e.target.value)} placeholder="Что ещё важно знать заказчику об услуге или о тебе" />
+              </div>
             </div>
-            <div data-active={step === 8 ? "true" : undefined} data-quiz-step="8" className={step === 8 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Ограничения" title="С чем не работаете?" hint="Стоп-темы и границы услуги защищают обе стороны.">
-                <TextArea name="stopConditions" defaultValue={stringValue(initialValues, "stopConditions")} placeholder="Например: не беру срочные задачи ночью, не работаю без предоплаты, не даю юридических гарантий" />
-              </QuizQuestion>
+          )}
+
+          {step === 7 && (
+            <div className="space-y-5">
+              <div>
+                <h3 className="text-2xl font-bold leading-tight text-ink">Объявление готово</h3>
+                <p className="mt-2 text-sm leading-6 text-zinc-600">Проверь перед публикацией</p>
+              </div>
+              <div className="rounded-xl border border-zinc-200 p-3">
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">Услуга</p>
+                <ServiceSummaryRow label="Для кого" value={v.audience} />
+                <ServiceSummaryRow label="Категория" value={categoryValue} />
+                <ServiceSummaryRow label="Название" value={v.serviceName} />
+              </div>
+              <div className="rounded-xl border border-zinc-200 p-3">
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">Описание</p>
+                <ServiceSummaryRow label="Что входит" value={v.serviceDesc} />
+                <ServiceSummaryRow label="Формат" value={v.formatService} />
+                <ServiceSummaryRow label="Город" value={v.city} />
+                <ServiceSummaryRow label="Срок" value={v.duration} />
+                <ServiceSummaryRow label="Гарантии" value={v.guarantee} />
+              </div>
+              <div className="rounded-xl border border-zinc-200 p-3">
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">Стоимость</p>
+                <ServiceSummaryRow label="Формат оплаты" value={v.payFormat} />
+                <ServiceSummaryRow label="Цена" value={v.priceInput} />
+                <ServiceSummaryRow label="Способ оплаты" value={v.payMethods.join(", ")} />
+              </div>
+              <div className="rounded-xl border border-zinc-200 p-3">
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">Условия для заказчика</p>
+                {reqFields.map(([key, label, val, imp]) => (
+                  <ServiceSummaryRow key={key} label={label} value={val || "—"} badge={imp} />
+                ))}
+              </div>
+              <div className="rounded-xl border border-zinc-200 p-3">
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">Об исполнителе</p>
+                <ServiceSummaryRow label="Тип" value={v.providerType} />
+                <ServiceSummaryRow label="Опыт" value={v.providerExp} />
+                <ServiceSummaryRow label="Портфолио" value={v.portfolio} />
+                <ServiceSummaryRow label="Контакт" value={v.contact} />
+              </div>
+              {(v.wishesText || v.quickWishes.length > 0) && (
+                <div className="rounded-xl border border-zinc-200 p-3">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-zinc-500">Доп. информация</p>
+                  {v.quickWishes.length > 0 && <ServiceSummaryRow label="Выбрано" value={v.quickWishes.join(", ")} />}
+                  {v.wishesText && <ServiceSummaryRow label="Текст" value={v.wishesText} />}
+                </div>
+              )}
+              {mustCriteria && (
+                <div className="rounded-xl bg-red-50 p-3 text-sm font-semibold leading-6 text-[#7A2614]">
+                  <p className="mb-1 text-xs uppercase tracking-[0.12em]">🔴 Жёсткие условия для заказа</p>
+                  {mustCriteria}
+                </div>
+              )}
             </div>
-            <div data-active={step === 9 ? "true" : undefined} data-quiz-step="9" className={step === 9 ? "min-h-0 flex-1" : "hidden"}>
-              <QuizQuestion eyebrow="Контакт" title="Куда писать клиенту?" hint="Контакт будет виден на странице услуги.">
-                <TextInput name="contact" defaultValue={stringValue(initialValues, "contact")} placeholder="Telegram, email или другой контакт" required={step === 9} />
-                <TextArea name="description" defaultValue={stringValue(initialValues, "description")} placeholder="Короткое описание услуги для карточки" required={step === 9} />
-              </QuizQuestion>
-            </div>
-          </>
-        )}
+          )}
+        </div>
 
         <div className="quiz-footer">
-          <button
-            className="quiz-back"
-            type="button"
-            disabled={step === 0}
-            data-quiz-back
-            onClick={(event) => {
-              event.preventDefault();
-              goToStep(step - 1);
-            }}
-          >
+          <button className="quiz-back" type="button" disabled={step === 0} onClick={() => goToStep(step - 1)}>
             Назад
           </button>
-          {!lastStep ? (
-            <button
-              className="quiz-next"
-              type="button"
-              data-quiz-next
-              onClick={(event) => {
-                event.preventDefault();
-                goToStep(step + 1);
-              }}
-            >
-              Далее
+          {step < steps.length - 1 ? (
+            <button className="quiz-next" type="button" onClick={() => goToStep(step + 1)}>
+              {step === 0 ? "Начать" : step === steps.length - 2 ? "Посмотреть объявление" : "Далее"}
             </button>
           ) : (
-            <FormSubmitButton className="quiz-next" pendingText={submitLabel ? "Сохраняем..." : "Публикуем..."}>
-              {submitLabel ?? "Опубликовать"}
+            <FormSubmitButton className="quiz-next bg-hot" pendingText={submitLabel ? "Сохраняем..." : "Публикуем..."}>
+              {submitLabel ?? "Опубликовать услугу"}
             </FormSubmitButton>
           )}
         </div>
       </form>
     </section>
   );
+}
+
+function structuredField(label: string, value: string) {
+  if (!value || !value.trim()) return "";
+  return `${label}: ${value.trim()}`;
+}
+
+export function ListingQuizForm({ action, kind, initialValues, listingId, submitLabel }: ListingQuizFormProps) {
+  if (kind === "SERVICE") {
+    return <ServiceWizard action={action} initialValues={initialValues} listingId={listingId} submitLabel={submitLabel} />;
+  }
+  return <VacancyWizard action={action} initialValues={initialValues} listingId={listingId} submitLabel={submitLabel} />;
 }

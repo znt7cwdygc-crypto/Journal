@@ -194,6 +194,55 @@ function buildListingDescription(formData: FormData, type: ListingType, baseDesc
     ].filter(Boolean).join("\n\n");
   }
 
+  if (type === ListingType.SERVICE && template === "service-v2") {
+    const audience = cleanText(formData.get("audience"), 120);
+    const category = requireText(formData.get("serviceCategory"), "категорию услуги", 120);
+    const serviceIncludes = cleanMultiline(formData.get("serviceIncludes"), 2000);
+    const formatService = cleanText(formData.get("formatService"), 80);
+    const duration = cleanText(formData.get("duration"), 120);
+    const guarantee = cleanText(formData.get("guarantee"), 120);
+    const payFormat = cleanText(formData.get("payFormat"), 120);
+    const payMethods = cleanText(formData.get("payMethods"), 300);
+    const prepay = cleanText(formData.get("prepay"), 120);
+    const prepayImp = cleanText(formData.get("prepayImportance"), 20);
+    const minOrder = cleanText(formData.get("minOrder"), 200);
+    const minOrderImp = cleanText(formData.get("minOrderImportance"), 20);
+    const access = cleanText(formData.get("access"), 300);
+    const accessImp = cleanText(formData.get("accessImportance"), 20);
+    const nda = cleanText(formData.get("nda"), 120);
+    const ndaImp = cleanText(formData.get("ndaImportance"), 20);
+    const providerType = cleanText(formData.get("providerType"), 120);
+    const providerExp = cleanText(formData.get("providerExp"), 120);
+    const portfolio = cleanText(formData.get("portfolio"), 300);
+    const quickWishes = cleanText(formData.get("quickWishes"), 500);
+    const wishesText = cleanMultiline(formData.get("wishesText"), 1000);
+
+    const impLabel = (v: string) => v === "must" ? "(обязательно)" : v === "nice" ? "(желательно)" : v === "none" ? "(не важно)" : "";
+
+    return [
+      structuredLine("Для кого", audience),
+      structuredLine("Категория", category),
+      structuredLine("Что входит", serviceIncludes),
+      structuredLine("Формат оказания", formatService),
+      structuredLine("Срок выполнения", duration),
+      structuredLine("Гарантии", guarantee),
+      structuredLine("Цена", price),
+      structuredLine("Формат оплаты", payFormat),
+      structuredLine("Способ оплаты", payMethods),
+      structuredLine("Предоплата", prepay ? `${prepay} ${impLabel(prepayImp)}` : ""),
+      structuredLine("Мин. объём заказа", minOrder ? `${minOrder} ${impLabel(minOrderImp)}` : ""),
+      structuredLine("Нужны доступы/данные", access ? `${access} ${impLabel(accessImp)}` : ""),
+      structuredLine("Конфиденциальность", nda ? `${nda} ${impLabel(ndaImp)}` : ""),
+      structuredLine("Тип исполнителя", providerType),
+      structuredLine("Опыт", providerExp),
+      structuredLine("Портфолио", portfolio),
+      structuredLine("Бонусы", quickWishes),
+      structuredLine("Дополнительно", wishesText),
+      structuredLine("Ограничения", stopConditions),
+      structuredLine("Коротко", baseDescription)
+    ].filter(Boolean).join("\n\n");
+  }
+
   if (type === ListingType.SERVICE && template === "service-v1") {
     return [
       structuredLine("Категория", requireText(formData.get("serviceCategory"), "категорию услуги", 120)),
