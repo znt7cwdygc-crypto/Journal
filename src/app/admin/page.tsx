@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { createAdvertisementAction, deleteListingReviewAction, reviewPaymentAction, reviewReportAction, toggleAdvertisementAction, topUpBalanceAction, updateAdvertisementAction } from "@/app/actions";
-import { adPlacementLabel, adPlacements } from "@/lib/ads";
+import { adMonthlyPriceUsd, adPlacementLabel, adPlacements } from "@/lib/ads";
 import { requireRole } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { TreeBranch, TreeLeaf, TreeRoot } from "@/components/tree";
@@ -54,7 +54,7 @@ export default async function AdminPage() {
               <label className="block text-sm font-medium">Раздел</label>
               <select className="mt-1 w-full rounded border p-2 text-sm" name="placement" required>
                 {adPlacements.map((placement) => (
-                  <option key={placement.value} value={placement.value}>{placement.label}</option>
+                  <option key={placement.value} value={placement.value}>{placement.label} — ${adMonthlyPriceUsd(placement.value)}/мес</option>
                 ))}
               </select>
             </div>
@@ -95,7 +95,10 @@ export default async function AdminPage() {
                 <div className="min-w-0">
                   <p className="font-medium">{ad.title}</p>
                   <p className="mt-1 text-xs text-zinc-500">
-                    {adPlacementLabel(ad.placement)} • {ad.status} • клики: {ad.clickCount} • создал {ad.createdBy.name || ad.createdBy.email}
+                    {adPlacementLabel(ad.placement)} • ${adMonthlyPriceUsd(ad.placement)}/мес • {ad.status} • клики: {ad.clickCount} • создал {ad.createdBy.name || ad.createdBy.email}
+                  </p>
+                  <p className="mt-2 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+                    Цена размещения: ${adMonthlyPriceUsd(ad.placement)} в месяц
                   </p>
                   {ad.description && <p className="mt-1 text-sm text-zinc-600">{ad.description}</p>}
                   <a className="mt-1 block truncate text-xs text-accent" href={ad.targetUrl} target="_blank" rel="noreferrer">{ad.targetUrl}</a>
@@ -106,7 +109,7 @@ export default async function AdminPage() {
                     <label className="block text-xs font-semibold text-zinc-500">Место рекламы</label>
                     <select className="mt-1 w-full rounded border p-2 text-sm" name="placement" defaultValue={ad.placement} required>
                       {adPlacements.map((placement) => (
-                        <option key={placement.value} value={placement.value}>{placement.label}</option>
+                        <option key={placement.value} value={placement.value}>{placement.label} — ${adMonthlyPriceUsd(placement.value)}/мес</option>
                       ))}
                     </select>
                   </div>

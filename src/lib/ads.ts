@@ -23,6 +23,23 @@ export function adPlacementLabel(value: string) {
   return adPlacements.find((placement) => placement.value === value)?.label || value;
 }
 
+export const adMonthlyPricesUsd: Record<AdPlacement, number> = {
+  home: 150,
+  articles: 130,
+  vacancies: 110,
+  services: 100,
+  products: 90,
+  resumes: 80,
+  "model-operator": 80,
+  cabinet: 70,
+  authors: 60,
+  links: 50
+};
+
+export function adMonthlyPriceUsd(value: string) {
+  return adMonthlyPricesUsd[normalizeAdPlacement(value)];
+}
+
 export function isHttpUrl(value: string) {
   try {
     const url = new URL(value);
