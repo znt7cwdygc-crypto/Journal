@@ -226,6 +226,21 @@ export default async function ArticleDetailsPage({
           })
         }}
       />
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Главная", "item": siteUrl("/").toString() },
+              { "@type": "ListItem", "position": 2, "name": "Лента", "item": siteUrl("/articles").toString() },
+              { "@type": "ListItem", "position": 3, "name": article.title, "item": siteUrl(canonicalPath).toString() }
+            ]
+          })
+        }}
+      />
       {coverImage && (
         <SafeImage
           className="mb-6 aspect-[16/7] w-full object-cover"

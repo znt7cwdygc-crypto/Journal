@@ -5,6 +5,7 @@ import { CatalogFilterForm } from "@/components/catalog-filter-form";
 import { CatalogPageHeader } from "@/components/catalog-page-header";
 import { ProductDirectoryCard } from "@/components/product-card";
 import { prisma } from "@/lib/prisma";
+import { siteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -93,6 +94,14 @@ export default async function ProductsPage({ searchParams }: { searchParams?: { 
 
   return (
     <div className="space-y-4">
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "Товары",
+        "description": "Товары участников WebcamExpert: оборудование, свет, камеры, мебель и полезные вещи для работы.",
+        "url": siteUrl("/products").toString(),
+        "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
+      }) }} />
       <CatalogPageHeader
         eyebrow="Маркет"
         title="Товары"

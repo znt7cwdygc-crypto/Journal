@@ -142,6 +142,21 @@ export default async function ResumeDetailsPage({
         }}
       />
 
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Главная", "item": siteUrl("/").toString() },
+              { "@type": "ListItem", "position": 2, "name": "Резюме", "item": siteUrl("/resumes").toString() },
+              { "@type": "ListItem", "position": 3, "name": resume.title, "item": siteUrl(resumePath).toString() }
+            ]
+          })
+        }}
+      />
       <Link className="text-sm font-semibold text-accent" href="/resumes">Назад к резюме</Link>
       <div className="mt-4 flex flex-wrap gap-2 text-xs">
         <span className="rounded-full bg-mint px-3 py-1 font-semibold text-ink">Резюме</span>

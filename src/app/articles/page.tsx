@@ -11,6 +11,7 @@ import { safeImageUrl } from "@/lib/media";
 import { prisma } from "@/lib/prisma";
 import { articleSeoPath } from "@/lib/seo-url";
 import { demoArticles, topicNav } from "@/lib/ugc-demo";
+import { siteUrl } from "@/lib/seo";
 import { articleTopic as inferArticleTopic } from "@/lib/topics";
 
 export const dynamic = "force-dynamic";
@@ -92,6 +93,14 @@ export default async function ArticlesPage({
 
   return (
     <div className="page-stack">
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "Статьи и материалы сообщества",
+        "description": "Лента авторских историй, экспертных инструкций, разборов и обсуждений сообщества WebcamExpert.",
+        "url": siteUrl("/articles").toString(),
+        "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
+      }) }} />
       <section className="content-card overflow-hidden">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>

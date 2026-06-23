@@ -5,6 +5,7 @@ import { CatalogFilterForm } from "@/components/catalog-filter-form";
 import { CatalogPageHeader } from "@/components/catalog-page-header";
 import { ListingDirectoryCard } from "@/components/directory-card";
 import { serviceTopic } from "@/lib/topics";
+import { siteUrl } from "@/lib/seo";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -100,6 +101,14 @@ export default async function ServicesPage({ searchParams }: { searchParams?: { 
 
   return (
     <div className="space-y-4">
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "Услуги",
+        "description": "Каталог услуг, экспертов и консультаций WebcamExpert для моделей, студий и команд.",
+        "url": siteUrl("/services").toString(),
+        "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
+      }) }} />
       <CatalogPageHeader
         eyebrow="Услуги"
         title="Услуги"
