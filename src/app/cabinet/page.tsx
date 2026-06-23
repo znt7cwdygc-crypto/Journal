@@ -107,11 +107,12 @@ export default async function CabinetPage({
     productError?: string | string[];
     inviteResponse?: string | string[];
     inviteReport?: string | string[];
+    invited?: string | string[];
   };
 }) {
   const user = await requireUser();
 
-  const [dbUser, myArticles, myListings, myProducts, myResume, myMatchProfile, draftArticle, followedAuthors, followedTopics, savedListings, savedProducts, savedResumes, savedMatchProfiles, myInvites, studioBalance] = await Promise.all([
+  const [dbUser, myArticles, myListings, myProducts, myResume, myMatchProfile, draftArticle, followedAuthors, followedTopics, savedListings, savedProducts, savedResumes, savedMatchProfiles, myInvites, sentInvites, studioBalance] = await Promise.all([
     prisma.user.findUnique({
       where: { id: user.id },
       include: {
@@ -193,6 +194,19 @@ export default async function CabinetPage({
       include: {
         studio: {
           select: { id: true, name: true, email: true, tgHandle: true, violationCount: true }
+        },
+        resume: {
+          select: { id: true, title: true, roleGoal: true, contactEmail: true, contactTelegram: true }
+        }
+      },
+      orderBy: { createdAt: "desc" },
+      take: 20
+    }),
+    prisma.invite.findMany({
+      where: { studioId: user.id },
+      include: {
+        model: {
+          select: { id: true, name: true, email: true, tgHandle: true }
         },
         resume: {
           select: { id: true, title: true, roleGoal: true, contactEmail: true, contactTelegram: true }
@@ -311,30 +325,73 @@ export default async function CabinetPage({
         </section>
       )}
 
-      {myResume && (
-        <details id="invites" data-cabinet-panel className="group rounded-lg bg-white shadow-sm" open={Boolean(inviteResponseParam || inviteReportParam)}>
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
-            <div>
-              <h2 className="font-semibold">Мои инвайты</h2>
-              <p className="mt-1 text-xs text-zinc-500">Предложения от студий по вашим резюме</p>
-            </div>
-            {myInvites.filter((i) => i.status === "PENDING").length > 0 && (
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
-                {myInvites.filter((i) => i.status === "PENDING").length} новых
-              </span>
-            )}
-          </summary>
-          <div className="border-t border-zinc-100 p-4 space-y-3">
-            {myInvites.length > 0 ? (
-              myInvites.map((invite) => (
-                <InviteCard key={invite.id} invite={invite} />
-              ))
-            ) : (
-              <p className="text-sm text-zinc-500">Пока нет инвайтов. Когда студия заинтересуется вашим резюме, вы увидите предложение здесь.</p>
-            )}
+      <details id="invites" data-cabinet-panel className="group rounded-lg bg-white shadow-sm" open={Boolean(inviteResponseParam || inviteReportParam || searchValue(searchParams?.invited))}>
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
+          <div>
+            <h2 className="font-semibold">Мои инвайты</h2>
+            <p className="mt-1 text-xs text-zinc-500">Входящие и отправленные предложения</p>
           </div>
-        </details>
-      )}
+          {(myInvites.filter((i) => i.status === "PENDING").length + sentInvites.filter((i) => i.status === "ACCEPTED").length) > 0 && (
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+              {myInvites.filter((i) => i.status === "PENDING").length + sentInvites.filter((i) => i.status === "ACCEPTED").length} активных
+            </span>
+          )}
+        </summary>
+        <div className="border-t border-zinc-100 p-4 space-y-4">
+          {myInvites.length > 0 && (
+            <div>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">Входящие — предложения вам</p>
+              <div className="space-y-3">
+                {myInvites.map((invite) => (
+                  <InviteCard key={invite.id} invite={invite} />
+                ))}
+              </div>
+            </div>
+          )}
+          {sentInvites.length > 0 && (
+            <div>
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">Отправленные — ваши запросы</p>
+              <div className="space-y-3">
+                {sentInvites.map((invite) => {
+                  const statusLabel = invite.status === "PENDING" ? "Ожидает ответа" : invite.status === "ACCEPTED" ? "Контакт получен" : invite.status === "DECLINED" ? "Отклонено" : "Истекло";
+                  const statusColor = invite.status === "PENDING" ? "bg-amber-100 text-amber-800" : invite.status === "ACCEPTED" ? "bg-emerald-100 text-emerald-800" : "bg-zinc-100 text-zinc-600";
+                  const costLabel = `$${(invite.amountUsd / 100).toFixed(0)}`;
+                  const modelContact = invite.status === "ACCEPTED" ? [invite.resume.contactTelegram, invite.resume.contactEmail].filter(Boolean).join(" • ") : null;
+                  return (
+                    <div key={invite.id} className="rounded-lg border border-zinc-200 p-3">
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className={`rounded-full px-2 py-0.5 font-semibold ${statusColor}`}>{statusLabel}</span>
+                        <span className="text-zinc-500">{costLabel}</span>
+                        <span className="text-zinc-400">{invite.createdAt.toLocaleDateString("ru-RU")}</span>
+                      </div>
+                      <p className="mt-2 text-sm font-semibold">{invite.resume.title}</p>
+                      <p className="mt-1 text-xs text-zinc-500 line-clamp-2">{invite.message}</p>
+                      {modelContact && (
+                        <div className="mt-2 rounded-lg bg-emerald-50 p-2 text-sm">
+                          <span className="text-xs font-bold text-emerald-700">Контакт:</span>{" "}
+                          <span className="font-semibold text-emerald-900">{modelContact}</span>
+                        </div>
+                      )}
+                      {invite.status === "PENDING" && (
+                        <p className="mt-2 text-xs text-amber-600">Ожидайте решения. Если модель не ответит в течение 72ч — деньги вернутся.</p>
+                      )}
+                      {invite.status === "DECLINED" && (
+                        <p className="mt-2 text-xs text-zinc-500">Средства возвращены на ваш баланс.</p>
+                      )}
+                      {invite.status === "EXPIRED" && (
+                        <p className="mt-2 text-xs text-zinc-500">Время ответа истекло. Средства возвращены.</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {myInvites.length === 0 && sentInvites.length === 0 && (
+            <p className="text-sm text-zinc-500">Пока нет инвайтов. Здесь будут входящие предложения по вашему резюме и отправленные вами запросы на контакты.</p>
+          )}
+        </div>
+      </details>
 
       {providerMode && (
         <section className="rounded-lg bg-white p-4 shadow-sm">
