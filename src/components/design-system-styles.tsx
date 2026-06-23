@@ -37,18 +37,18 @@ const css = `
 .form-field:focus,.form-textarea:focus{border-color:#ff4d2e}
 .form-textarea{line-height:1.5rem;resize:vertical}
 .form-hint{background:#ecfeff;border:1px solid #a5f3fc;border-radius:.5rem;color:#164e63;font-size:.875rem;line-height:1.5rem;padding:.75rem}
-.tiptap-article-content{padding:.875rem;font-size:1rem;line-height:1.75rem;color:#18181b}
-.tiptap-article-content p{margin:.75rem 0}
-.tiptap-article-content h2{font-size:1.5rem;font-weight:700;line-height:1.2;margin:1.5rem 0 .75rem}
-.tiptap-article-content h3{font-size:1.25rem;font-weight:700;line-height:1.25;margin:1.25rem 0 .625rem}
-.tiptap-article-content ul,.tiptap-article-content ol{margin:.875rem 0;padding-left:1.375rem}
+.tiptap-article-content{padding:.625rem;font-size:1rem;line-height:1.6rem;color:#18181b}
+.tiptap-article-content p{margin:.5rem 0}
+.tiptap-article-content h2{font-size:1.375rem;font-weight:700;line-height:1.2;margin:1rem 0 .5rem}
+.tiptap-article-content h3{font-size:1.125rem;font-weight:700;line-height:1.25;margin:.875rem 0 .375rem}
+.tiptap-article-content ul,.tiptap-article-content ol{margin:.625rem 0;padding-left:1.25rem}
 .tiptap-article-content ul{list-style:disc}
 .tiptap-article-content ol{list-style:decimal}
 .tiptap-article-content li{margin:.375rem 0}
-.tiptap-article-content blockquote{border-left:4px solid #ff4d2e;background:#fff7ed;margin:1rem 0;padding:.75rem 1rem;font-weight:600}
+.tiptap-article-content blockquote{border-left:4px solid #ff4d2e;background:#fff7ed;margin:.75rem 0;padding:.5rem .75rem;font-weight:600}
 .tiptap-article-content a{color:#0f766e;text-decoration:underline;text-underline-offset:3px}
-.tiptap-article-content hr{border:0;border-top:1px solid #e4e4e7;margin:1.25rem 0}
-.tiptap-article-content img,.article-html img{border-radius:.5rem;display:block;height:auto;margin:1rem auto;max-height:560px;max-width:100%;object-fit:contain}
+.tiptap-article-content hr{border:0;border-top:1px solid #e4e4e7;margin:.875rem 0}
+.tiptap-article-content img,.article-html img{border-radius:.5rem;display:block;height:auto;margin:.75rem auto;max-height:560px;max-width:100%;object-fit:contain}
 .tiptap-article-content .is-editor-empty:first-child::before{color:#a1a1aa;content:attr(data-placeholder);float:left;height:0;pointer-events:none}
 .article-html p{margin:1.25rem 0}
 .article-html h2{font-size:1.75rem;font-weight:700;line-height:1.2;margin:2.25rem 0 1rem;color:#09090b}

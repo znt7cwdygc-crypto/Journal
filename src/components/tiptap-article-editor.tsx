@@ -59,7 +59,7 @@ function ToolbarButton({
   return (
     <button
       aria-label={title}
-      className={`flex h-8 items-center justify-center rounded-lg text-sm font-semibold transition ${
+      className={`flex h-7 items-center justify-center rounded-md text-xs font-semibold transition ${
         wide ? "px-2.5" : "w-8"
       } ${active ? "bg-zinc-900 text-white" : "bg-transparent text-zinc-700 hover:bg-zinc-200"} disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent`}
       disabled={disabled}
@@ -77,7 +77,7 @@ function ToolbarGroup({ children }: { children: ReactNode }) {
 }
 
 function ToolbarDivider() {
-  return <div className="mx-1 h-6 w-px bg-zinc-200" />;
+  return <div className="mx-0.5 h-5 w-px bg-zinc-200" />;
 }
 
 export function TiptapArticleEditor({ name, initialContent }: TiptapArticleEditorProps) {
@@ -110,7 +110,7 @@ export function TiptapArticleEditor({ name, initialContent }: TiptapArticleEdito
     content: initialHtml,
     editorProps: {
       attributes: {
-        class: "tiptap-article-content min-h-[220px] outline-none"
+        class: "tiptap-article-content min-h-[170px] outline-none"
       }
     },
     immediatelyRender: false,
@@ -161,7 +161,7 @@ export function TiptapArticleEditor({ name, initialContent }: TiptapArticleEdito
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white focus-within:border-[#ff4d2e] focus-within:ring-2 focus-within:ring-[#fff1ed]">
       <input name={name} type="hidden" value={html} />
-      <div className="flex flex-wrap items-center gap-1 border-b border-zinc-100 bg-zinc-50 p-2">
+      <div className="flex flex-wrap items-center gap-0.5 border-b border-zinc-100 bg-zinc-50 p-1.5">
         <ToolbarGroup>
           <ToolbarButton wide active={editor?.isActive("paragraph")} disabled={!editor} onClick={() => editor?.chain().focus().setParagraph().run()} title="Обычный текст">
             Текст
@@ -244,7 +244,7 @@ export function TiptapArticleEditor({ name, initialContent }: TiptapArticleEdito
       </div>
       <EditorContent editor={editor} />
       {(uploadMessage || isUploading) && (
-        <p className="border-t border-zinc-100 px-3 py-2 text-sm font-medium text-zinc-600">
+        <p className="border-t border-zinc-100 px-2.5 py-1.5 text-xs font-medium text-zinc-600">
           {isUploading ? "Загружаем изображение..." : uploadMessage}
         </p>
       )}
