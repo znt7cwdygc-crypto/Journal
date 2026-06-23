@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { ContactReveal } from "@/components/contact-reveal";
 import { ImportanceBio } from "@/components/importance-bio";
 import { ReportButton } from "@/components/report-button";
+import { ReverseQuiz } from "@/components/reverse-quiz";
 import { prisma } from "@/lib/prisma";
 import { siteName, siteUrl, truncateSeo } from "@/lib/seo";
 import { idFromSeoParam, pathTail, resumeSeoPath } from "@/lib/seo-url";
@@ -64,7 +65,7 @@ export default async function ResumeDetailsPage({
   searchParams
 }: {
   params: { slug: string };
-  searchParams?: { reported?: string; favorite?: string };
+  searchParams?: { reported?: string; favorite?: string; invited?: string };
 }) {
   const session = await auth();
   const resume = await findResume(params.slug);
@@ -76,6 +77,26 @@ export default async function ResumeDetailsPage({
   }
 
   await prisma.resume.update({ where: { id: resume.id }, data: { viewCount: { increment: 1 } } });
+
+  const isOwner = session?.user?.id === resume.userId;
+  const viewerUser = session?.user?.id
+    ? await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { id: true, accountMode: true }
+      })
+    : null;
+  const isProvider = viewerUser
+    ? viewerUser.accountMode === "PROVIDER" || viewerUser.accountMode === "BOTH"
+    : false;
+  const viewerBalance = viewerUser
+    ? await prisma.studioBalance.findUnique({ where: { userId: viewerUser.id } })
+    : null;
+  const existingInvite = session?.user?.id
+    ? await prisma.invite.findFirst({
+        where: { resumeId: resume.id, studioId: session.user.id },
+        orderBy: { createdAt: "desc" }
+      })
+    : null;
 
   const authorName = resume.user.name || resume.user.email || "Автор резюме";
   const isSaved = Boolean(session?.user?.id && resume.savedBy.some((item) => item.userId === session.user.id));
@@ -149,21 +170,50 @@ export default async function ResumeDetailsPage({
         </div>
       )}
 
-      <div className="directory-actions mt-5 grid grid-cols-3 gap-2">
-        <ContactReveal contact={contactValue(resume)} signedIn={Boolean(session?.user)} compact />
-        <form action={saveResumeAction}>
-          <input type="hidden" name="resumeId" value={resume.id} />
-          <input type="hidden" name="next" value={resumePath} />
-          <button className="btn btn-muted h-10 w-full whitespace-nowrap px-1 text-[11px]" type="submit">
-            {isSaved ? "Убрать" : "В избранное"}
-          </button>
-        </form>
-        <ReportButton
-          targetType="RESUME"
-          targetId={resume.id}
-          next={resumePath}
-          buttonClassName="btn btn-danger h-10 w-full whitespace-nowrap px-1 text-[11px]"
-        />
+      {searchParams?.invited && (
+        <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+          Инвайт отправлен, ожидайте ответа модели.
+        </div>
+      )}
+
+      <div className="directory-actions mt-5 space-y-3">
+        <div className="grid grid-cols-2 gap-2">
+          <form action={saveResumeAction}>
+            <input type="hidden" name="resumeId" value={resume.id} />
+            <input type="hidden" name="next" value={resumePath} />
+            <button className="btn btn-muted h-10 w-full whitespace-nowrap px-1 text-[11px]" type="submit">
+              {isSaved ? "Убрать" : "В избранное"}
+            </button>
+          </form>
+          <ReportButton
+            targetType="RESUME"
+            targetId={resume.id}
+            next={resumePath}
+            buttonClassName="btn btn-danger h-10 w-full whitespace-nowrap px-1 text-[11px]"
+          />
+        </div>
+
+        {isOwner ? (
+          <ContactReveal contact={contactValue(resume)} signedIn={Boolean(session?.user)} compact />
+        ) : existingInvite?.status === "ACCEPTED" ? (
+          <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm">
+            <p className="font-semibold text-sky-800">Контакт раскрыт</p>
+            <p className="mt-1 text-zinc-800">{contactValue(resume)}</p>
+          </div>
+        ) : existingInvite?.status === "PENDING" ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            Инвайт отправлен, ожидайте ответа
+          </div>
+        ) : (
+          <ReverseQuiz
+            resumeId={resume.id}
+            bio={resume.bio}
+            roleGoal={resume.roleGoal}
+            signedIn={Boolean(session?.user)}
+            canProvide={isProvider}
+            hasBalance={Boolean(viewerBalance && viewerBalance.availableUsd > 0)}
+          />
+        )}
       </div>
 
       <Link href={`/profiles/${resume.userId}`} className="mt-6 flex items-center gap-3 rounded-lg bg-zinc-50 p-3 text-sm hover:bg-zinc-100">

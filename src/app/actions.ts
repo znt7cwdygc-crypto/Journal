@@ -1743,9 +1743,16 @@ export async function reviewPaymentAction(formData: FormData) {
 
 // ─── Invite system ───────────────────────────────────────────────────
 
-const INVITE_COST_CENTS = 1500;
+const INVITE_COST_MODEL_CENTS = 1500; // $15 for model resumes
+const INVITE_COST_SPECIALIST_CENTS = 500; // $5 for specialist resumes
 const INVITE_DAILY_LIMIT = 10;
 const INVITE_TTL_MS = 72 * 60 * 60 * 1000; // 72 hours
+
+function inviteCostCents(roleGoal: string) {
+  const lower = roleGoal.toLowerCase();
+  if (lower === "модель" || lower.includes("модель")) return INVITE_COST_MODEL_CENTS;
+  return INVITE_COST_SPECIALIST_CENTS;
+}
 
 export async function sendInviteAction(formData: FormData) {
   const session = await auth();
@@ -1769,13 +1776,14 @@ export async function sendInviteAction(formData: FormData) {
 
   const resume = await prisma.resume.findFirst({
     where: { id: resumeId, isPublic: true, hiddenByInactivity: false },
-    select: { id: true, userId: true }
+    select: { id: true, userId: true, roleGoal: true }
   });
   if (!resume) throw new Error("Резюме не найдено");
   if (resume.userId === user.id) throw new Error("Нельзя отправить инвайт самому себе");
 
+  const costCents = inviteCostCents(resume.roleGoal);
   const balance = await prisma.studioBalance.findUnique({ where: { userId: user.id } });
-  if (!balance || balance.availableUsd < INVITE_COST_CENTS) throw new Error("Недостаточно средств на балансе");
+  if (!balance || balance.availableUsd < costCents) throw new Error("Недостаточно средств на балансе");
 
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
@@ -1798,6 +1806,7 @@ export async function sendInviteAction(formData: FormData) {
         quizAnswers,
         message,
         offeredPercent,
+        amountUsd: costCents,
         expiresAt: new Date(Date.now() + INVITE_TTL_MS)
       }
     });
@@ -1806,7 +1815,7 @@ export async function sendInviteAction(formData: FormData) {
       data: {
         userId: user.id,
         type: BalanceTxType.HOLD,
-        amountCents: INVITE_COST_CENTS,
+        amountCents: costCents,
         inviteId: invite.id,
         note: `Hold for invite ${invite.id}`
       }
@@ -1817,8 +1826,8 @@ export async function sendInviteAction(formData: FormData) {
     await tx.studioBalance.update({
       where: { userId: user.id },
       data: {
-        availableUsd: { decrement: INVITE_COST_CENTS },
-        holdUsd: { increment: INVITE_COST_CENTS }
+        availableUsd: { decrement: costCents },
+        holdUsd: { increment: costCents }
       }
     });
 
@@ -1846,6 +1855,8 @@ export async function respondInviteAction(formData: FormData) {
   if (invite.modelId !== session.user.id) throw new Error("Нет доступа");
   if (invite.status !== InviteStatus.PENDING) throw new Error("Инвайт уже обработан");
 
+  const cost = invite.amountUsd;
+
   if (response === "accept") {
     await prisma.$transaction(async (tx) => {
       await tx.invite.update({
@@ -1857,7 +1868,7 @@ export async function respondInviteAction(formData: FormData) {
         data: {
           userId: invite.studioId,
           type: BalanceTxType.CHARGE,
-          amountCents: INVITE_COST_CENTS,
+          amountCents: cost,
           inviteId: invite.id,
           note: `Charge for accepted invite ${invite.id}`
         }
@@ -1865,7 +1876,7 @@ export async function respondInviteAction(formData: FormData) {
 
       await tx.studioBalance.update({
         where: { userId: invite.studioId },
-        data: { holdUsd: { decrement: INVITE_COST_CENTS } }
+        data: { holdUsd: { decrement: cost } }
       });
     });
   } else {
@@ -1879,7 +1890,7 @@ export async function respondInviteAction(formData: FormData) {
         data: {
           userId: invite.studioId,
           type: BalanceTxType.REFUND,
-          amountCents: INVITE_COST_CENTS,
+          amountCents: cost,
           inviteId: invite.id,
           note: `Refund for declined invite ${invite.id}`
         }
@@ -1888,8 +1899,8 @@ export async function respondInviteAction(formData: FormData) {
       await tx.studioBalance.update({
         where: { userId: invite.studioId },
         data: {
-          holdUsd: { decrement: INVITE_COST_CENTS },
-          availableUsd: { increment: INVITE_COST_CENTS }
+          holdUsd: { decrement: cost },
+          availableUsd: { increment: cost }
         }
       });
     });

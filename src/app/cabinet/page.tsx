@@ -23,6 +23,7 @@ import {
 } from "@/app/actions";
 import { ArticleEditorForm } from "@/components/article-editor-form";
 import { CabinetPanelRouter } from "@/components/cabinet-panel-router";
+import { InviteCard } from "@/components/invite-card";
 import { ListingQuizDisclosure } from "@/components/listing-quiz-disclosure";
 import { MatchProfileForm } from "@/components/match-profile-form";
 import { ProductForm } from "@/components/product-form";
@@ -104,11 +105,13 @@ export default async function CabinetPage({
     resumeId?: string | string[];
     productReset?: string | string[];
     productError?: string | string[];
+    inviteResponse?: string | string[];
+    inviteReport?: string | string[];
   };
 }) {
   const user = await requireUser();
 
-  const [dbUser, myArticles, myListings, myProducts, myResume, myMatchProfile, draftArticle, followedAuthors, followedTopics, savedListings, savedProducts, savedResumes, savedMatchProfiles] = await Promise.all([
+  const [dbUser, myArticles, myListings, myProducts, myResume, myMatchProfile, draftArticle, followedAuthors, followedTopics, savedListings, savedProducts, savedResumes, savedMatchProfiles, myInvites, studioBalance] = await Promise.all([
     prisma.user.findUnique({
       where: { id: user.id },
       include: {
@@ -184,7 +187,21 @@ export default async function CabinetPage({
       },
       orderBy: { createdAt: "desc" },
       take: 6
-    })
+    }),
+    prisma.invite.findMany({
+      where: { modelId: user.id },
+      include: {
+        studio: {
+          select: { id: true, name: true, email: true, tgHandle: true, violationCount: true }
+        },
+        resume: {
+          select: { id: true, title: true, roleGoal: true, contactEmail: true, contactTelegram: true }
+        }
+      },
+      orderBy: { createdAt: "desc" },
+      take: 20
+    }),
+    prisma.studioBalance.findUnique({ where: { userId: user.id } })
   ]);
 
   if (!dbUser) {
@@ -219,6 +236,8 @@ export default async function CabinetPage({
     : productError
       ? `product-error-${productError}`
       : "product-new";
+  const inviteResponseParam = searchValue(searchParams?.inviteResponse);
+  const inviteReportParam = searchValue(searchParams?.inviteReport);
   const profileName = dbUser.name || dbUser.email || "Профиль";
   const accountModeLabel =
     dbUser.accountMode === "PROVIDER"
@@ -275,6 +294,58 @@ export default async function CabinetPage({
           {providerMode && <a className="shrink-0 rounded-lg bg-zinc-100 px-3 py-2 text-zinc-700" href="#service">Услуга</a>}
         </div>
       </section>
+
+      {inviteResponseParam === "accept" && (
+        <section className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
+          Вы приняли инвайт. Контакты студии раскрыты.
+        </section>
+      )}
+      {inviteResponseParam === "decline" && (
+        <section className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm font-medium text-zinc-700">
+          Инвайт отклонен. Средства возвращены студии.
+        </section>
+      )}
+      {inviteReportParam === "sent" && (
+        <section className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
+          Жалоба на несоответствие условий отправлена в модерацию.
+        </section>
+      )}
+
+      {myInvites.length > 0 && (
+        <details id="invites" data-cabinet-panel className="group rounded-lg bg-white shadow-sm" open={Boolean(inviteResponseParam || inviteReportParam)}>
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
+            <div>
+              <h2 className="font-semibold">Мои инвайты</h2>
+              <p className="mt-1 text-xs text-zinc-500">Предложения от студий по вашим резюме</p>
+            </div>
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+              {myInvites.filter((i) => i.status === "PENDING").length} новых
+            </span>
+          </summary>
+          <div className="border-t border-zinc-100 p-4 space-y-3">
+            {myInvites.map((invite) => (
+              <InviteCard key={invite.id} invite={invite} />
+            ))}
+          </div>
+        </details>
+      )}
+
+      {studioBalance && providerMode && (
+        <section className="rounded-lg bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-semibold">Баланс студии</h2>
+          <div className="mt-3 grid grid-cols-2 gap-3 text-center">
+            <div className="rounded-lg bg-emerald-50 p-3">
+              <p className="text-lg font-bold text-emerald-800">${(studioBalance.availableUsd / 100).toFixed(2)}</p>
+              <p className="text-xs text-emerald-600">Доступно</p>
+            </div>
+            <div className="rounded-lg bg-amber-50 p-3">
+              <p className="text-lg font-bold text-amber-800">${(studioBalance.holdUsd / 100).toFixed(2)}</p>
+              <p className="text-xs text-amber-600">В холде</p>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-zinc-500">Для пополнения баланса обратитесь к администратору.</p>
+        </section>
+      )}
 
       {((createdMessage && !customSuccessVisible) || (updatedMessage && !customSuccessVisible)) && (
         <section className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">

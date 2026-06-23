@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 
   let expiredInviteCount = 0;
   for (const invite of expiredInvites) {
-    const costCents = invite.amountUsd * 100;
+    const costCents = invite.amountUsd;
     await prisma.$transaction([
       prisma.invite.update({
         where: { id: invite.id },
