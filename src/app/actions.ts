@@ -177,7 +177,7 @@ function buildListingDescription(formData: FormData, type: ListingType, baseDesc
 
   if (type === ListingType.VACANCY && template === "vacancy-specialist-v1") {
     const vacancyRole = requireText(formData.get("vacancyRole"), "роль", 120);
-    const forbiddenText = [vacancyRole, baseDescription, formData.get("title"), formData.get("requirements")].join(" ");
+    const forbiddenText = vacancyRole;
     if (forbiddenModelVacancyPattern.test(forbiddenText)) throw new Error("Вакансии для моделей здесь нельзя размещать. Используйте резюме моделей и другие разделы.");
 
     return [
