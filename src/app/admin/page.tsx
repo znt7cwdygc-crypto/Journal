@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createAdvertisementAction, deleteListingReviewAction, reviewPaymentAction, reviewReportAction, toggleAdvertisementAction, topUpBalanceAction } from "@/app/actions";
+import { createAdvertisementAction, deleteListingReviewAction, reviewPaymentAction, reviewReportAction, toggleAdvertisementAction, topUpBalanceAction, updateAdvertisementAction } from "@/app/actions";
 import { adPlacementLabel, adPlacements } from "@/lib/ads";
 import { requireRole } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
@@ -91,7 +91,7 @@ export default async function AdminPage() {
           {advertisements.length === 0 && <p className="text-sm text-zinc-500">Рекламы пока нет.</p>}
           {advertisements.map((ad) => (
             <TreeLeaf key={ad.id}>
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div className="space-y-3">
                 <div className="min-w-0">
                   <p className="font-medium">{ad.title}</p>
                   <p className="mt-1 text-xs text-zinc-500">
@@ -100,7 +100,45 @@ export default async function AdminPage() {
                   {ad.description && <p className="mt-1 text-sm text-zinc-600">{ad.description}</p>}
                   <a className="mt-1 block truncate text-xs text-accent" href={ad.targetUrl} target="_blank" rel="noreferrer">{ad.targetUrl}</a>
                 </div>
-                <div className="flex shrink-0 flex-wrap gap-2">
+                <form action={updateAdvertisementAction} className="grid gap-2 rounded-lg bg-zinc-50 p-3 md:grid-cols-2">
+                  <input type="hidden" name="adId" value={ad.id} />
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-500">Место рекламы</label>
+                    <select className="mt-1 w-full rounded border p-2 text-sm" name="placement" defaultValue={ad.placement} required>
+                      {adPlacements.map((placement) => (
+                        <option key={placement.value} value={placement.value}>{placement.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-500">Название</label>
+                    <input className="mt-1 w-full rounded border p-2 text-sm" name="title" defaultValue={ad.title} maxLength={120} required />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-zinc-500">Описание</label>
+                    <input className="mt-1 w-full rounded border p-2 text-sm" name="description" defaultValue={ad.description || ""} maxLength={220} />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-zinc-500">Картинка/GIF именно для этого места</label>
+                    <input className="mt-1 w-full rounded border p-2 text-sm" name="imageUrl" defaultValue={ad.imageUrl} required />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-zinc-500">Ссылка именно для этого места</label>
+                    <input className="mt-1 w-full rounded border p-2 text-sm" name="targetUrl" defaultValue={ad.targetUrl} type="url" required />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-500">Старт</label>
+                    <input className="mt-1 w-full rounded border p-2 text-sm" name="startsAt" type="datetime-local" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-zinc-500">Окончание</label>
+                    <input className="mt-1 w-full rounded border p-2 text-sm" name="expiresAt" type="datetime-local" />
+                  </div>
+                  <button className="rounded bg-hot px-3 py-2 text-sm font-semibold text-white md:col-span-2" type="submit">
+                    Сохранить это место рекламы
+                  </button>
+                </form>
+                <div className="flex flex-wrap gap-2">
                   <form action={toggleAdvertisementAction}>
                     <input type="hidden" name="adId" value={ad.id} />
                     <input type="hidden" name="status" value={ad.status === "ACTIVE" ? "PAUSED" : "ACTIVE"} />

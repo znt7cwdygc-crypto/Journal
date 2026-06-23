@@ -15,11 +15,9 @@ export async function AdBlock({ placement, variant = "banner" }: { placement: Ad
         <span className="inline-flex rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">
           Реклама
         </span>
-        <span className="mt-3 flex h-16 w-full items-center justify-center overflow-hidden rounded-lg bg-zinc-950">
+        <span className="mt-2 flex h-24 w-full items-center justify-center overflow-hidden rounded-lg bg-zinc-950">
           <img className="h-full w-full object-contain" src={ad.imageUrl} alt={ad.title} loading="lazy" />
         </span>
-        <span className="mt-3 block truncate text-base font-semibold leading-snug text-ink">{ad.title}</span>
-        {ad.description && <span className="mt-1 block truncate text-sm leading-5 text-zinc-600">{ad.description}</span>}
       </a>
     );
   }

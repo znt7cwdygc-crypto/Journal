@@ -2019,6 +2019,37 @@ export async function createAdvertisementAction(formData: FormData) {
   redirect("/admin?ad=created#ads");
 }
 
+export async function updateAdvertisementAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") throw new Error("Недостаточно прав");
+
+  const adId = cleanText(formData.get("adId"), 120);
+  const title = requireText(formData.get("title"), "название рекламы", 120);
+  const imageUrl = requireText(formData.get("imageUrl"), "ссылку на картинку", 2000);
+  const targetUrl = requireText(formData.get("targetUrl"), "ссылку перехода", 500);
+  if (!isHttpUrl(imageUrl) && !imageUrl.startsWith("data:image/")) throw new Error("Картинка должна быть http/https ссылкой или data:image");
+  if (!isHttpUrl(targetUrl)) throw new Error("Ссылка перехода должна быть http/https ссылкой");
+
+  const placement = normalizeAdPlacement(cleanText(formData.get("placement"), 80));
+  const previousAd = await prisma.advertisement.findUnique({ where: { id: adId }, select: { placement: true } });
+  await prisma.advertisement.update({
+    where: { id: adId },
+    data: {
+      title,
+      description: cleanText(formData.get("description"), 220) || null,
+      imageUrl,
+      targetUrl,
+      placement,
+      startsAt: parseAdDate(formData.get("startsAt")),
+      expiresAt: parseAdDate(formData.get("expiresAt"))
+    }
+  });
+
+  revalidateAdPlacement(previousAd?.placement);
+  revalidateAdPlacement(placement);
+  redirect("/admin?ad=updated#ads");
+}
+
 export async function toggleAdvertisementAction(formData: FormData) {
   const session = await auth();
   if (!session?.user || session.user.role !== "ADMIN") throw new Error("Недостаточно прав");
