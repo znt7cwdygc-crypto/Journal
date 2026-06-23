@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { createAdvertisementAction, deleteListingReviewAction, reviewPaymentAction, reviewReportAction, toggleAdvertisementAction, topUpBalanceAction, updateAdvertisementAction } from "@/app/actions";
+import { createAdvertisementAction, deleteListingReviewAction, reviewPaymentAction, toggleAdvertisementAction, updateAdvertisementAction } from "@/app/actions";
 import { adMonthlyPriceUsd, adPlacementLabel, adPlacements } from "@/lib/ads";
 import { requireRole } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
@@ -8,44 +8,114 @@ import { TreeBranch, TreeLeaf, TreeRoot } from "@/components/tree";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Админ-панель",
+  title: "Админ-панель — Дашборд",
   robots: { index: false, follow: false }
 };
 
 export default async function AdminPage() {
   await requireRole(["ADMIN"]);
 
-  const [pendingPayments, pendingArticles, pendingListings, reports, listingReviews, providerUsers, recentTransactions, advertisements] = await Promise.all([
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  const [
+    totalUsers,
+    newUsersWeek,
+    newUsersMonth,
+    articlesByStatus,
+    listingsCount,
+    productsCount,
+    resumesCount,
+    inviteStats,
+    inviteRevenue,
+    activeReports,
+    recentAudit,
+    pendingPayments,
+    listingReviews,
+    advertisements,
+  ] = await Promise.all([
+    prisma.user.count(),
+    prisma.user.count({ where: { createdAt: { gte: weekAgo } } }),
+    prisma.user.count({ where: { createdAt: { gte: monthAgo } } }),
+    prisma.article.groupBy({ by: ["status"], _count: true }),
+    prisma.listing.count(),
+    prisma.product.count(),
+    prisma.resume.count(),
+    prisma.invite.groupBy({ by: ["status"], _count: true }),
+    prisma.balanceTransaction.aggregate({ where: { type: "CHARGE" }, _sum: { amountCents: true } }),
+    prisma.report.count({ where: { status: "PENDING_REVIEW" } }),
+    prisma.auditLog.findMany({
+      include: { user: { select: { name: true, email: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    }),
     prisma.payment.findMany({ where: { status: "PENDING" }, orderBy: { createdAt: "asc" } }),
-    prisma.article.findMany({ where: { status: "PENDING_REVIEW" }, orderBy: { createdAt: "asc" } }),
-    prisma.listing.findMany({ where: { status: "PENDING_REVIEW" }, orderBy: { createdAt: "asc" } }),
-    prisma.report.findMany({ where: { status: "PENDING_REVIEW" }, include: { reporter: true }, orderBy: { createdAt: "asc" } }),
     prisma.listingReview.findMany({
       where: { listing: { type: "SERVICE" } },
       include: { listing: true, user: true },
       orderBy: { createdAt: "desc" },
-      take: 30
-    }),
-    prisma.user.findMany({
-      where: { accountMode: { in: ["PROVIDER", "BOTH"] } },
-      select: { id: true, name: true, email: true },
-      orderBy: { name: "asc" }
-    }),
-    prisma.balanceTransaction.findMany({
-      include: { user: { select: { name: true, email: true } } },
-      orderBy: { createdAt: "desc" },
-      take: 20
+      take: 30,
     }),
     prisma.advertisement.findMany({
       include: { createdBy: { select: { name: true, email: true } } },
       orderBy: { createdAt: "desc" },
-      take: 30
-    }).catch(() => [])
+      take: 30,
+    }).catch(() => []),
   ]);
+
+  const articleStatusMap = Object.fromEntries(articlesByStatus.map((s) => [s.status, s._count]));
+  const inviteStatusMap = Object.fromEntries(inviteStats.map((s) => [s.status, s._count]));
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Админ-панель</h1>
+      <h1 className="text-2xl font-semibold">Дашборд</h1>
+
+      <TreeRoot title="Пользователи">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          <Stat label="Всего" value={totalUsers} />
+          <Stat label="За неделю" value={newUsersWeek} />
+          <Stat label="За месяц" value={newUsersMonth} />
+        </div>
+      </TreeRoot>
+
+      <TreeRoot title="Контент">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Stat label="Статьи (опубл.)" value={articleStatusMap["PUBLISHED"] ?? 0} />
+          <Stat label="Статьи (черн.)" value={articleStatusMap["DRAFT"] ?? 0} />
+          <Stat label="Статьи (архив)" value={articleStatusMap["ARCHIVED"] ?? 0} />
+          <Stat label="На проверке" value={articleStatusMap["PENDING_REVIEW"] ?? 0} />
+          <Stat label="Объявления" value={listingsCount} />
+          <Stat label="Товары" value={productsCount} />
+          <Stat label="Резюме" value={resumesCount} />
+        </div>
+      </TreeRoot>
+
+      <TreeRoot title="Инвайты">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Stat label="Отправлено" value={inviteStatusMap["PENDING"] ?? 0} />
+          <Stat label="Принято" value={inviteStatusMap["ACCEPTED"] ?? 0} />
+          <Stat label="Отклонено" value={inviteStatusMap["DECLINED"] ?? 0} />
+          <Stat label="Истекло" value={inviteStatusMap["EXPIRED"] ?? 0} />
+          <Stat label="Доход (charge)" value={`$${((inviteRevenue._sum.amountCents ?? 0) / 100).toFixed(2)}`} />
+        </div>
+      </TreeRoot>
+
+      <TreeRoot title="Жалобы">
+        <p className="text-sm">Активных жалоб: <span className="font-semibold text-red-600">{activeReports}</span></p>
+      </TreeRoot>
+
+      <TreeRoot title="Последний аудит-лог">
+        <div className="space-y-1">
+          {recentAudit.length === 0 && <p className="text-sm text-zinc-500">Пусто.</p>}
+          {recentAudit.map((log) => (
+            <div key={log.id} className="rounded-md bg-stone-50 px-3 py-2 text-sm">
+              <span className="font-medium">{log.action}</span> — {log.targetType}:{log.targetId}
+              <span className="ml-2 text-xs text-zinc-500">{log.user.name || log.user.email} • {log.createdAt.toLocaleDateString("ru-RU")}</span>
+            </div>
+          ))}
+        </div>
+      </TreeRoot>
 
       <TreeRoot title="Реклама">
         <TreeBranch label="Создать баннер">
@@ -161,30 +231,6 @@ export default async function AdminPage() {
         </TreeBranch>
       </TreeRoot>
 
-      <TreeRoot title="Жалобы и модерация">
-        <TreeBranch label={`На проверке (${reports.length})`}>
-          {reports.length === 0 && <p className="text-sm text-zinc-500">Нет жалоб в очереди.</p>}
-          {reports.map((report) => (
-            <TreeLeaf key={report.id}>
-              <p>{report.targetType} • {report.targetId}</p>
-              <p className="text-xs text-zinc-500">{report.reason} • от {report.reporter.email || report.reporter.name}</p>
-              <div className="mt-2 flex gap-2">
-                <form action={reviewReportAction}>
-                  <input type="hidden" name="reportId" value={report.id} />
-                  <input type="hidden" name="decision" value="hide" />
-                  <button className="rounded bg-red-600 px-3 py-1 text-white" type="submit">Скрыть</button>
-                </form>
-                <form action={reviewReportAction}>
-                  <input type="hidden" name="reportId" value={report.id} />
-                  <input type="hidden" name="decision" value="resolve" />
-                  <button className="rounded bg-emerald-600 px-3 py-1 text-white" type="submit">Разрешить</button>
-                </form>
-              </div>
-            </TreeLeaf>
-          ))}
-        </TreeBranch>
-      </TreeRoot>
-
       <TreeRoot title="Отзывы на услуги">
         <TreeBranch label={`Последние (${listingReviews.length})`}>
           {listingReviews.length === 0 && <p className="text-sm text-zinc-500">Отзывов пока нет.</p>}
@@ -227,54 +273,15 @@ export default async function AdminPage() {
           ))}
         </TreeBranch>
       </TreeRoot>
+    </div>
+  );
+}
 
-      <TreeRoot title="Пополнение баланса студий">
-        <TreeBranch label="Пополнить">
-          <form action={topUpBalanceAction} className="space-y-3 p-2">
-            <div>
-              <label className="block text-sm font-medium">Пользователь</label>
-              <select className="mt-1 w-full rounded border p-2 text-sm" name="userId" required>
-                <option value="">Выберите студию</option>
-                {providerUsers.map((u) => (
-                  <option key={u.id} value={u.id}>{u.name || u.email || u.id}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium">Сумма (центы)</label>
-              <input className="mt-1 w-full rounded border p-2 text-sm" type="number" name="amountCents" min={100} max={10000000} required placeholder="1500 = $15" />
-              <p className="mt-1 text-xs text-zinc-500">1500 = $15, 500 = $5</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium">Заметка</label>
-              <input className="mt-1 w-full rounded border p-2 text-sm" type="text" name="note" placeholder="Admin top-up" />
-            </div>
-            <button className="rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white" type="submit">Пополнить баланс</button>
-          </form>
-        </TreeBranch>
-        <TreeBranch label={`Последние транзакции (${recentTransactions.length})`}>
-          {recentTransactions.length === 0 && <p className="text-sm text-zinc-500">Транзакций пока нет.</p>}
-          {recentTransactions.map((tx) => (
-            <TreeLeaf key={tx.id}>
-              <p>{tx.type} • ${(tx.amountCents / 100).toFixed(2)} • {tx.user.name || tx.user.email}</p>
-              <p className="text-xs text-zinc-500">{tx.note || "-"} • {tx.createdAt.toLocaleDateString("ru-RU")}</p>
-            </TreeLeaf>
-          ))}
-        </TreeBranch>
-      </TreeRoot>
-
-      <TreeRoot title="Дерево контента на модерации">
-        <TreeBranch label={`Статьи (${pendingArticles.length})`}>
-          {pendingArticles.map((article) => (
-            <TreeLeaf key={article.id}>{article.title}</TreeLeaf>
-          ))}
-        </TreeBranch>
-        <TreeBranch label={`Вакансии/услуги (${pendingListings.length})`}>
-          {pendingListings.map((listing) => (
-            <TreeLeaf key={listing.id}>{listing.title}</TreeLeaf>
-          ))}
-        </TreeBranch>
-      </TreeRoot>
+function Stat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div className="rounded-lg border border-soft bg-white p-3 text-center">
+      <p className="text-xs text-zinc-500">{label}</p>
+      <p className="mt-1 text-lg font-semibold">{String(value)}</p>
     </div>
   );
 }
