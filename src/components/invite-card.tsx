@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { respondInviteAction, reportInviteMismatchAction } from "@/app/actions";
 import { FormSubmitButton } from "@/components/form-submit-button";
 
@@ -14,6 +17,7 @@ type InviteData = {
   message: string;
   quizAnswers: string;
   offeredPercent: number | null;
+  declineReason: string | null;
   createdAt: Date;
   respondedAt: Date | null;
   resume: {
@@ -33,7 +37,7 @@ type InviteData = {
 };
 
 function timeAgo(date: Date) {
-  const diff = Date.now() - date.getTime();
+  const diff = Date.now() - new Date(date).getTime();
   const hours = Math.floor(diff / 3600000);
   if (hours < 1) return "только что";
   if (hours < 24) return `${hours} ч назад`;
@@ -42,6 +46,9 @@ function timeAgo(date: Date) {
 }
 
 export function InviteCard({ invite }: { invite: InviteData }) {
+  const [showDecline, setShowDecline] = useState(false);
+  const [declineText, setDeclineText] = useState("");
+
   let answers: QuizAnswer[] = [];
   try {
     answers = JSON.parse(invite.quizAnswers);
@@ -80,28 +87,52 @@ export function InviteCard({ invite }: { invite: InviteData }) {
         </div>
 
         {invite.studio.violationCount > 0 && (
-          <div className="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs font-semibold text-red-700">
+          <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">
             Нарушений у студии: {invite.studio.violationCount}
           </div>
         )}
 
         <p className="mt-3 text-xs text-zinc-500">От: {studioLabel}</p>
 
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 space-y-2">
           <form action={respondInviteAction}>
             <input type="hidden" name="inviteId" value={invite.id} />
             <input type="hidden" name="response" value="accept" />
-            <FormSubmitButton className="btn btn-primary text-sm" pendingText="Раскрываю...">
+            <input type="hidden" name="declineReason" value="" />
+            <FormSubmitButton className="btn btn-primary w-full text-sm" pendingText="Раскрываю...">
               Согласна — раскрыть контакты
             </FormSubmitButton>
           </form>
-          <form action={respondInviteAction}>
-            <input type="hidden" name="inviteId" value={invite.id} />
-            <input type="hidden" name="response" value="decline" />
-            <FormSubmitButton className="btn btn-muted text-sm" pendingText="Отклоняю...">
+
+          {!showDecline ? (
+            <button type="button" className="btn btn-muted w-full text-sm" onClick={() => setShowDecline(true)}>
               Отклонить
-            </FormSubmitButton>
-          </form>
+            </button>
+          ) : (
+            <form action={respondInviteAction} className="space-y-2">
+              <input type="hidden" name="inviteId" value={invite.id} />
+              <input type="hidden" name="response" value="decline" />
+              <textarea
+                name="declineReason"
+                value={declineText}
+                onChange={(e) => setDeclineText(e.target.value)}
+                className="w-full rounded-lg border border-zinc-200 p-3 text-sm outline-none focus:border-hot"
+                rows={3}
+                placeholder="Укажите причину отклонения..."
+                required
+                minLength={5}
+              />
+              <p className="text-xs text-zinc-400">{declineText.length}/5 мин. символов</p>
+              <div className="flex gap-2">
+                <FormSubmitButton className="btn btn-danger flex-1 text-sm" pendingText="Отклоняю...">
+                  Отклонить инвайт
+                </FormSubmitButton>
+                <button type="button" className="btn btn-muted text-sm" onClick={() => { setShowDecline(false); setDeclineText(""); }}>
+                  Отмена
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
     );
@@ -162,6 +193,12 @@ export function InviteCard({ invite }: { invite: InviteData }) {
         <span className="text-xs text-zinc-500">{timeAgo(invite.createdAt)}</span>
       </div>
       <p className="mt-2 text-xs text-zinc-500">Резюме: {invite.resume.title}</p>
+      {invite.declineReason && (
+        <div className="mt-2 rounded-lg bg-zinc-50 p-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">Причина отклонения</p>
+          <p className="mt-1 text-sm text-zinc-700">{invite.declineReason}</p>
+        </div>
+      )}
     </div>
   );
 }

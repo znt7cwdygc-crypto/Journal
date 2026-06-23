@@ -376,7 +376,15 @@ export default async function CabinetPage({
                         <p className="mt-2 text-xs text-amber-600">Ожидайте решения. Если модель не ответит в течение 72ч — деньги вернутся.</p>
                       )}
                       {invite.status === "DECLINED" && (
-                        <p className="mt-2 text-xs text-zinc-500">Средства возвращены на ваш баланс.</p>
+                        <div className="mt-2">
+                          {invite.declineReason && (
+                            <div className="rounded-lg bg-zinc-50 p-2 mb-1">
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Причина отклонения</p>
+                              <p className="mt-0.5 text-xs text-zinc-700">{invite.declineReason}</p>
+                            </div>
+                          )}
+                          <p className="text-xs text-zinc-500">Средства возвращены на ваш баланс.</p>
+                        </div>
                       )}
                       {invite.status === "EXPIRED" && (
                         <p className="mt-2 text-xs text-zinc-500">Время ответа истекло. Средства возвращены.</p>

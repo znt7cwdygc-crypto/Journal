@@ -553,6 +553,7 @@ model Invite {
   offeredPercent  Int?
   amountUsd       Int          @default(15)
   holdTxId        String?
+  declineReason   String?
   respondedAt     DateTime?
   expiresAt       DateTime
   createdAt       DateTime     @default(now())

@@ -1848,7 +1848,9 @@ export async function respondInviteAction(formData: FormData) {
 
   const inviteId = String(formData.get("inviteId") ?? "");
   const response = String(formData.get("response") ?? "");
+  const declineReason = String(formData.get("declineReason") ?? "").trim();
   if (!inviteId || !["accept", "decline"].includes(response)) throw new Error("Некорректный ответ");
+  if (response === "decline" && declineReason.length < 5) throw new Error("Укажите причину отклонения (минимум 5 символов)");
 
   const invite = await prisma.invite.findUnique({ where: { id: inviteId } });
   if (!invite) throw new Error("Инвайт не найден");
@@ -1883,7 +1885,7 @@ export async function respondInviteAction(formData: FormData) {
     await prisma.$transaction(async (tx) => {
       await tx.invite.update({
         where: { id: invite.id },
-        data: { status: InviteStatus.DECLINED, respondedAt: new Date() }
+        data: { status: InviteStatus.DECLINED, respondedAt: new Date(), declineReason }
       });
 
       await tx.balanceTransaction.create({
