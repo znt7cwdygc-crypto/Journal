@@ -63,7 +63,8 @@ function formatPrice(value: number) {
 
 export default async function HomePage() {
   const now = new Date();
-  const [articles, listings, products] = await Promise.all([
+  const activeListingWhere = { status: "PUBLISHED" as const, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] };
+  const [articles, vacancyListings, serviceListings, products] = await Promise.all([
     prisma.article.findMany({
       where: { status: "PUBLISHED" },
       include: { createdBy: true, comments: true, ratings: true },
@@ -71,10 +72,16 @@ export default async function HomePage() {
       take: 14
     }),
     prisma.listing.findMany({
-      where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+      where: { ...activeListingWhere, type: "VACANCY" },
       include: { createdBy: true },
       orderBy: { createdAt: "desc" },
-      take: 4
+      take: 2
+    }),
+    prisma.listing.findMany({
+      where: { ...activeListingWhere, type: "SERVICE" },
+      include: { createdBy: true },
+      orderBy: { createdAt: "desc" },
+      take: 2
     }),
     prisma.product.findMany({
       where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
@@ -104,8 +111,6 @@ export default async function HomePage() {
     .sort((a, b) => b.comments.length + b.responseCount - (a.comments.length + a.responseCount))
     .slice(0, 4);
   const feedArticles = articles.slice(1);
-  const vacancyListings = listings.filter((listing) => listing.type === "VACANCY").slice(0, 2);
-  const serviceListings = listings.filter((listing) => listing.type === "SERVICE").slice(0, 2);
   const listingBlocks = [
     { title: "Вакансии", href: "/vacancies", items: vacancyListings },
     { title: "Услуги", href: "/services", items: serviceListings }
