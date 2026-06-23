@@ -3,13 +3,14 @@
 import { hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { AccountMode, BalanceTxType, ContentStatus, InviteStatus, ListingType, PaymentStatus, PaymentType, Prisma, ProductCondition, ProductDelivery, ProfileKind } from "@prisma/client";
+import { AccountMode, BalanceTxType, ContentStatus, InviteStatus, ListingType, PaymentStatus, PaymentType, Prisma, ProductCondition, ProductDelivery, ProfileKind, UserRole } from "@prisma/client";
 import { auth, signIn, signOut } from "@/auth";
 import { getExpertLicenseEnd, getResumeUnlockEnd } from "@/lib/licenses";
 import { adRevalidatePaths, isHttpUrl, normalizeAdPlacement } from "@/lib/ads";
 import { normalizeArticleBody, stripArticleHtml } from "@/lib/article-html";
 import { prisma } from "@/lib/prisma";
 import { listingExpiresAt, matchProfileExpiresAt, productExpiresAt, resumeExpiresAt } from "@/lib/publication-periods";
+import { isUserBlocked, requireRole } from "@/lib/access";
 import { safeInternalPath } from "@/lib/safe-redirect";
 import { articleSeoPath } from "@/lib/seo-url";
 import { articleTopic } from "@/lib/topics";
@@ -18,6 +19,10 @@ import { cleanMultiline, cleanNumber, cleanText, makeSlug, optionalUrl, requireM
 
 function ensureAdult(formData: FormData) {
   if (formData.get("adult") !== "on") throw new Error("Нужно подтвердить 18+");
+}
+
+async function logAudit(userId: string, action: string, targetType: string, targetId: string, details?: string) {
+  await prisma.auditLog.create({ data: { userId, action, targetType, targetId, details } });
 }
 
 export async function registerAction(formData: FormData) {
@@ -527,6 +532,9 @@ export async function submitBlogArticleAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
 
+  const blockCheck = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedPermanently: true, blockedUntil: true } });
+  if (blockCheck && isUserBlocked(blockCheck)) throw new Error("Ваш аккаунт заблокирован. Публикация контента недоступна.");
+
   const title = requireText(formData.get("title"), "заголовок", 140);
   const summary = requireText(formData.get("summary"), "краткое описание", 260);
   const body = requireArticleBody(formData.get("body"));
@@ -754,6 +762,10 @@ export async function submitArticleAction(formData: FormData) {
 
 export async function submitListingAction(formData: FormData) {
   const user = await requirePaidUser();
+
+  const blockCheck = await prisma.user.findUnique({ where: { id: user.id }, select: { blockedPermanently: true, blockedUntil: true } });
+  if (blockCheck && isUserBlocked(blockCheck)) throw new Error("Ваш аккаунт заблокирован. Публикация контента недоступна.");
+
   const kind = String(formData.get("kind") ?? "VACANCY") as ListingType;
   const type = kind === "SERVICE" ? ListingType.SERVICE : ListingType.VACANCY;
   const employmentType = String(formData.get("employmentType") ?? "REMOTE");
@@ -874,6 +886,9 @@ export async function deleteListingAction(formData: FormData) {
 export async function submitProductAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
+
+  const blockCheck = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedPermanently: true, blockedUntil: true } });
+  if (blockCheck && isUserBlocked(blockCheck)) throw new Error("Ваш аккаунт заблокирован. Публикация контента недоступна.");
 
   let productId = "";
   try {
@@ -1232,6 +1247,7 @@ export async function deleteListingReviewAction(formData: FormData) {
   if (!review) throw new Error("Отзыв не найден");
 
   await prisma.listingReview.delete({ where: { id: review.id } });
+  await logAudit(session.user.id, "delete_review", "LISTING_REVIEW", reviewId);
   await revalidateListing(review.listingId);
   revalidatePath("/admin");
 }
@@ -1310,6 +1326,8 @@ export async function reviewReportAction(formData: FormData) {
       await prisma.matchProfile.update({ where: { id: report.targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: report.reason } }).catch(() => null);
     }
   }
+
+  await logAudit(session.user.id, decision === "hide" ? "hide_report" : "resolve_report", "REPORT", reportId);
 
   revalidatePath("/admin");
   revalidatePath("/articles");
@@ -1507,6 +1525,9 @@ export async function createResumeAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
 
+  const blockCheck = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedPermanently: true, blockedUntil: true } });
+  if (blockCheck && isUserBlocked(blockCheck)) throw new Error("Ваш аккаунт заблокирован. Публикация контента недоступна.");
+
   const title = requireText(formData.get("title"), "заголовок резюме", 140);
   const roleGoal = requireText(formData.get("roleGoal"), "желаемая роль", 120);
   const resumeTemplate = cleanText(formData.get("resumeTemplate"), 80);
@@ -1572,6 +1593,9 @@ export async function renewResumeAction() {
 export async function submitMatchProfileAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
+
+  const blockCheck = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedPermanently: true, blockedUntil: true } });
+  if (blockCheck && isUserBlocked(blockCheck)) throw new Error("Ваш аккаунт заблокирован. Публикация контента недоступна.");
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -1737,6 +1761,8 @@ export async function reviewPaymentAction(formData: FormData) {
     });
   }
 
+  await logAudit(session.user.id, decision === "approve" ? "approve_payment" : "reject_payment", "PAYMENT", paymentId, JSON.stringify({ decision }));
+
   revalidatePath("/admin");
   revalidatePath("/cabinet");
   revalidatePath("/resumes");
@@ -1758,6 +1784,9 @@ function inviteCostCents(roleGoal: string) {
 export async function sendInviteAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
+
+  const blockCheck = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedPermanently: true, blockedUntil: true } });
+  if (blockCheck && isUserBlocked(blockCheck)) throw new Error("Ваш аккаунт заблокирован. Публикация контента недоступна.");
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -1973,6 +2002,8 @@ export async function topUpBalanceAction(formData: FormData) {
     })
   ]);
 
+  await logAudit(session.user.id, "top_up_balance", "USER", userId, JSON.stringify({ amountCents, note }));
+
   revalidatePath("/admin");
   revalidatePath("/cabinet");
 }
@@ -2065,4 +2096,146 @@ export async function toggleAdvertisementAction(formData: FormData) {
 
   revalidateAdPlacement(ad.placement);
   redirect("/admin?ad=updated#ads");
+}
+
+// ─── Admin system actions ────────────────────────────────────────────
+
+export async function blockUserAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN"]);
+  const targetUserId = String(formData.get("userId") ?? "");
+  const blockType = String(formData.get("blockType") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+  const days = parseInt(String(formData.get("days") ?? "0"), 10);
+
+  if (!targetUserId) throw new Error("User ID missing");
+  if (!reason) throw new Error("Укажите причину блокировки");
+
+  const target = await prisma.user.findUnique({ where: { id: targetUserId } });
+  if (!target) throw new Error("Пользователь не найден");
+  if (target.role === "ADMIN") throw new Error("Нельзя заблокировать администратора");
+
+  if (blockType === "permanent") {
+    await prisma.user.update({
+      where: { id: targetUserId },
+      data: { blockedPermanently: true, blockReason: reason }
+    });
+  } else {
+    const until = new Date();
+    until.setDate(until.getDate() + (days || 7));
+    await prisma.user.update({
+      where: { id: targetUserId },
+      data: { blockedUntil: until, blockReason: reason }
+    });
+  }
+
+  await logAudit(admin.id, "block_user", "USER", targetUserId, JSON.stringify({ blockType, days, reason }));
+  revalidatePath("/admin");
+  redirect("/admin/users");
+}
+
+export async function unblockUserAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN"]);
+  const targetUserId = String(formData.get("userId") ?? "");
+  if (!targetUserId) throw new Error("User ID missing");
+
+  await prisma.user.update({
+    where: { id: targetUserId },
+    data: { blockedPermanently: false, blockedUntil: null, blockReason: null }
+  });
+
+  await logAudit(admin.id, "unblock_user", "USER", targetUserId);
+  revalidatePath("/admin");
+  redirect("/admin/users");
+}
+
+export async function changeUserRoleAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN"]);
+  const targetUserId = String(formData.get("userId") ?? "");
+  const newRole = String(formData.get("role") ?? "") as UserRole;
+  if (!targetUserId || !["USER", "ADMIN", "MODERATOR"].includes(newRole)) throw new Error("Invalid data");
+
+  const target = await prisma.user.findUnique({ where: { id: targetUserId } });
+  if (!target) throw new Error("Пользователь не найден");
+
+  await prisma.user.update({ where: { id: targetUserId }, data: { role: newRole } });
+  await logAudit(admin.id, "change_role", "USER", targetUserId, JSON.stringify({ from: target.role, to: newRole }));
+  revalidatePath("/admin");
+  redirect("/admin/users");
+}
+
+export async function adminEditArticleAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN", "MODERATOR"]);
+  const articleId = String(formData.get("articleId") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const summary = String(formData.get("summary") ?? "").trim();
+  const body = String(formData.get("body") ?? "").trim();
+  const status = String(formData.get("status") ?? "") as ContentStatus;
+
+  if (!articleId) throw new Error("Article ID missing");
+  const article = await prisma.article.findUnique({ where: { id: articleId } });
+  if (!article) throw new Error("Статья не найдена");
+
+  await prisma.article.update({
+    where: { id: articleId },
+    data: {
+      ...(title ? { title } : {}),
+      ...(summary ? { summary } : {}),
+      ...(body ? { body } : {}),
+      ...(["DRAFT", "PENDING_REVIEW", "PUBLISHED", "ARCHIVED", "REJECTED"].includes(status) ? { status } : {})
+    }
+  });
+
+  await logAudit(admin.id, "edit_article", "ARTICLE", articleId, JSON.stringify({ title, status }));
+  revalidatePath("/admin");
+  revalidatePath("/articles");
+}
+
+export async function adminEditListingAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN", "MODERATOR"]);
+  const listingId = String(formData.get("listingId") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const status = String(formData.get("status") ?? "") as ContentStatus;
+
+  if (!listingId) throw new Error("Listing ID missing");
+  const listing = await prisma.listing.findUnique({ where: { id: listingId } });
+  if (!listing) throw new Error("Размещение не найдено");
+
+  await prisma.listing.update({
+    where: { id: listingId },
+    data: {
+      ...(title ? { title } : {}),
+      ...(description ? { description } : {}),
+      ...(["DRAFT", "PENDING_REVIEW", "PUBLISHED", "ARCHIVED", "REJECTED"].includes(status) ? { status } : {})
+    }
+  });
+
+  await logAudit(admin.id, "edit_listing", "LISTING", listingId, JSON.stringify({ title, status }));
+  revalidatePath("/admin");
+  revalidatePath("/vacancies");
+  revalidatePath("/services");
+}
+
+export async function adminDeleteContentAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN", "MODERATOR"]);
+  const targetType = String(formData.get("targetType") ?? "");
+  const targetId = String(formData.get("targetId") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  if (!targetId || !targetType) throw new Error("Missing target");
+
+  if (targetType === "ARTICLE") {
+    await prisma.article.update({ where: { id: targetId }, data: { status: "ARCHIVED", hiddenReason: reason || "Удалено администратором" } });
+  } else if (targetType === "LISTING") {
+    await prisma.listing.update({ where: { id: targetId }, data: { status: "ARCHIVED", hiddenReason: reason || "Удалено администратором" } });
+  } else if (targetType === "PRODUCT") {
+    await prisma.product.update({ where: { id: targetId }, data: { status: "ARCHIVED", hiddenReason: reason || "Удалено администратором" } });
+  } else if (targetType === "RESUME") {
+    await prisma.resume.update({ where: { id: targetId }, data: { isPublic: false } });
+  } else {
+    throw new Error("Неизвестный тип контента");
+  }
+
+  await logAudit(admin.id, "delete_content", targetType, targetId, reason);
+  revalidatePath("/admin");
 }

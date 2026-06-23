@@ -17,3 +17,9 @@ export async function requireRole(roles: UserRole[]) {
 export function canProvide(accountMode?: string | null) {
   return accountMode === "PROVIDER" || accountMode === "BOTH";
 }
+
+export function isUserBlocked(user: { blockedPermanently: boolean; blockedUntil: Date | null }) {
+  if (user.blockedPermanently) return true;
+  if (user.blockedUntil && user.blockedUntil > new Date()) return true;
+  return false;
+}

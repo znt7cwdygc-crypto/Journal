@@ -10,6 +10,7 @@ datasource db {
 enum UserRole {
   USER
   ADMIN
+  MODERATOR
 }
 
 enum AccountMode {
@@ -131,8 +132,11 @@ model User {
   profileKind      ProfileKind @default(MODEL)
   tgHandle         String?
   isAdultConfirmed Boolean     @default(false)
-  lastActiveAt     DateTime    @default(now())
-  createdAt        DateTime    @default(now())
+  lastActiveAt       DateTime    @default(now())
+  blockedUntil       DateTime?
+  blockedPermanently Boolean     @default(false)
+  blockReason        String?
+  createdAt          DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 
   articles         Article[]
@@ -161,6 +165,7 @@ model User {
   balanceTransactions BalanceTransaction[]
   violationCount      Int                  @default(0)
   advertisements      Advertisement[]
+  auditLogs           AuditLog[]           @relation("AuditLogs")
 
   accounts Account[]
   sessions Session[]
@@ -614,4 +619,19 @@ model BalanceTransaction {
 
   @@index([userId, createdAt])
   @@index([inviteId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation("AuditLogs", fields: [userId], references: [id], onDelete: Cascade)
+  action     String
+  targetType String
+  targetId   String
+  details    String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([targetType, targetId])
+  @@index([createdAt])
 }
