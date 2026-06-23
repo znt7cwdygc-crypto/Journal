@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { auth } from "@/auth";
+import { AdBlock } from "@/components/ad-block";
 import { CatalogFilterForm } from "@/components/catalog-filter-form";
 import { CatalogPageHeader } from "@/components/catalog-page-header";
 import { ProductDirectoryCard } from "@/components/product-card";
@@ -124,6 +125,7 @@ export default async function ProductsPage({ searchParams }: { searchParams?: { 
           }
         ]}
       />
+      <AdBlock placement="products" />
 
       {searchParams?.reported && (
         <section className="rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800">

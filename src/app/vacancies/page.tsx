@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { AdBlock } from "@/components/ad-block";
 import { CatalogFilterForm } from "@/components/catalog-filter-form";
 import { CatalogPageHeader } from "@/components/catalog-page-header";
 import { ListingDirectoryCard } from "@/components/directory-card";
@@ -131,6 +132,7 @@ export default async function VacanciesPage({ searchParams }: { searchParams?: {
           }
         ]}
       />
+      <AdBlock placement="vacancies" />
       {searchParams?.reported && (
         <section className="rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800">
           Жалоба отправлена в модерацию.

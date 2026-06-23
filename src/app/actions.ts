@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { AccountMode, BalanceTxType, ContentStatus, InviteStatus, ListingType, PaymentStatus, PaymentType, Prisma, ProductCondition, ProductDelivery, ProfileKind } from "@prisma/client";
 import { auth, signIn, signOut } from "@/auth";
 import { getExpertLicenseEnd, getResumeUnlockEnd } from "@/lib/licenses";
+import { adRevalidatePaths, isHttpUrl, normalizeAdPlacement } from "@/lib/ads";
 import { normalizeArticleBody, stripArticleHtml } from "@/lib/article-html";
 import { prisma } from "@/lib/prisma";
 import { listingExpiresAt, matchProfileExpiresAt, productExpiresAt, resumeExpiresAt } from "@/lib/publication-periods";
@@ -1974,4 +1975,63 @@ export async function topUpBalanceAction(formData: FormData) {
 
   revalidatePath("/admin");
   revalidatePath("/cabinet");
+}
+
+function parseAdDate(value: FormDataEntryValue | null) {
+  const text = cleanText(value, 80);
+  if (!text) return null;
+  const date = new Date(text);
+  if (Number.isNaN(date.getTime())) throw new Error("Некорректная дата рекламы");
+  return date;
+}
+
+function revalidateAdPlacement(placement?: string) {
+  for (const path of adRevalidatePaths(placement)) {
+    revalidatePath(path);
+  }
+}
+
+export async function createAdvertisementAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") throw new Error("Недостаточно прав");
+
+  const title = requireText(formData.get("title"), "название рекламы", 120);
+  const imageUrl = requireText(formData.get("imageUrl"), "ссылку на картинку", 500);
+  const targetUrl = requireText(formData.get("targetUrl"), "ссылку перехода", 500);
+  if (!isHttpUrl(imageUrl)) throw new Error("Картинка должна быть http/https ссылкой");
+  if (!isHttpUrl(targetUrl)) throw new Error("Ссылка перехода должна быть http/https ссылкой");
+
+  const placement = normalizeAdPlacement(cleanText(formData.get("placement"), 80));
+  await prisma.advertisement.create({
+    data: {
+      title,
+      description: cleanText(formData.get("description"), 220) || null,
+      imageUrl,
+      targetUrl,
+      placement,
+      startsAt: parseAdDate(formData.get("startsAt")),
+      expiresAt: parseAdDate(formData.get("expiresAt")),
+      createdById: session.user.id
+    }
+  });
+
+  revalidateAdPlacement(placement);
+  redirect("/admin?ad=created#ads");
+}
+
+export async function toggleAdvertisementAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") throw new Error("Недостаточно прав");
+
+  const adId = cleanText(formData.get("adId"), 120);
+  const status = cleanText(formData.get("status"), 40);
+  const nextStatus = status === "ARCHIVED" ? "ARCHIVED" : status === "PAUSED" ? "PAUSED" : "ACTIVE";
+  const ad = await prisma.advertisement.update({
+    where: { id: adId },
+    data: { status: nextStatus as never },
+    select: { placement: true }
+  });
+
+  revalidateAdPlacement(ad.placement);
+  redirect("/admin?ad=updated#ads");
 }

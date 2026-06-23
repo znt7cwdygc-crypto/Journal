@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { deleteListingReviewAction, reviewPaymentAction, reviewReportAction, topUpBalanceAction } from "@/app/actions";
+import { createAdvertisementAction, deleteListingReviewAction, reviewPaymentAction, reviewReportAction, toggleAdvertisementAction, topUpBalanceAction } from "@/app/actions";
+import { adPlacementLabel, adPlacements } from "@/lib/ads";
 import { requireRole } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { TreeBranch, TreeLeaf, TreeRoot } from "@/components/tree";
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 export default async function AdminPage() {
   await requireRole(["ADMIN"]);
 
-  const [pendingPayments, pendingArticles, pendingListings, reports, listingReviews, providerUsers, recentTransactions] = await Promise.all([
+  const [pendingPayments, pendingArticles, pendingListings, reports, listingReviews, providerUsers, recentTransactions, advertisements] = await Promise.all([
     prisma.payment.findMany({ where: { status: "PENDING" }, orderBy: { createdAt: "asc" } }),
     prisma.article.findMany({ where: { status: "PENDING_REVIEW" }, orderBy: { createdAt: "asc" } }),
     prisma.listing.findMany({ where: { status: "PENDING_REVIEW" }, orderBy: { createdAt: "asc" } }),
@@ -34,12 +35,90 @@ export default async function AdminPage() {
       include: { user: { select: { name: true, email: true } } },
       orderBy: { createdAt: "desc" },
       take: 20
+    }),
+    prisma.advertisement.findMany({
+      include: { createdBy: { select: { name: true, email: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 30
     })
   ]);
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Админ-панель</h1>
+
+      <TreeRoot title="Реклама">
+        <TreeBranch label="Создать баннер">
+          <form action={createAdvertisementAction} className="grid gap-3 p-2 md:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium">Раздел</label>
+              <select className="mt-1 w-full rounded border p-2 text-sm" name="placement" required>
+                {adPlacements.map((placement) => (
+                  <option key={placement.value} value={placement.value}>{placement.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Название</label>
+              <input className="mt-1 w-full rounded border p-2 text-sm" name="title" maxLength={120} required placeholder="Например: Настройка OBS под ключ" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium">Короткое описание</label>
+              <input className="mt-1 w-full rounded border p-2 text-sm" name="description" maxLength={220} placeholder="1 строка под баннером" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Картинка/GIF URL</label>
+              <input className="mt-1 w-full rounded border p-2 text-sm" name="imageUrl" type="url" required placeholder="https://..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Ссылка перехода</label>
+              <input className="mt-1 w-full rounded border p-2 text-sm" name="targetUrl" type="url" required placeholder="https://..." />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Старт</label>
+              <input className="mt-1 w-full rounded border p-2 text-sm" name="startsAt" type="datetime-local" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium">Окончание</label>
+              <input className="mt-1 w-full rounded border p-2 text-sm" name="expiresAt" type="datetime-local" />
+            </div>
+            <button className="rounded bg-hot px-4 py-2 text-sm font-semibold text-white md:col-span-2" type="submit">
+              Создать рекламу
+            </button>
+          </form>
+        </TreeBranch>
+        <TreeBranch label={`Активные и архив (${advertisements.length})`}>
+          {advertisements.length === 0 && <p className="text-sm text-zinc-500">Рекламы пока нет.</p>}
+          {advertisements.map((ad) => (
+            <TreeLeaf key={ad.id}>
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="min-w-0">
+                  <p className="font-medium">{ad.title}</p>
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {adPlacementLabel(ad.placement)} • {ad.status} • клики: {ad.clickCount} • создал {ad.createdBy.name || ad.createdBy.email}
+                  </p>
+                  {ad.description && <p className="mt-1 text-sm text-zinc-600">{ad.description}</p>}
+                  <a className="mt-1 block truncate text-xs text-accent" href={ad.targetUrl} target="_blank" rel="noreferrer">{ad.targetUrl}</a>
+                </div>
+                <div className="flex shrink-0 flex-wrap gap-2">
+                  <form action={toggleAdvertisementAction}>
+                    <input type="hidden" name="adId" value={ad.id} />
+                    <input type="hidden" name="status" value={ad.status === "ACTIVE" ? "PAUSED" : "ACTIVE"} />
+                    <button className="rounded bg-zinc-900 px-3 py-1 text-xs font-medium text-white" type="submit">
+                      {ad.status === "ACTIVE" ? "Пауза" : "Активировать"}
+                    </button>
+                  </form>
+                  <form action={toggleAdvertisementAction}>
+                    <input type="hidden" name="adId" value={ad.id} />
+                    <input type="hidden" name="status" value="ARCHIVED" />
+                    <button className="rounded bg-red-600 px-3 py-1 text-xs font-medium text-white" type="submit">В архив</button>
+                  </form>
+                </div>
+              </div>
+            </TreeLeaf>
+          ))}
+        </TreeBranch>
+      </TreeRoot>
 
       <TreeRoot title="Жалобы и модерация">
         <TreeBranch label={`На проверке (${reports.length})`}>

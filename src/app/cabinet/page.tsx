@@ -21,6 +21,7 @@ import {
   updatePublicProfileAction,
   updateProfileSettingsAction
 } from "@/app/actions";
+import { AdBlock } from "@/components/ad-block";
 import { ArticleEditorForm } from "@/components/article-editor-form";
 import { CabinetPanelRouter } from "@/components/cabinet-panel-router";
 import { InviteCard } from "@/components/invite-card";
@@ -308,6 +309,8 @@ export default async function CabinetPage({
           {providerMode && <a className="shrink-0 rounded-lg bg-zinc-100 px-3 py-2 text-zinc-700" href="#service">Услуга</a>}
         </div>
       </section>
+
+      <AdBlock placement="cabinet" />
 
       {inviteResponseParam === "accept" && (
         <section className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">

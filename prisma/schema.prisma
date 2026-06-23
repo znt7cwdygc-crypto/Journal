@@ -93,6 +93,12 @@ enum BalanceTxType {
   REFUND
 }
 
+enum AdvertisementStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
 enum ProductCondition {
   NEW
   GOOD
@@ -154,6 +160,7 @@ model User {
   studioBalance       StudioBalance?
   balanceTransactions BalanceTransaction[]
   violationCount      Int                  @default(0)
+  advertisements      Advertisement[]
 
   accounts Account[]
   sessions Session[]
@@ -370,6 +377,27 @@ model SavedProduct {
 
   @@unique([userId, productId])
   @@index([productId])
+}
+
+model Advertisement {
+  id          String              @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String
+  targetUrl   String
+  placement   String
+  status      AdvertisementStatus @default(ACTIVE)
+  clickCount  Int                 @default(0)
+  startsAt    DateTime?
+  expiresAt   DateTime?
+  createdById String
+  createdBy   User                @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([placement, status])
+  @@index([expiresAt])
+  @@index([createdById, createdAt])
 }
 
 model Report {

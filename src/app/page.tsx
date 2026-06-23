@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { AdBlock } from "@/components/ad-block";
 import { SafeImage } from "@/components/safe-image";
 import { PLATFORM_DISCLAIMER } from "@/lib/disclaimer";
 import { safeImageUrl } from "@/lib/media";
@@ -226,6 +227,8 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      <AdBlock placement="home" />
 
       <section className="section-card">
         <div className="flex flex-wrap items-center justify-between gap-3">

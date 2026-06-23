@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { saveMatchProfileAction } from "@/app/actions";
 import { auth } from "@/auth";
+import { AdBlock } from "@/components/ad-block";
 import { CatalogFilterForm } from "@/components/catalog-filter-form";
 import { CatalogPageHeader } from "@/components/catalog-page-header";
 import { ContactReveal } from "@/components/contact-reveal";
@@ -120,6 +121,7 @@ export default async function ModelOperatorPage({
           }
         ]}
       />
+      <AdBlock placement="model-operator" />
 
       {searchParams?.reported && (
         <section className="rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800">

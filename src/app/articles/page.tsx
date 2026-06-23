@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Prisma } from "@prisma/client";
 import { followTopicAction } from "@/app/actions";
 import { auth } from "@/auth";
+import { AdBlock } from "@/components/ad-block";
 import { ReportButton } from "@/components/report-button";
 import { SafeImage } from "@/components/safe-image";
 import { stripArticleHtml } from "@/lib/article-html";
@@ -162,6 +163,8 @@ export default async function ArticlesPage({
               : "Вы отписались от рубрики."}
         </section>
       )}
+
+      <AdBlock placement="articles" />
 
       {articles.length === 0 && !activeTopic && (
         <section className="grid gap-4">
