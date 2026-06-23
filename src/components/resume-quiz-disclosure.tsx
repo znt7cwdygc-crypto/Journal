@@ -31,8 +31,8 @@ export function ResumeQuizDisclosure({ action, resume }: ResumeQuizDisclosurePro
     <details id="resume" ref={detailsRef} data-cabinet-panel className="group rounded-lg bg-white shadow-sm" onToggle={handleToggle}>
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
         <div>
-          <h2 className="font-semibold">Резюме модели</h2>
-          <p className="mt-1 text-xs text-zinc-500">{resume ? "Резюме уже опубликовано, можно обновить" : "Квиз-анкета для каталога резюме"}</p>
+          <h2 className="font-semibold">Разместить резюме</h2>
+          <p className="mt-1 text-xs text-zinc-500">{resume ? "Резюме уже опубликовано, можно обновить" : "Модель или специалист — квиз подстроится"}</p>
         </div>
         <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-semibold text-white">{resume ? "Обновить" : "Создать"}</span>
       </summary>
