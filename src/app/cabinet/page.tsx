@@ -311,35 +311,41 @@ export default async function CabinetPage({
         </section>
       )}
 
-      {myInvites.length > 0 && (
+      {myResume && (
         <details id="invites" data-cabinet-panel className="group rounded-lg bg-white shadow-sm" open={Boolean(inviteResponseParam || inviteReportParam)}>
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
             <div>
               <h2 className="font-semibold">Мои инвайты</h2>
               <p className="mt-1 text-xs text-zinc-500">Предложения от студий по вашим резюме</p>
             </div>
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
-              {myInvites.filter((i) => i.status === "PENDING").length} новых
-            </span>
+            {myInvites.filter((i) => i.status === "PENDING").length > 0 && (
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-800">
+                {myInvites.filter((i) => i.status === "PENDING").length} новых
+              </span>
+            )}
           </summary>
           <div className="border-t border-zinc-100 p-4 space-y-3">
-            {myInvites.map((invite) => (
-              <InviteCard key={invite.id} invite={invite} />
-            ))}
+            {myInvites.length > 0 ? (
+              myInvites.map((invite) => (
+                <InviteCard key={invite.id} invite={invite} />
+              ))
+            ) : (
+              <p className="text-sm text-zinc-500">Пока нет инвайтов. Когда студия заинтересуется вашим резюме, вы увидите предложение здесь.</p>
+            )}
           </div>
         </details>
       )}
 
-      {studioBalance && providerMode && (
+      {providerMode && (
         <section className="rounded-lg bg-white p-4 shadow-sm">
           <h2 className="text-sm font-semibold">Баланс студии</h2>
           <div className="mt-3 grid grid-cols-2 gap-3 text-center">
             <div className="rounded-lg bg-emerald-50 p-3">
-              <p className="text-lg font-bold text-emerald-800">${(studioBalance.availableUsd / 100).toFixed(2)}</p>
+              <p className="text-lg font-bold text-emerald-800">${((studioBalance?.availableUsd ?? 0) / 100).toFixed(2)}</p>
               <p className="text-xs text-emerald-600">Доступно</p>
             </div>
             <div className="rounded-lg bg-amber-50 p-3">
-              <p className="text-lg font-bold text-amber-800">${(studioBalance.holdUsd / 100).toFixed(2)}</p>
+              <p className="text-lg font-bold text-amber-800">${((studioBalance?.holdUsd ?? 0) / 100).toFixed(2)}</p>
               <p className="text-xs text-amber-600">В холде</p>
             </div>
           </div>
