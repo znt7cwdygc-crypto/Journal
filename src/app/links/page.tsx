@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Fragment } from "react";
+import { AdBlock } from "@/components/ad-block";
 
 export const metadata: Metadata = {
   title: "Полезные ссылки",
@@ -19,12 +21,15 @@ export default function UsefulLinksPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Полезные ссылки</h1>
       <div className="grid gap-3 md:grid-cols-2">
-        {links.map((item) => (
-          <a key={item.url} href={item.url} target="_blank" rel="noreferrer" className="rounded-xl bg-white p-5 shadow-sm hover:shadow">
-            <p className="text-xs uppercase tracking-[0.15em] text-zinc-500">{item.topic}</p>
-            <p className="mt-1 font-medium">{item.title}</p>
-            <p className="mt-2 text-sm text-accent">{item.url}</p>
-          </a>
+        {links.map((item, index) => (
+          <Fragment key={item.url}>
+            {index === 1 && <AdBlock placement="links" variant="card" />}
+            <a href={item.url} target="_blank" rel="noreferrer" className="rounded-xl bg-white p-5 shadow-sm hover:shadow">
+              <p className="text-xs uppercase tracking-[0.15em] text-zinc-500">{item.topic}</p>
+              <p className="mt-1 font-medium">{item.title}</p>
+              <p className="mt-2 text-sm text-accent">{item.url}</p>
+            </a>
+          </Fragment>
         ))}
       </div>
     </div>

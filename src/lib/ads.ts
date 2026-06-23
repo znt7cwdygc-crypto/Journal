@@ -8,7 +8,9 @@ export const adPlacements = [
   { value: "resumes", label: "Резюме" },
   { value: "products", label: "Товары" },
   { value: "model-operator", label: "Модель оператор" },
-  { value: "cabinet", label: "Личный кабинет" }
+  { value: "cabinet", label: "Личный кабинет" },
+  { value: "authors", label: "Авторы" },
+  { value: "links", label: "Полезные ссылки" }
 ] as const;
 
 export type AdPlacement = (typeof adPlacements)[number]["value"];
@@ -60,7 +62,9 @@ export function adRevalidatePaths(placement?: string) {
     resumes: ["/resumes"],
     products: ["/products"],
     "model-operator": ["/model-operator"],
-    cabinet: ["/cabinet"]
+    cabinet: ["/cabinet"],
+    authors: ["/authors"],
+    links: ["/links"]
   };
 
   return [...common, ...(placement ? map[placement] || [] : Object.values(map).flat())];

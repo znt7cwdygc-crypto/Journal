@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { Fragment } from "react";
 import type { Metadata } from "next";
 import { Prisma, ProfileKind } from "@prisma/client";
+import { AdBlock } from "@/components/ad-block";
 import { SafeImage } from "@/components/safe-image";
 import { safeImageUrl } from "@/lib/media";
 import { prisma } from "@/lib/prisma";
@@ -130,7 +132,7 @@ export default async function AuthorsPage({ searchParams }: { searchParams?: { k
       )}
 
       <section className="grid gap-3 md:grid-cols-2">
-        {sortedAuthors.map((author) => {
+        {sortedAuthors.map((author, index) => {
           const articles = author._count.articles;
           const listings = author._count.listings;
           const hasResume = Boolean(author.resume);
@@ -141,42 +143,45 @@ export default async function AuthorsPage({ searchParams }: { searchParams?: { k
           const authorImage = safeImageUrl(author.image);
 
           return (
-            <Link key={author.id} href={`/profiles/${author.id}`} className="block min-w-0 overflow-hidden border border-zinc-200 bg-white p-5 shadow-sm hover:border-hot">
-              <div className="flex min-w-0 items-start gap-3">
-                {authorImage ? (
-                  <SafeImage
-                    className="h-11 w-11 shrink-0 rounded object-cover"
-                    src={authorImage}
-                    alt={author.name || "Аватар автора"}
-                    fallback={
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-hot text-base font-black text-white">
-                        {(author.name || author.email || "A").slice(0, 1).toUpperCase()}
-                      </div>
-                    }
-                  />
-                ) : (
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-hot text-base font-black text-white">
-                    {(author.name || author.email || "A").slice(0, 1).toUpperCase()}
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <h2 className="max-w-full truncate text-lg font-semibold">{author.name || author.email || "Автор"}</h2>
-                  <p className="mt-1 max-w-full truncate text-sm text-zinc-600">{roleLabel} • {author.profileKind}</p>
-                  <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
-                    {verified && <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-700">проверенный</span>}
-                    {activeAuthor && <span className="rounded bg-sky-50 px-1.5 py-0.5 text-sky-700">активный автор</span>}
+            <Fragment key={author.id}>
+              {index === 1 && <AdBlock placement="authors" variant="card" />}
+              <Link href={`/profiles/${author.id}`} className="block min-w-0 overflow-hidden border border-zinc-200 bg-white p-5 shadow-sm hover:border-hot">
+                <div className="flex min-w-0 items-start gap-3">
+                  {authorImage ? (
+                    <SafeImage
+                      className="h-11 w-11 shrink-0 rounded object-cover"
+                      src={authorImage}
+                      alt={author.name || "Аватар автора"}
+                      fallback={
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-hot text-base font-black text-white">
+                          {(author.name || author.email || "A").slice(0, 1).toUpperCase()}
+                        </div>
+                      }
+                    />
+                  ) : (
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-hot text-base font-black text-white">
+                      {(author.name || author.email || "A").slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <h2 className="max-w-full truncate text-lg font-semibold">{author.name || author.email || "Автор"}</h2>
+                    <p className="mt-1 max-w-full truncate text-sm text-zinc-600">{roleLabel} • {author.profileKind}</p>
+                    <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
+                      {verified && <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-700">проверенный</span>}
+                      {activeAuthor && <span className="rounded bg-sky-50 px-1.5 py-0.5 text-sky-700">активный автор</span>}
+                    </div>
                   </div>
                 </div>
-              </div>
-              {author.profileBio && <p className="mt-3 line-clamp-2 text-sm leading-6 text-zinc-600">{author.profileBio}</p>}
-              <div className="mt-4 flex min-w-0 flex-wrap gap-2 text-xs">
-                <span className="max-w-full truncate rounded-full bg-red-50 px-3 py-1 text-hot">{articles} статей</span>
-                <span className="max-w-full truncate rounded-full bg-sky-50 px-3 py-1 text-sky-700">{listings} размещений</span>
-                <span className="max-w-full truncate rounded-full bg-yellow-50 px-3 py-1 text-amber-800">{useful} полезных реакций</span>
-                <span className="max-w-full truncate rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">{author._count.authorFollowers} подписчиков</span>
-                {hasResume && <span className="max-w-full truncate rounded-full bg-teal-50 px-3 py-1 text-accent">резюме</span>}
-              </div>
-            </Link>
+                {author.profileBio && <p className="mt-3 line-clamp-2 text-sm leading-6 text-zinc-600">{author.profileBio}</p>}
+                <div className="mt-4 flex min-w-0 flex-wrap gap-2 text-xs">
+                  <span className="max-w-full truncate rounded-full bg-red-50 px-3 py-1 text-hot">{articles} статей</span>
+                  <span className="max-w-full truncate rounded-full bg-sky-50 px-3 py-1 text-sky-700">{listings} размещений</span>
+                  <span className="max-w-full truncate rounded-full bg-yellow-50 px-3 py-1 text-amber-800">{useful} полезных реакций</span>
+                  <span className="max-w-full truncate rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">{author._count.authorFollowers} подписчиков</span>
+                  {hasResume && <span className="max-w-full truncate rounded-full bg-teal-50 px-3 py-1 text-accent">резюме</span>}
+                </div>
+              </Link>
+            </Fragment>
           );
         })}
       </section>
