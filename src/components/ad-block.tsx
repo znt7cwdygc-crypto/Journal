@@ -7,12 +7,14 @@ export async function AdBlock({ placement }: { placement: AdPlacement }) {
   return (
     <section className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm">
       <a
-        className="grid gap-3 p-3 transition hover:border-hot hover:bg-zinc-50 sm:grid-cols-[120px_minmax(0,1fr)] sm:items-center"
+        className="grid gap-4 p-3 transition hover:border-hot hover:bg-zinc-50 sm:grid-cols-[220px_minmax(0,1fr)] sm:items-center"
         href={`/ads/${ad.id}/click`}
         rel="sponsored noopener noreferrer"
         target="_blank"
       >
-        <img className="aspect-[16/9] w-full rounded-md bg-zinc-100 object-cover sm:h-20" src={ad.imageUrl} alt={ad.title} loading="lazy" />
+        <span className="flex aspect-[16/9] w-full items-center justify-center overflow-hidden rounded-md bg-zinc-950 sm:h-[124px]">
+          <img className="h-full w-full object-contain" src={ad.imageUrl} alt={ad.title} loading="lazy" />
+        </span>
         <span className="min-w-0">
           <span className="inline-flex rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">
             Реклама
