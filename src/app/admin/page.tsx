@@ -40,7 +40,7 @@ export default async function AdminPage() {
       include: { createdBy: { select: { name: true, email: true } } },
       orderBy: { createdAt: "desc" },
       take: 30
-    })
+    }).catch(() => [])
   ]);
 
   return (

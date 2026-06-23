@@ -33,17 +33,21 @@ export function isHttpUrl(value: string) {
 export async function getAdvertisementForPlacement(placement: AdPlacement) {
   const now = new Date();
 
-  return prisma.advertisement.findFirst({
-    where: {
-      placement,
-      status: "ACTIVE",
-      AND: [
-        { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
-        { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] }
-      ]
-    },
-    orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }]
-  });
+  try {
+    return await prisma.advertisement.findFirst({
+      where: {
+        placement,
+        status: "ACTIVE",
+        AND: [
+          { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
+          { OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] }
+        ]
+      },
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }]
+    });
+  } catch {
+    return null;
+  }
 }
 
 export function adRevalidatePaths(placement?: string) {
