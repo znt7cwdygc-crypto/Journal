@@ -1400,6 +1400,56 @@ function listLineWithImportance(formData: FormData, label: string, values: strin
   return `${listLine(label, values)} (${importanceText(formData, field)})`;
 }
 
+function buildSpecialistResumeQuizBio(formData: FormData) {
+  if (formData.get("resumeConfirm") !== "on") throw new Error("Нужно подтвердить актуальность требований");
+
+  const position = cleanList(formData, "specPosition", 12);
+  const exp = cleanList(formData, "specExperience", 2);
+  const searchStatus = cleanList(formData, "specSearchStatus", 2);
+  const employment = cleanList(formData, "specEmployment", 4);
+  const schedule = cleanList(formData, "specSchedule", 4);
+  const income = cleanList(formData, "specIncome", 3);
+  const skills = cleanList(formData, "specSkills", 12);
+  const education = cleanList(formData, "specEducation", 2);
+  const langs = cleanList(formData, "specLanguages", 8);
+  const quickWishes = cleanList(formData, "quickWishes", 8);
+  const wishesText = cleanMultiline(formData.get("wishesText"), 1200);
+
+  return [
+    "О СЕБЕ",
+    listLine("Должность", position),
+    listLine("Опыт", exp),
+    listLine("Статус поиска", searchStatus),
+    listLine("Занятость", employment),
+    listLine("Желаемый график", schedule),
+    listLine("Ожидаемый доход", income),
+    listLine("Навыки", skills),
+    listLine("Образование", education),
+    listLine("Языки", langs),
+    "",
+    "ФИНАНСОВЫЕ ТРЕБОВАНИЯ",
+    textLineWithImportance(formData, "Минимальная зарплата", formData.get("specSalaryValue"), "specSalary"),
+    listLineWithImportance(formData, "Формат оплаты", cleanList(formData, "specPayFormat", 4), "specPayFormat"),
+    listLineWithImportance(formData, "Периодичность выплат", cleanList(formData, "specPayFrequency", 4), "specPayFrequency"),
+    listLineWithImportance(formData, "Испытательный срок", cleanList(formData, "specProbation", 4), "specProbation"),
+    "",
+    "УСЛОВИЯ РАБОТЫ",
+    listLineWithImportance(formData, "Формат работы", cleanList(formData, "specWorkFormat", 4), "specWorkFormat"),
+    listLineWithImportance(formData, "Оборудование", cleanList(formData, "specEquipment", 4), "specEquipment"),
+    textLineWithImportance(formData, "Локация", cleanText(formData.get("specLocationValue"), 120), "specLocation"),
+    listLineWithImportance(formData, "Доп. условия", cleanList(formData, "specBenefits", 8), "specBenefits"),
+    "",
+    "КОМАНДА",
+    listLineWithImportance(formData, "Пол руководителя", cleanList(formData, "specManagerGender", 4), "specManagerGender"),
+    listLineWithImportance(formData, "Состав команды", cleanList(formData, "specTeamGender", 4), "specTeamGender"),
+    listLineWithImportance(formData, "Размер команды", cleanList(formData, "specTeamSize", 4), "specTeamSize"),
+    "",
+    "ДОП. ПОЖЕЛАНИЯ",
+    listLine("Быстрый выбор", quickWishes),
+    `Своими словами: ${wishesText || "не указано"}`
+  ].join("\n").slice(0, 6000);
+}
+
 function buildModelResumeQuizBio(formData: FormData) {
   if (formData.get("resumeConfirm") !== "on") throw new Error("Нужно подтвердить актуальность требований");
 
@@ -1462,6 +1512,8 @@ export async function createResumeAction(formData: FormData) {
   const bio =
     resumeTemplate === "model-quiz-v2"
       ? buildModelResumeQuizBio(formData)
+      : resumeTemplate === "specialist-quiz-v1"
+      ? buildSpecialistResumeQuizBio(formData)
       : resumeTemplate === "model-v1"
       ? buildModelResumeBio(formData)
       : requireMultiline(formData.get("bio"), "о себе", 6000);

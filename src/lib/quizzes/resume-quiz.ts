@@ -56,3 +56,57 @@ export const resumeQuizOptions = {
     "Грубость саппорта"
   ]
 };
+
+/* ── Specialist-specific options ── */
+
+export const specialistPositions = [
+  "Администратор",
+  "Помощник администратора",
+  "Управляющий студией",
+  "SMM-менеджер",
+  "Оператор",
+  "Фотограф/Видеограф",
+  "HR/Рекрутер",
+  "IT-специалист",
+  "Тренер/коуч",
+  "Другое"
+];
+
+export const specialistExperience = ["Без опыта", "От 6 месяцев", "От 1 года", "От 3 лет"];
+
+export const specialistEmployment = ["Полная занятость", "Частичная занятость", "Проектная работа", "Подработка"];
+
+export const specialistSchedule = ["Фиксированный график", "Свободный график", "Сменный график"];
+
+export const specialistIncome = ["До $300", "$300–600", "$600–1000", "Более $1000", "Не указывать"];
+
+export const specialistSkills = [
+  "Коммуникативные навыки",
+  "Работа с таблицами/CRM",
+  "Графические редакторы",
+  "Видеомонтаж",
+  "Знание вебкам-индустрии",
+  "Технические навыки (ПК/сети)",
+  "Управленческий опыт",
+  "Другое"
+];
+
+export const specialistEducation = ["Среднее", "Высшее", "Не указывать"];
+
+export const specialistPayFormats = ["Фиксированная зарплата", "Процент от прибыли", "Комбинированно", "Сдельная оплата"];
+
+export const specialistPayFrequency = ["Еженедельно", "2 раза в месяц", "Раз в месяц"];
+
+export const specialistProbation = ["Без испытательного срока", "Готов(а) к испытательному сроку", "Без разницы"];
+
+export const specialistWorkFormat = ["Удалённо", "Очно", "Гибридный", "Без разницы"];
+
+export const specialistEquipmentNeeded = ["Да, нужно", "Без разницы"];
+
+export const specialistBenefits = ["Соц. пакет", "Премии/бонусы", "Обучение за счёт компании", "Оплачиваемый отпуск"];
+
+export const specialistManagerGender = ["Женщина", "Мужчина", "Без разницы"];
+
+export const specialistTeamGender = ["Только женщины", "Только мужчины", "Смешанный", "Без разницы"];
+
+export const specialistTeamSize = ["До 5 человек", "5–20 человек", "Более 20 человек", "Без разницы"];
