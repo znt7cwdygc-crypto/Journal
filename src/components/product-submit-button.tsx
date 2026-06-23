@@ -7,7 +7,7 @@ export function ProductSubmitButton({ label }: { label: string }) {
 
   return (
     <button
-      className="btn btn-primary w-full disabled:cursor-wait disabled:opacity-70 sm:w-auto"
+      className="btn btn-primary w-full whitespace-nowrap disabled:cursor-wait disabled:opacity-70 sm:w-auto"
       disabled={pending}
       type="submit"
     >

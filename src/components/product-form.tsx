@@ -27,18 +27,18 @@ export function ProductForm({
   submitLabel?: string;
 }) {
   return (
-    <form action={action} className="overflow-hidden rounded-2xl border border-zinc-200 bg-white" encType="multipart/form-data">
+    <form action={action} className="overflow-hidden rounded-xl border border-zinc-200 bg-white" encType="multipart/form-data">
       {product?.id && <input type="hidden" name="productId" value={product.id} />}
 
-      <div className="border-b border-zinc-100 p-5 sm:p-6">
+      <div className="border-b border-zinc-100 p-4 sm:p-5">
         <label className="form-label" htmlFor="product-image">Фото товара</label>
         <div className="mt-2">
           <ProductImageInput imageUrl={product?.imageUrl} title={product?.title} required={!product?.imageUrl} />
         </div>
       </div>
 
-      <div className="border-b border-zinc-100 p-5 sm:p-6">
-        <div className="grid gap-4 sm:grid-cols-2">
+      <div className="border-b border-zinc-100 p-4 sm:p-5">
+        <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
           <label className="block">
             <span className="form-label">Название</span>
             <input className="form-field mt-2" name="title" defaultValue={product?.title ?? ""} placeholder="Например: Logitech Brio 4K" required />
@@ -54,7 +54,7 @@ export function ProductForm({
           <label className="block">
             <span className="form-label">Цена</span>
             <span className="relative mt-2 block">
-              <input className="form-field pr-10" name="priceRub" type="number" min="0" step="1" defaultValue={product?.priceRub ?? ""} placeholder="15000" required />
+              <input className="form-field pr-10" name="priceRub" type="text" inputMode="numeric" defaultValue={product?.priceRub ?? ""} placeholder="15000" required />
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-zinc-500">₽</span>
             </span>
           </label>
@@ -82,24 +82,24 @@ export function ProductForm({
         </div>
       </div>
 
-      <label className="block border-b border-zinc-100 p-5 sm:p-6">
+      <label className="block border-b border-zinc-100 p-4 sm:p-5">
         <span className="form-label">Описание</span>
         <textarea
-          className="form-textarea mt-2"
+          className="form-textarea mt-2 min-h-[112px]"
           name="description"
-          rows={5}
+          rows={4}
           defaultValue={product?.description ?? ""}
           placeholder="Что продаете, почему продаете, комплектация, дефекты, как передать товар."
           required
         />
       </label>
 
-      <label className="block border-b border-zinc-100 p-5 sm:p-6">
+      <label className="block border-b border-zinc-100 p-4 sm:p-5">
         <span className="form-label">Контакт</span>
         <input className="form-field mt-2" name="contact" defaultValue={product?.contact ?? ""} placeholder="@telegram или email" required />
       </label>
 
-      <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:p-6">
+      <div className="grid gap-3 p-4 sm:grid-cols-[auto_1fr] sm:items-center sm:p-5">
         <ProductSubmitButton label={submitLabel} />
         <p className="text-xs leading-5 text-zinc-500">После нажатия дождитесь публикации, обычно это занимает несколько секунд.</p>
       </div>
