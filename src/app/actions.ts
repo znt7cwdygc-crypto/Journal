@@ -3,7 +3,7 @@
 import { hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { AccountMode, ContentStatus, ListingType, PaymentStatus, PaymentType, Prisma, ProductCondition, ProductDelivery, ProfileKind } from "@prisma/client";
+import { AccountMode, BalanceTxType, ContentStatus, InviteStatus, ListingType, PaymentStatus, PaymentType, Prisma, ProductCondition, ProductDelivery, ProfileKind } from "@prisma/client";
 import { auth, signIn, signOut } from "@/auth";
 import { getExpertLicenseEnd, getResumeUnlockEnd } from "@/lib/licenses";
 import { normalizeArticleBody, stripArticleHtml } from "@/lib/article-html";
@@ -1247,7 +1247,7 @@ export async function reportContentAction(_state: ReportContentState, formData: 
   const targetType = String(formData.get("targetType") ?? "");
   const targetId = String(formData.get("targetId") ?? "");
   const reason = cleanText(formData.get("reason"), 500);
-  if (!["ARTICLE", "COMMENT", "PROFILE", "LISTING", "PRODUCT", "RESUME", "MATCH_PROFILE"].includes(targetType) || !targetId) {
+  if (!["ARTICLE", "COMMENT", "PROFILE", "LISTING", "PRODUCT", "RESUME", "MATCH_PROFILE", "INVITE"].includes(targetType) || !targetId) {
     return { status: "error", message: "Некорректная жалоба." };
   }
   if (reason.length < 10) {
@@ -1739,4 +1739,226 @@ export async function reviewPaymentAction(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/cabinet");
   revalidatePath("/resumes");
+}
+
+// ─── Invite system ───────────────────────────────────────────────────
+
+const INVITE_COST_CENTS = 1500;
+const INVITE_DAILY_LIMIT = 10;
+const INVITE_TTL_MS = 72 * 60 * 60 * 1000; // 72 hours
+
+export async function sendInviteAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, accountMode: true }
+  });
+  if (!user || !canProvide(user.accountMode)) throw new Error("Включите режим поставщика услуг");
+
+  const resumeId = String(formData.get("resumeId") ?? "");
+  const quizAnswers = String(formData.get("quizAnswers") ?? "");
+  const message = String(formData.get("message") ?? "").trim();
+  const offeredPercent = formData.get("offeredPercent") ? cleanNumber(formData.get("offeredPercent"), 1, 100) : null;
+
+  if (!resumeId) throw new Error("Resume ID missing");
+  if (message.length < 20) throw new Error("Сообщение должно быть не менее 20 символов");
+
+  try { JSON.parse(quizAnswers); } catch { throw new Error("Некорректные ответы квиза"); }
+
+  const resume = await prisma.resume.findFirst({
+    where: { id: resumeId, isPublic: true, hiddenByInactivity: false },
+    select: { id: true, userId: true }
+  });
+  if (!resume) throw new Error("Резюме не найдено");
+  if (resume.userId === user.id) throw new Error("Нельзя отправить инвайт самому себе");
+
+  const balance = await prisma.studioBalance.findUnique({ where: { userId: user.id } });
+  if (!balance || balance.availableUsd < INVITE_COST_CENTS) throw new Error("Недостаточно средств на балансе");
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayCount = await prisma.invite.count({
+    where: { studioId: user.id, createdAt: { gte: todayStart } }
+  });
+  if (todayCount >= INVITE_DAILY_LIMIT) throw new Error(`Лимит ${INVITE_DAILY_LIMIT} инвайтов в день`);
+
+  const duplicate = await prisma.invite.findFirst({
+    where: { resumeId, studioId: user.id, status: InviteStatus.PENDING }
+  });
+  if (duplicate) throw new Error("У вас уже есть активный инвайт на это резюме");
+
+  await prisma.$transaction(async (tx) => {
+    const invite = await tx.invite.create({
+      data: {
+        resumeId,
+        studioId: user.id,
+        modelId: resume.userId,
+        quizAnswers,
+        message,
+        offeredPercent,
+        expiresAt: new Date(Date.now() + INVITE_TTL_MS)
+      }
+    });
+
+    const holdTx = await tx.balanceTransaction.create({
+      data: {
+        userId: user.id,
+        type: BalanceTxType.HOLD,
+        amountCents: INVITE_COST_CENTS,
+        inviteId: invite.id,
+        note: `Hold for invite ${invite.id}`
+      }
+    });
+
+    await tx.invite.update({ where: { id: invite.id }, data: { holdTxId: holdTx.id } });
+
+    await tx.studioBalance.update({
+      where: { userId: user.id },
+      data: {
+        availableUsd: { decrement: INVITE_COST_CENTS },
+        holdUsd: { increment: INVITE_COST_CENTS }
+      }
+    });
+
+    await tx.resume.update({
+      where: { id: resumeId },
+      data: { responseCount: { increment: 1 } }
+    });
+  });
+
+  revalidatePath("/resumes");
+  revalidatePath("/cabinet");
+  redirect(`/resumes/${resumeId}?invited=1`);
+}
+
+export async function respondInviteAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const inviteId = String(formData.get("inviteId") ?? "");
+  const response = String(formData.get("response") ?? "");
+  if (!inviteId || !["accept", "decline"].includes(response)) throw new Error("Некорректный ответ");
+
+  const invite = await prisma.invite.findUnique({ where: { id: inviteId } });
+  if (!invite) throw new Error("Инвайт не найден");
+  if (invite.modelId !== session.user.id) throw new Error("Нет доступа");
+  if (invite.status !== InviteStatus.PENDING) throw new Error("Инвайт уже обработан");
+
+  if (response === "accept") {
+    await prisma.$transaction(async (tx) => {
+      await tx.invite.update({
+        where: { id: invite.id },
+        data: { status: InviteStatus.ACCEPTED, respondedAt: new Date() }
+      });
+
+      await tx.balanceTransaction.create({
+        data: {
+          userId: invite.studioId,
+          type: BalanceTxType.CHARGE,
+          amountCents: INVITE_COST_CENTS,
+          inviteId: invite.id,
+          note: `Charge for accepted invite ${invite.id}`
+        }
+      });
+
+      await tx.studioBalance.update({
+        where: { userId: invite.studioId },
+        data: { holdUsd: { decrement: INVITE_COST_CENTS } }
+      });
+    });
+  } else {
+    await prisma.$transaction(async (tx) => {
+      await tx.invite.update({
+        where: { id: invite.id },
+        data: { status: InviteStatus.DECLINED, respondedAt: new Date() }
+      });
+
+      await tx.balanceTransaction.create({
+        data: {
+          userId: invite.studioId,
+          type: BalanceTxType.REFUND,
+          amountCents: INVITE_COST_CENTS,
+          inviteId: invite.id,
+          note: `Refund for declined invite ${invite.id}`
+        }
+      });
+
+      await tx.studioBalance.update({
+        where: { userId: invite.studioId },
+        data: {
+          holdUsd: { decrement: INVITE_COST_CENTS },
+          availableUsd: { increment: INVITE_COST_CENTS }
+        }
+      });
+    });
+  }
+
+  revalidatePath("/cabinet");
+  redirect(`/cabinet?inviteResponse=${response}#invites`);
+}
+
+export async function reportInviteMismatchAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const inviteId = String(formData.get("inviteId") ?? "");
+  const reason = cleanText(formData.get("reason"), 500);
+  if (!inviteId) throw new Error("Invite ID missing");
+  if (reason.length < 10) throw new Error("Опишите причину жалобы");
+
+  const invite = await prisma.invite.findUnique({ where: { id: inviteId } });
+  if (!invite) throw new Error("Инвайт не найден");
+  if (invite.modelId !== session.user.id) throw new Error("Нет доступа");
+  if (invite.status !== InviteStatus.ACCEPTED) throw new Error("Жалоба возможна только на принятый инвайт");
+
+  await prisma.$transaction([
+    prisma.report.create({
+      data: {
+        targetType: "INVITE",
+        targetId: inviteId,
+        reason,
+        reporterId: session.user.id
+      }
+    }),
+    prisma.user.update({
+      where: { id: invite.studioId },
+      data: { violationCount: { increment: 1 } }
+    })
+  ]);
+
+  revalidatePath("/cabinet");
+  revalidatePath("/admin");
+  redirect(`/cabinet?inviteReport=sent#invites`);
+}
+
+export async function topUpBalanceAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") throw new Error("Недостаточно прав");
+
+  const userId = String(formData.get("userId") ?? "");
+  const amountCents = cleanNumber(formData.get("amountCents"), 1, 10000000);
+  const note = cleanText(formData.get("note"), 500) || "Admin top-up";
+
+  if (!userId) throw new Error("User ID missing");
+
+  await prisma.$transaction([
+    prisma.studioBalance.upsert({
+      where: { userId },
+      update: { availableUsd: { increment: amountCents } },
+      create: { userId, availableUsd: amountCents }
+    }),
+    prisma.balanceTransaction.create({
+      data: {
+        userId,
+        type: BalanceTxType.TOP_UP,
+        amountCents,
+        note
+      }
+    })
+  ]);
+
+  revalidatePath("/admin");
+  revalidatePath("/cabinet");
 }

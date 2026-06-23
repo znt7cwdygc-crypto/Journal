@@ -76,6 +76,21 @@ enum ReportTargetType {
   PRODUCT
   RESUME
   MATCH_PROFILE
+  INVITE
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+enum BalanceTxType {
+  TOP_UP
+  HOLD
+  CHARGE
+  REFUND
 }
 
 enum ProductCondition {
@@ -134,6 +149,11 @@ model User {
   savedProducts    SavedProduct[]
   matchProfile     MatchProfile?
   savedMatchProfiles SavedMatchProfile[]
+  studioInvites       Invite[]             @relation("StudioInvites")
+  modelInvites        Invite[]             @relation("ModelInvites")
+  studioBalance       StudioBalance?
+  balanceTransactions BalanceTransaction[]
+  violationCount      Int                  @default(0)
 
   accounts Account[]
   sessions Session[]
@@ -392,6 +412,7 @@ model Resume {
 
   unlocks ResumeContactUnlock[]
   savedBy SavedResume[]
+  invites Invite[]
 
   @@index([isPublic, hiddenByInactivity, expiresAt])
 }
@@ -516,4 +537,52 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Invite {
+  id              String       @id @default(cuid())
+  resumeId        String
+  resume          Resume       @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  studioId        String
+  studio          User         @relation("StudioInvites", fields: [studioId], references: [id], onDelete: Cascade)
+  modelId         String
+  model           User         @relation("ModelInvites", fields: [modelId], references: [id], onDelete: Cascade)
+  status          InviteStatus @default(PENDING)
+  quizAnswers     String
+  message         String
+  offeredPercent  Int?
+  amountUsd       Int          @default(15)
+  holdTxId        String?
+  respondedAt     DateTime?
+  expiresAt       DateTime
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([resumeId, studioId])
+  @@index([modelId, status])
+  @@index([status, expiresAt])
+}
+
+model StudioBalance {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availableUsd  Int      @default(0)
+  holdUsd       Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model BalanceTransaction {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        BalanceTxType
+  amountCents Int
+  inviteId    String?
+  note        String?
+  createdAt   DateTime     @default(now())
+
+  @@index([userId, createdAt])
+  @@index([inviteId])
 }
