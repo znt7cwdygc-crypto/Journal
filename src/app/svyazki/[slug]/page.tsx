@@ -127,6 +127,21 @@ export default async function MatchProfileDetailsPage({
           })
         }}
       />
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Главная", "item": siteUrl("/").toString() },
+              { "@type": "ListItem", "position": 2, "name": "Модель оператор", "item": siteUrl("/model-operator").toString() },
+              { "@type": "ListItem", "position": 3, "name": profile.title }
+            ]
+          })
+        }}
+      />
 
       <Link className="text-sm font-semibold text-accent" href="/model-operator">Назад к разделу</Link>
       <div className="mt-4 flex flex-wrap gap-2 text-xs">

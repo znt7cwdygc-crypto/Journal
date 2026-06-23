@@ -120,6 +120,21 @@ export default async function ProductDetailsPage({
           })
         }}
       />
+      <script
+        type="application/ld+json"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+              { "@type": "ListItem", "position": 1, "name": "Главная", "item": siteUrl("/").toString() },
+              { "@type": "ListItem", "position": 2, "name": "Товары", "item": siteUrl("/products").toString() },
+              { "@type": "ListItem", "position": 3, "name": product.title }
+            ]
+          })
+        }}
+      />
 
       <Link className="text-sm font-semibold text-accent" href="/products">Назад к товарам</Link>
       <div className="mt-4 flex flex-wrap gap-2 text-xs">

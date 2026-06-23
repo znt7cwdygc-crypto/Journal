@@ -8,6 +8,7 @@ import { CatalogPageHeader } from "@/components/catalog-page-header";
 import { ContactReveal } from "@/components/contact-reveal";
 import { ReportButton } from "@/components/report-button";
 import { prisma } from "@/lib/prisma";
+import { siteUrl } from "@/lib/seo";
 import { matchProfileSeoPath } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
@@ -91,6 +92,13 @@ export default async function ModelOperatorPage({
 
   return (
     <div className="space-y-4">
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "Модель оператор",
+        "url": siteUrl("/model-operator").toString(),
+        "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
+      }) }} />
       <CatalogPageHeader
         eyebrow="Связки"
         title="Модель оператор"

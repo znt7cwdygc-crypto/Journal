@@ -6,6 +6,7 @@ import { AdBlock } from "@/components/ad-block";
 import { SafeImage } from "@/components/safe-image";
 import { safeImageUrl } from "@/lib/media";
 import { prisma } from "@/lib/prisma";
+import { siteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -85,6 +86,13 @@ export default async function AuthorsPage({ searchParams }: { searchParams?: { k
 
   return (
     <div className="space-y-5">
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "Авторы",
+        "url": siteUrl("/authors").toString(),
+        "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
+      }) }} />
       <section className="border border-zinc-200 bg-white p-5 shadow-sm">
         <p className="inline-flex rounded bg-mint px-2 py-1 text-xs font-bold uppercase tracking-[0.16em] text-ink">
           Авторы
