@@ -204,15 +204,15 @@ export default async function HomePage() {
             {products.length === 0 && <p className="text-sm text-zinc-500">Пока нет активных товаров.</p>}
           </div>
         </div>
-        <div className="content-card">
-          <div className="grid gap-4">
+        <div className="content-card h-full">
+          <div className="grid h-full gap-4 md:grid-rows-2">
             {listingBlocks.map(({ title, href, items }) => (
-              <div key={title} className="min-w-0">
+              <div key={title} className="flex min-w-0 flex-col">
                 <div className="flex items-center justify-between gap-3">
                   <h2 className="section-title text-lg">{title}</h2>
                   <Link href={href} className="text-sm font-medium text-accent">Все</Link>
                 </div>
-                <div className="mt-3 space-y-3">
+                <div className="mt-3 flex flex-1 flex-col justify-start space-y-3">
                   {items.map((listing) => (
                     <Link key={listing.id} href={listingSeoPath(listing)} className="block border-b border-zinc-100 pb-3 last:border-0">
                       <p className="font-medium leading-snug line-clamp-2">{listing.title}</p>
