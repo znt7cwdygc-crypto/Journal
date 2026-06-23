@@ -375,27 +375,25 @@ export default async function CabinetPage({
           <span className="rounded-full bg-hot px-3 py-1 text-xs font-semibold text-white">{isEditingArticle ? "Редактирование" : "Новая"}</span>
         </summary>
         <div className="border-t border-zinc-100 p-3">
-          <div className="mb-3 flex flex-col gap-2 rounded-lg bg-zinc-50 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="font-semibold text-ink">{isEditingArticle ? selectedArticle?.title || "Черновик без названия" : "Написать новую статью"}</p>
-              <p className="mt-1 text-xs text-zinc-500">
-                {isEditingArticle
-                  ? "Чтобы начать с пустой формы, нажмите «Новая статья»."
-                  : draftArticle
-                    ? "Есть сохраненный черновик ниже в «Моих статьях», его можно продолжить отдельно."
-                    : "Заполните рубрику, формат, заголовок, обложку и текст."}
-              </p>
+          {(isEditingArticle || draftArticle) && (
+            <div className="mb-3 flex flex-col gap-2 rounded-lg bg-zinc-50 p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="font-semibold text-ink">{isEditingArticle ? selectedArticle?.title || "Черновик без названия" : "Есть сохраненный черновик"}</p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  {isEditingArticle ? "Чтобы начать с пустой формы, нажмите «Новая статья»." : "Его можно продолжить отдельно, новая форма ниже останется пустой."}
+                </p>
+              </div>
+              {isEditingArticle ? (
+                <a className="shrink-0 rounded-lg bg-hot px-3 py-2 text-center text-xs font-semibold text-white" href="/cabinet#blog">
+                  Новая статья
+                </a>
+              ) : draftArticle ? (
+                <a className="shrink-0 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-center text-xs font-semibold text-zinc-800" href={`/cabinet/articles/${draftArticle.id}/edit`}>
+                  Продолжить черновик
+                </a>
+              ) : null}
             </div>
-            {isEditingArticle ? (
-              <a className="shrink-0 rounded-lg bg-hot px-3 py-2 text-center text-xs font-semibold text-white" href="/cabinet#blog">
-                Новая статья
-              </a>
-            ) : draftArticle ? (
-              <a className="shrink-0 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-center text-xs font-semibold text-zinc-800" href={`/cabinet/articles/${draftArticle.id}/edit`}>
-                Продолжить черновик
-              </a>
-            ) : null}
-          </div>
+          )}
           <ArticleEditorForm key={articleJustCreated ? `article-created-${articleResultId}` : selectedArticle?.id ?? "new-article"} action={submitBlogArticleAction} draftAction={saveBlogDraftAction} initialDraft={selectedArticle} />
         </div>
       </details>

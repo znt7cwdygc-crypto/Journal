@@ -46,18 +46,22 @@ function ToolbarButton({
   children,
   disabled,
   onClick,
-  title
+  title,
+  wide
 }: {
   active?: boolean;
   children: ReactNode;
   disabled?: boolean;
   onClick: () => void;
   title: string;
+  wide?: boolean;
 }) {
   return (
     <button
       aria-label={title}
-      className={`whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-semibold transition ${active ? "bg-zinc-900 text-white" : "bg-white text-zinc-700 hover:bg-zinc-100"} disabled:cursor-not-allowed disabled:opacity-40`}
+      className={`flex h-8 items-center justify-center rounded-lg text-sm font-semibold transition ${
+        wide ? "px-2.5" : "w-8"
+      } ${active ? "bg-zinc-900 text-white" : "bg-transparent text-zinc-700 hover:bg-zinc-200"} disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent`}
       disabled={disabled}
       onClick={onClick}
       title={title}
@@ -66,6 +70,14 @@ function ToolbarButton({
       {children}
     </button>
   );
+}
+
+function ToolbarGroup({ children }: { children: ReactNode }) {
+  return <div className="flex items-center gap-0.5">{children}</div>;
+}
+
+function ToolbarDivider() {
+  return <div className="mx-1 h-6 w-px bg-zinc-200" />;
 }
 
 export function TiptapArticleEditor({ name, initialContent }: TiptapArticleEditorProps) {
@@ -98,7 +110,7 @@ export function TiptapArticleEditor({ name, initialContent }: TiptapArticleEdito
     content: initialHtml,
     editorProps: {
       attributes: {
-        class: "tiptap-article-content min-h-[280px] outline-none"
+        class: "tiptap-article-content min-h-[220px] outline-none"
       }
     },
     immediatelyRender: false,
@@ -149,69 +161,86 @@ export function TiptapArticleEditor({ name, initialContent }: TiptapArticleEdito
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white focus-within:border-[#ff4d2e] focus-within:ring-2 focus-within:ring-[#fff1ed]">
       <input name={name} type="hidden" value={html} />
-      <div className="flex flex-wrap gap-1 border-b border-zinc-100 bg-zinc-50 p-2">
-        <ToolbarButton active={editor?.isActive("paragraph")} disabled={!editor} onClick={() => editor?.chain().focus().setParagraph().run()} title="Обычный текст">
-          Текст
-        </ToolbarButton>
-        <ToolbarButton active={editor?.isActive("heading", { level: 2 })} disabled={!editor} onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} title="Заголовок">
-          Заголовок
-        </ToolbarButton>
-        <ToolbarButton active={editor?.isActive("heading", { level: 3 })} disabled={!editor} onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} title="Подзаголовок">
-          Подзаг.
-        </ToolbarButton>
-        <ToolbarButton active={editor?.isActive("bold")} disabled={!editor} onClick={() => editor?.chain().focus().toggleBold().run()} title="Жирный">
-          Ж
-        </ToolbarButton>
-        <ToolbarButton active={editor?.isActive("italic")} disabled={!editor} onClick={() => editor?.chain().focus().toggleItalic().run()} title="Курсив">
-          К
-        </ToolbarButton>
-        <ToolbarButton active={editor?.isActive("underline")} disabled={!editor} onClick={() => editor?.chain().focus().toggleUnderline().run()} title="Подчеркнутый">
-          Ч
-        </ToolbarButton>
-        <ToolbarButton active={editor?.isActive("bulletList")} disabled={!editor} onClick={() => editor?.chain().focus().toggleBulletList().run()} title="Список">
-          • Список
-        </ToolbarButton>
-        <ToolbarButton active={editor?.isActive("orderedList")} disabled={!editor} onClick={() => editor?.chain().focus().toggleOrderedList().run()} title="Нумерованный список">
-          1. Список
-        </ToolbarButton>
-        <ToolbarButton active={editor?.isActive("blockquote")} disabled={!editor} onClick={() => editor?.chain().focus().toggleBlockquote().run()} title="Цитата">
-          Цитата
-        </ToolbarButton>
-        <ToolbarButton active={editor?.isActive("link")} disabled={!editor} onClick={setLink} title="Ссылка">
-          Ссылка
-        </ToolbarButton>
-        <ToolbarButton disabled={!editor} onClick={() => editor?.chain().focus().setHorizontalRule().run()} title="Разделитель">
-          Линия
-        </ToolbarButton>
-        <ToolbarButton active={editor?.isActive({ textAlign: "left" })} disabled={!editor} onClick={() => editor?.chain().focus().setTextAlign("left").run()} title="По левому краю">
-          Слева
-        </ToolbarButton>
-        <ToolbarButton active={editor?.isActive({ textAlign: "center" })} disabled={!editor} onClick={() => editor?.chain().focus().setTextAlign("center").run()} title="По центру">
-          Центр
-        </ToolbarButton>
-        <ToolbarButton active={editor?.isActive({ textAlign: "right" })} disabled={!editor} onClick={() => editor?.chain().focus().setTextAlign("right").run()} title="По правому краю">
-          Справа
-        </ToolbarButton>
-        <label className={`cursor-pointer whitespace-nowrap rounded-md bg-white px-2.5 py-1.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100 ${isUploading ? "pointer-events-none opacity-50" : ""}`} title="Изображение">
-          Фото
-          <input
-            className="sr-only"
-            disabled={!editor || isUploading}
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              event.target.value = "";
-              if (file) void uploadImage(file);
-            }}
-          />
-        </label>
-        <ToolbarButton disabled={!editor || !editor.can().undo()} onClick={() => editor?.chain().focus().undo().run()} title="Отменить">
-          Назад
-        </ToolbarButton>
-        <ToolbarButton disabled={!editor || !editor.can().redo()} onClick={() => editor?.chain().focus().redo().run()} title="Повторить">
-          Вперед
-        </ToolbarButton>
+      <div className="flex flex-wrap items-center gap-1 border-b border-zinc-100 bg-zinc-50 p-2">
+        <ToolbarGroup>
+          <ToolbarButton wide active={editor?.isActive("paragraph")} disabled={!editor} onClick={() => editor?.chain().focus().setParagraph().run()} title="Обычный текст">
+            Текст
+          </ToolbarButton>
+          <ToolbarButton wide active={editor?.isActive("heading", { level: 2 })} disabled={!editor} onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} title="Заголовок">
+            H2
+          </ToolbarButton>
+          <ToolbarButton wide active={editor?.isActive("heading", { level: 3 })} disabled={!editor} onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} title="Подзаголовок">
+            H3
+          </ToolbarButton>
+        </ToolbarGroup>
+        <ToolbarDivider />
+        <ToolbarGroup>
+          <ToolbarButton active={editor?.isActive("bold")} disabled={!editor} onClick={() => editor?.chain().focus().toggleBold().run()} title="Жирный">
+            Ж
+          </ToolbarButton>
+          <ToolbarButton active={editor?.isActive("italic")} disabled={!editor} onClick={() => editor?.chain().focus().toggleItalic().run()} title="Курсив">
+            К
+          </ToolbarButton>
+          <ToolbarButton active={editor?.isActive("underline")} disabled={!editor} onClick={() => editor?.chain().focus().toggleUnderline().run()} title="Подчеркнутый">
+            Ч
+          </ToolbarButton>
+        </ToolbarGroup>
+        <ToolbarDivider />
+        <ToolbarGroup>
+          <ToolbarButton active={editor?.isActive("bulletList")} disabled={!editor} onClick={() => editor?.chain().focus().toggleBulletList().run()} title="Маркированный список">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="4" cy="6" r="1" /><circle cx="4" cy="12" r="1" /><circle cx="4" cy="18" r="1" /><path d="M9 6h11M9 12h11M9 18h11" /></svg>
+          </ToolbarButton>
+          <ToolbarButton active={editor?.isActive("orderedList")} disabled={!editor} onClick={() => editor?.chain().focus().toggleOrderedList().run()} title="Нумерованный список">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 10h1M4 14h.01M4 18h1" /></svg>
+          </ToolbarButton>
+          <ToolbarButton active={editor?.isActive("blockquote")} disabled={!editor} onClick={() => editor?.chain().focus().toggleBlockquote().run()} title="Цитата">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M7 7h3v4l-2 6H6l1.5-5H7zm9 0h3v4l-2 6h-2l1.5-5H16z" /></svg>
+          </ToolbarButton>
+        </ToolbarGroup>
+        <ToolbarDivider />
+        <ToolbarGroup>
+          <ToolbarButton active={editor?.isActive("link")} disabled={!editor} onClick={setLink} title="Ссылка">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M10 14a4 4 0 005.66 0l2.83-2.83a4 4 0 00-5.66-5.66l-1 1M14 10a4 4 0 00-5.66 0L5.5 12.83a4 4 0 005.66 5.66l1-1" /></svg>
+          </ToolbarButton>
+          <ToolbarButton disabled={!editor} onClick={() => editor?.chain().focus().setHorizontalRule().run()} title="Разделитель">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12h16" /></svg>
+          </ToolbarButton>
+          <label className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg bg-transparent text-zinc-700 transition hover:bg-zinc-200 ${isUploading ? "pointer-events-none opacity-50" : ""}`} title="Фото">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="10" r="1.5" /><path d="M21 16l-5-5-3 3-2-2-4 4" /></svg>
+            <input
+              className="sr-only"
+              disabled={!editor || isUploading}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) void uploadImage(file);
+              }}
+            />
+          </label>
+        </ToolbarGroup>
+        <ToolbarDivider />
+        <ToolbarGroup>
+          <ToolbarButton active={editor?.isActive({ textAlign: "left" })} disabled={!editor} onClick={() => editor?.chain().focus().setTextAlign("left").run()} title="По левому краю">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h10M4 18h16" /></svg>
+          </ToolbarButton>
+          <ToolbarButton active={editor?.isActive({ textAlign: "center" })} disabled={!editor} onClick={() => editor?.chain().focus().setTextAlign("center").run()} title="По центру">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M7 12h10M4 18h16" /></svg>
+          </ToolbarButton>
+          <ToolbarButton active={editor?.isActive({ textAlign: "right" })} disabled={!editor} onClick={() => editor?.chain().focus().setTextAlign("right").run()} title="По правому краю">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M10 12h10M4 18h16" /></svg>
+          </ToolbarButton>
+        </ToolbarGroup>
+        <ToolbarDivider />
+        <ToolbarGroup>
+          <ToolbarButton disabled={!editor || !editor.can().undo()} onClick={() => editor?.chain().focus().undo().run()} title="Назад">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 14l-4-4 4-4M5 10h9a5 5 0 010 10h-1" /></svg>
+          </ToolbarButton>
+          <ToolbarButton disabled={!editor || !editor.can().redo()} onClick={() => editor?.chain().focus().redo().run()} title="Вперед">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 6l4 4-4 4M19 10h-9a5 5 0 000 10h1" /></svg>
+          </ToolbarButton>
+        </ToolbarGroup>
       </div>
       <EditorContent editor={editor} />
       {(uploadMessage || isUploading) && (
