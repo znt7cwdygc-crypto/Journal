@@ -38,14 +38,14 @@ export function ProductForm({
       </div>
 
       <div className="border-b border-zinc-100 p-4 sm:p-5">
-        <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
+        <div className="grid gap-x-4 gap-y-2.5 sm:grid-cols-2">
           <label className="block">
             <span className="form-label">Название</span>
-            <input className="form-field mt-2" name="title" defaultValue={product?.title ?? ""} placeholder="Например: Logitech Brio 4K" required />
+            <input className="form-field mt-1.5 h-12" name="title" defaultValue={product?.title ?? ""} placeholder="Например: Logitech Brio 4K" required />
           </label>
           <label className="block">
             <span className="form-label">Категория</span>
-            <select className="form-field mt-2" name="category" defaultValue={product?.category ?? "Оборудование"} required>
+            <select className="form-field mt-1.5 h-12" name="category" defaultValue={product?.category ?? "Оборудование"} required>
               {categories.map((category) => (
                 <option key={category} value={category}>{category}</option>
               ))}
@@ -53,18 +53,18 @@ export function ProductForm({
           </label>
           <label className="block">
             <span className="form-label">Цена</span>
-            <span className="relative mt-2 block">
-              <input className="form-field pr-10" name="priceRub" type="text" inputMode="numeric" defaultValue={product?.priceRub ?? ""} placeholder="15000" required />
+            <span className="relative mt-1.5 block">
+              <input className="form-field h-12 pr-10" name="priceRub" type="text" inputMode="numeric" defaultValue={product?.priceRub ?? ""} placeholder="15000" required />
               <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-zinc-500">₽</span>
             </span>
           </label>
           <label className="block">
             <span className="form-label">Город</span>
-            <input className="form-field mt-2" name="city" defaultValue={product?.city ?? ""} placeholder="Москва или удаленно" />
+            <input className="form-field mt-1.5 h-12" name="city" defaultValue={product?.city ?? ""} placeholder="Москва или удаленно" />
           </label>
           <label className="block">
             <span className="form-label">Доставка</span>
-            <select className="form-field mt-2" name="delivery" defaultValue={product?.delivery ?? "ANY"}>
+            <select className="form-field mt-1.5 h-12" name="delivery" defaultValue={product?.delivery ?? "ANY"}>
               <option value="ANY">Город или доставка</option>
               <option value="CITY_ONLY">Только самовывоз</option>
               <option value="DELIVERY">Почта/курьер по России</option>
@@ -72,7 +72,7 @@ export function ProductForm({
           </label>
           <label className="block">
             <span className="form-label">Состояние</span>
-            <select className="form-field mt-2" name="condition" defaultValue={product?.condition ?? "GOOD"}>
+            <select className="form-field mt-1.5 h-12" name="condition" defaultValue={product?.condition ?? "GOOD"}>
               <option value="NEW">Новое</option>
               <option value="GOOD">Хорошее</option>
               <option value="USED">Б/у</option>
@@ -96,12 +96,14 @@ export function ProductForm({
 
       <label className="block border-b border-zinc-100 p-4 sm:p-5">
         <span className="form-label">Контакт</span>
-        <input className="form-field mt-2" name="contact" defaultValue={product?.contact ?? ""} placeholder="@telegram или email" required />
+        <input className="form-field mt-1.5 h-12" name="contact" defaultValue={product?.contact ?? ""} placeholder="@telegram или email" required />
       </label>
 
-      <div className="grid gap-3 p-4 sm:grid-cols-[auto_1fr] sm:items-center sm:p-5">
-        <ProductSubmitButton label={submitLabel} />
+      <div className="grid gap-3 p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
         <p className="text-xs leading-5 text-zinc-500">После нажатия дождитесь публикации, обычно это занимает несколько секунд.</p>
+        <div className="sm:justify-self-end">
+          <ProductSubmitButton label={submitLabel} />
+        </div>
       </div>
     </form>
   );
