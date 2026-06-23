@@ -1839,7 +1839,7 @@ export async function sendInviteAction(formData: FormData) {
 
   revalidatePath("/resumes");
   revalidatePath("/cabinet");
-  redirect(`/resumes/${resumeId}?invited=1`);
+  redirect(`/cabinet?invited=1#invites-sent`);
 }
 
 export async function respondInviteAction(formData: FormData) {
