@@ -7,17 +7,16 @@ export async function AdBlock({ placement, variant = "banner" }: { placement: Ad
   if (variant === "card") {
     return (
       <a
-        className="block min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-hot hover:shadow"
+        className="relative block min-h-[132px] min-w-0 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-950 p-5 shadow-sm transition hover:border-hot hover:shadow"
         href={`/ads/${ad.id}/click`}
         rel="sponsored noopener noreferrer"
         target="_blank"
       >
-        <span className="inline-flex rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-500">
+        <img className="absolute inset-0 h-full w-full object-cover opacity-95" src={ad.imageUrl} alt="" loading="lazy" />
+        <span className="relative inline-flex rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-zinc-600">
           Реклама
         </span>
-        <span className="mt-2 flex h-24 w-full items-center justify-center overflow-hidden rounded-lg bg-zinc-950">
-          <img className="h-full w-full object-contain" src={ad.imageUrl} alt={ad.title} loading="lazy" />
-        </span>
+        <span className="sr-only">{ad.title}</span>
       </a>
     );
   }
