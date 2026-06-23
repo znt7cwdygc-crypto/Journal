@@ -147,7 +147,7 @@ export function TiptapArticleEditor({ name, initialContent }: TiptapArticleEdito
   }, [editor]);
 
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white">
+    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white focus-within:border-[#ff4d2e] focus-within:ring-2 focus-within:ring-[#fff1ed]">
       <input name={name} type="hidden" value={html} />
       <div className="flex flex-wrap gap-1 border-b border-zinc-100 bg-zinc-50 p-2">
         <ToolbarButton active={editor?.isActive("paragraph")} disabled={!editor} onClick={() => editor?.chain().focus().setParagraph().run()} title="Обычный текст">
