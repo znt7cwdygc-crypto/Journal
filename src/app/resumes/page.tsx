@@ -149,14 +149,9 @@ export default async function ResumesPage({ searchParams }: { searchParams?: { s
       {Array.from(grouped.entries()).map(([section, items]) => (
         <section key={section} className="space-y-2">
           <h2 className="text-sm font-semibold uppercase tracking-[0.08em] text-zinc-500">{section}</h2>
-          {items.map((resume) => {
-            const isOwner = resume.userId === userId;
-            const isAdmin = role === "ADMIN";
-            const canSeeContacts = Boolean(session?.user) || isOwner || isAdmin;
-            return (
-              <ResumeDirectoryCard key={resume.id} resume={resume} canSeeContacts={canSeeContacts} currentPath={currentPath} />
-            );
-          })}
+          {items.map((resume) => (
+              <ResumeDirectoryCard key={resume.id} resume={resume} currentPath={currentPath} />
+          ))}
         </section>
       ))}
     </div>

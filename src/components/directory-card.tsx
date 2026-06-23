@@ -6,6 +6,11 @@ import { ReportButton } from "@/components/report-button";
 import { listingSeoPath, resumeSeoPath } from "@/lib/seo-url";
 import { maskContact } from "@/lib/validation";
 
+function isModelResume(roleGoal: string) {
+  const lower = roleGoal.toLowerCase();
+  return lower === "модель" || lower.includes("модель");
+}
+
 type DirectoryUser = {
   id: string;
   name: string | null;
@@ -223,14 +228,11 @@ export function ListingDirectoryCard({
 
 export function ResumeDirectoryCard({
   resume,
-  canSeeContacts,
   currentPath
 }: {
   resume: DirectoryResume;
-  canSeeContacts: boolean;
   currentPath: string;
 }) {
-  const contact = [resume.contactEmail, resume.contactTelegram].filter(Boolean).join(" • ") || "Контакт не указан";
   const isSaved = Boolean(resume.savedBy?.length);
   const moneyValue = resumeMoneyValue(resume.bio);
   const shortBio = resumeSummary(resume.bio);
@@ -262,7 +264,10 @@ export function ResumeDirectoryCard({
       </div>
 
       <DirectoryActionRow columns={3}>
-        <ContactReveal contact={contact} signedIn={canSeeContacts} compact />
+        <Link href={resumePath} className="btn btn-primary flex h-10 items-center justify-center gap-1.5 whitespace-nowrap px-2 text-[11px]">
+          <span>🔒</span>
+          <span>${isModelResume(resume.roleGoal) ? "15" : "5"}</span>
+        </Link>
         <form action={saveResumeAction}>
           <input type="hidden" name="resumeId" value={resume.id} />
           <input type="hidden" name="next" value={currentPath} />
