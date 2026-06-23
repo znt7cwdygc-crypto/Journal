@@ -9,6 +9,7 @@ import {
 } from "@/app/actions";
 import { auth } from "@/auth";
 import { ContactReveal } from "@/components/contact-reveal";
+import { ImportanceBio } from "@/components/importance-bio";
 import { ReportButton } from "@/components/report-button";
 import { prisma } from "@/lib/prisma";
 import { siteName, siteUrl, truncateSeo } from "@/lib/seo";
@@ -57,6 +58,20 @@ function structuredValue(text: string, label: string) {
   return line ? line.slice(line.indexOf(":") + 1).trim() : "";
 }
 
+function structuredBlocks(text: string) {
+  const values: Record<string, string> = {};
+
+  for (const part of text.split(/\n{2,}/)) {
+    const index = part.indexOf(":");
+    if (index <= 0) continue;
+    const label = part.slice(0, index).trim();
+    const value = part.slice(index + 1).trim();
+    if (label && value) values[label] = value;
+  }
+
+  return values;
+}
+
 function serviceSummary(description: string) {
   const summary = structuredValue(description, "Коротко");
   if (summary) return summary;
@@ -68,6 +83,33 @@ function serviceSummary(description: string) {
       .find((part) => part && !/^(категория|цена|комментарий к цене|что входит|опыт|портфолио|срок|доступность|ограничения):/i.test(part)) ||
     description
   );
+}
+
+function vacancyStructuredText(description: string) {
+  const data = structuredBlocks(description);
+  const lines = [
+    "О ВАКАНСИИ",
+    data["Роль"] ? `Роль: ${data["Роль"]}` : null,
+    data["График"] ? `График: ${data["График"]}` : null,
+    data["Занятость"] ? `Занятость: ${data["Занятость"]}` : null,
+    "",
+    "ОПЛАТА",
+    data["Оплата"] ? `Оплата: ${data["Оплата"]}` : null,
+    data["Комментарий к оплате"] ? `Выплаты: ${data["Комментарий к оплате"]}` : null,
+    "",
+    "ТРЕБОВАНИЯ",
+    data["Требования"] || null,
+    "",
+    "УСЛОВИЯ",
+    data["Условия"] ? `Условия: ${data["Условия"]}` : null,
+    data["Дополнительные условия"] ? `О работодателе: ${data["Дополнительные условия"]}` : null,
+    data["Кто не подойдет"] ? `Жесткие фильтры: ${data["Кто не подойдет"]}` : null,
+    "",
+    "КОРОТКО",
+    data["Коротко"] || null
+  ].filter((line) => line !== null);
+
+  return lines.join("\n").trim() || description;
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -111,6 +153,7 @@ export default async function ListingDetailsPage({
   const isSaved = Boolean(session?.user?.id && listing.savedBy.some((item) => item.userId === session.user.id));
   const price = isService ? structuredValue(listing.description, "Цена") : "";
   const summary = isService ? serviceSummary(listing.description) : listing.description;
+  const vacancyText = !isService ? vacancyStructuredText(listing.description) : "";
   const listingJsonLd = isService
     ? {
         "@context": "https://schema.org",
@@ -207,10 +250,14 @@ export default async function ListingDetailsPage({
         <span className="rounded-full bg-zinc-100 px-3 py-1 text-zinc-700">{listing.city || "Город не указан"}</span>
         <span className="rounded-full bg-sky-50 px-3 py-1 text-sky-700">{listing.employmentType || "Формат не указан"}</span>
       </div>
-      <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-tight">{listing.title}</h1>
+      <h1 className="mt-4 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">{listing.title}</h1>
       {price && <p className="mt-4 inline-flex rounded-xl bg-zinc-900 px-4 py-2 text-lg font-bold text-white">{price}</p>}
       {isService && summary !== listing.description && <p className="mt-4 text-lg leading-7 text-zinc-700">{summary}</p>}
-      <p className="mt-4 whitespace-pre-wrap text-base leading-8 text-zinc-800">{listing.description}</p>
+      {isService ? (
+        <p className="mt-4 whitespace-pre-wrap text-base leading-8 text-zinc-800">{listing.description}</p>
+      ) : (
+        <ImportanceBio text={vacancyText} />
+      )}
       {searchParams?.reported && (
         <div className="mt-4 rounded-lg border border-teal-100 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800">
           Жалоба отправлена в модерацию.
