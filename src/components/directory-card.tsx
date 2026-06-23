@@ -162,12 +162,14 @@ export function ListingDirectoryCard({
   const compactListing = kind === "VACANCY" || isService;
   const compactButtonClass = "btn h-10 w-full whitespace-nowrap px-1 text-[11px]";
   const listingPath = listingSeoPath({ ...listing, type: kind });
+  const vacancyRole = kind === "VACANCY" ? firstStructuredValue(listing.description, ["Роль", "Должность"]) : "";
+  const secondaryBadge = kind === "VACANCY" ? vacancyRole || "Роль не указана" : topic || formatLabel;
 
   return (
     <article className="directory-card bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5">
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className={`rounded-full px-2.5 py-1 font-semibold ${kindClass}`}>{typeLabel}</span>
-        <span className="rounded-full bg-zinc-100 px-2.5 py-1 font-semibold text-zinc-700">{topic || formatLabel}</span>
+        <span className="rounded-full bg-zinc-100 px-2.5 py-1 font-semibold text-zinc-700">{secondaryBadge}</span>
         <span className="text-zinc-500">{listing.createdAt.toLocaleDateString("ru-RU")}</span>
       </div>
 
