@@ -21,12 +21,12 @@ test.describe("Guest — public pages", () => {
 
   test("/services — loads", async ({ page }) => {
     await page.goto("/services");
-    await expect(page.locator("main, [role='main'], body")).toBeVisible();
+    await expect(page).toHaveTitle(/.+/);
   });
 
   test("/products — loads", async ({ page }) => {
     await page.goto("/products");
-    await expect(page.locator("main, [role='main'], body")).toBeVisible();
+    await expect(page).toHaveTitle(/.+/);
   });
 
   test("/resumes — has lock badge on cards", async ({ page }) => {
@@ -38,18 +38,18 @@ test.describe("Guest — public pages", () => {
 
   test("/model-operator — loads", async ({ page }) => {
     await page.goto("/model-operator");
-    await expect(page.locator("main, body")).toBeVisible();
+    await expect(page).toHaveTitle(/.+/);
   });
 
   test("/authors — loads", async ({ page }) => {
     await page.goto("/authors");
-    await expect(page.locator("main, body")).toBeVisible();
+    await expect(page).toHaveTitle(/.+/);
   });
 
   for (const path of ["/stories", "/money", "/safety", "/work"]) {
     test(`${path} — loads`, async ({ page }) => {
       await page.goto(path);
-      await expect(page.locator("main, body")).toBeVisible();
+      await expect(page).toHaveTitle(/.+/);
     });
   }
 

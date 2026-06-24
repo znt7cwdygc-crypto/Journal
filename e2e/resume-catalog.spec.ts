@@ -25,10 +25,10 @@ test.describe("Resume catalog", () => {
 
   test("Click resume card → detail page", async ({ page }) => {
     await page.goto("/resumes");
-    const firstLink = page.locator("a[href*='/resumes/']").first();
+    const firstLink = page.locator("a[href*='/resume/']").first();
     await expect(firstLink).toBeVisible();
     await firstLink.click();
-    await page.waitForURL("**/resumes/**");
+    await page.waitForURL("**/resume/**");
 
     // Detail page has title and content
     await expect(page.locator("h1, h2").first()).toBeVisible();
