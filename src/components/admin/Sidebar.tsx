@@ -4,12 +4,20 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-export type AdminNavItem = {
-  href: string;
-  label: string;
-  icon: string;
-  badge?: number;
-};
+export type AdminNavItem =
+  | {
+      href: string;
+      label: string;
+      icon: string;
+      badge?: number;
+    }
+  | {
+      section: string;
+    };
+
+function isSection(item: AdminNavItem): item is { section: string } {
+  return "section" in item;
+}
 
 export function AdminShell({
   items,
@@ -31,7 +39,17 @@ export function AdminShell({
 
   const nav = (
     <nav className="flex flex-col gap-0.5 px-3 py-4">
-      {items.map((item) => {
+      {items.map((item, i) => {
+        if (isSection(item)) {
+          return (
+            <p
+              key={`section-${i}`}
+              className="mb-1 mt-4 px-3 text-[10px] font-bold uppercase tracking-widest text-zinc-500 first:mt-0"
+            >
+              {item.section}
+            </p>
+          );
+        }
         const active = isActive(item.href);
         return (
           <Link
