@@ -18,6 +18,10 @@ export default defineConfig({
       name: "iPhone 14",
       use: { ...devices["iPhone 14"] },
     },
+    {
+      name: "Safari iOS",
+      use: { ...devices["iPhone 14"], browserName: "webkit" },
+    },
   ],
   outputDir: "e2e-results",
 });
