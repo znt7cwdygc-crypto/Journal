@@ -3,7 +3,7 @@ import { createAdvertisementAction, deleteListingReviewAction, reviewPaymentActi
 import { adMonthlyPriceUsd, adPlacementLabel, adPlacements } from "@/lib/ads";
 import { requireRole } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
-import { TreeBranch, TreeLeaf, TreeRoot } from "@/components/tree";
+import { Badge, Card, CardTitle, StatCard, Table, statusColor } from "@/components/admin/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   title: "Админ-панель — Дашборд",
   robots: { index: false, follow: false }
 };
+
+const inputCls = "mt-1 w-full rounded-lg border border-zinc-300 p-2 text-sm";
+const labelCls = "block text-xs font-semibold text-zinc-500";
 
 export default async function AdminPage() {
   await requireRole(["ADMIN"]);
@@ -65,223 +68,254 @@ export default async function AdminPage() {
   ]);
 
   const articleStatusMap = Object.fromEntries(articlesByStatus.map((s) => [s.status, s._count]));
-  const inviteStatusMap = Object.fromEntries(inviteStats.map((s) => [s.status, s._count]));
+  const inviteRevenueUsd = ((inviteRevenue._sum.amountCents ?? 0) / 100).toFixed(2);
+  const publishedArticles = articleStatusMap["PUBLISHED"] ?? 0;
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Дашборд</h1>
+      <div>
+        <h1 className="text-xl font-bold text-zinc-900">Дашборд</h1>
+        <p className="text-sm text-zinc-500">Обзор платформы WebcamExpert Journal</p>
+      </div>
 
-      <TreeRoot title="Пользователи">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-          <Stat label="Всего" value={totalUsers} />
-          <Stat label="За неделю" value={newUsersWeek} />
-          <Stat label="За месяц" value={newUsersMonth} />
-        </div>
-      </TreeRoot>
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        <StatCard icon="👥" accent="blue" value={totalUsers} label="Пользователи" sub={`+${newUsersWeek} за нед. / +${newUsersMonth} за мес.`} />
+        <StatCard icon="📝" accent="green" value={publishedArticles} label="Статьи (опубл.)" sub={`${articleStatusMap["DRAFT"] ?? 0} черн. · ${articleStatusMap["PENDING_REVIEW"] ?? 0} на проверке`} />
+        <StatCard icon="📂" accent="purple" value={listingsCount} label="Объявления" />
+        <StatCard icon="🛒" accent="amber" value={productsCount} label="Товары" sub={`${resumesCount} резюме`} />
+        <StatCard icon="💵" accent="green" value={`$${inviteRevenueUsd}`} label="Доход (charge)" />
+        <StatCard icon="⚠️" accent="red" value={activeReports} label="Активные жалобы" />
+      </div>
 
-      <TreeRoot title="Контент">
+      {/* Invites */}
+      <Card>
+        <CardTitle>Инвайты</CardTitle>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Stat label="Статьи (опубл.)" value={articleStatusMap["PUBLISHED"] ?? 0} />
-          <Stat label="Статьи (черн.)" value={articleStatusMap["DRAFT"] ?? 0} />
-          <Stat label="Статьи (архив)" value={articleStatusMap["ARCHIVED"] ?? 0} />
-          <Stat label="На проверке" value={articleStatusMap["PENDING_REVIEW"] ?? 0} />
-          <Stat label="Объявления" value={listingsCount} />
-          <Stat label="Товары" value={productsCount} />
-          <Stat label="Резюме" value={resumesCount} />
+          {(() => {
+            const m = Object.fromEntries(inviteStats.map((s) => [s.status, s._count]));
+            return (
+              <>
+                <MiniStat label="Отправлено" value={m["PENDING"] ?? 0} />
+                <MiniStat label="Принято" value={m["ACCEPTED"] ?? 0} />
+                <MiniStat label="Отклонено" value={m["DECLINED"] ?? 0} />
+                <MiniStat label="Истекло" value={m["EXPIRED"] ?? 0} />
+              </>
+            );
+          })()}
         </div>
-      </TreeRoot>
+      </Card>
 
-      <TreeRoot title="Инвайты">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-          <Stat label="Отправлено" value={inviteStatusMap["PENDING"] ?? 0} />
-          <Stat label="Принято" value={inviteStatusMap["ACCEPTED"] ?? 0} />
-          <Stat label="Отклонено" value={inviteStatusMap["DECLINED"] ?? 0} />
-          <Stat label="Истекло" value={inviteStatusMap["EXPIRED"] ?? 0} />
-          <Stat label="Доход (charge)" value={`$${((inviteRevenue._sum.amountCents ?? 0) / 100).toFixed(2)}`} />
-        </div>
-      </TreeRoot>
+      {/* Recent audit */}
+      <Card className="p-0">
+        <div className="px-5 pt-5"><CardTitle>Последние действия</CardTitle></div>
+        {recentAudit.length === 0 ? (
+          <p className="px-5 pb-5 text-sm text-zinc-500">Пусто.</p>
+        ) : (
+          <Table head={
+            <tr>
+              <th className="px-4 py-2">Действие</th>
+              <th className="px-4 py-2">Объект</th>
+              <th className="px-4 py-2">Админ</th>
+              <th className="px-4 py-2">Дата</th>
+            </tr>
+          }>
+            {recentAudit.map((log) => (
+              <tr key={log.id} className="even:bg-zinc-50">
+                <td className="px-4 py-2 font-medium text-zinc-900">{log.action}</td>
+                <td className="px-4 py-2 text-zinc-500">{log.targetType}:{log.targetId}</td>
+                <td className="px-4 py-2 text-zinc-500">{log.user.name || log.user.email}</td>
+                <td className="px-4 py-2 text-zinc-400">{log.createdAt.toLocaleDateString("ru-RU")}</td>
+              </tr>
+            ))}
+          </Table>
+        )}
+      </Card>
 
-      <TreeRoot title="Жалобы">
-        <p className="text-sm">Активных жалоб: <span className="font-semibold text-red-600">{activeReports}</span></p>
-      </TreeRoot>
+      {/* Ads */}
+      <Card id="ads" className="scroll-mt-20">
+        <CardTitle>📢 Реклама</CardTitle>
 
-      <TreeRoot title="Последний аудит-лог">
-        <div className="space-y-1">
-          {recentAudit.length === 0 && <p className="text-sm text-zinc-500">Пусто.</p>}
-          {recentAudit.map((log) => (
-            <div key={log.id} className="rounded-md bg-stone-50 px-3 py-2 text-sm">
-              <span className="font-medium">{log.action}</span> — {log.targetType}:{log.targetId}
-              <span className="ml-2 text-xs text-zinc-500">{log.user.name || log.user.email} • {log.createdAt.toLocaleDateString("ru-RU")}</span>
-            </div>
-          ))}
-        </div>
-      </TreeRoot>
-
-      <TreeRoot title="Реклама">
-        <TreeBranch label="Создать баннер">
-          <form action={createAdvertisementAction} className="grid gap-3 p-2 md:grid-cols-2">
+        <details className="mb-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+          <summary className="cursor-pointer select-none text-sm font-semibold">Создать баннер</summary>
+          <form action={createAdvertisementAction} className="mt-3 grid gap-3 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium">Раздел</label>
-              <select className="mt-1 w-full rounded border p-2 text-sm" name="placement" required>
+              <label className={labelCls}>Раздел</label>
+              <select className={inputCls} name="placement" required>
                 {adPlacements.map((placement) => (
                   <option key={placement.value} value={placement.value}>{placement.label} — ${adMonthlyPriceUsd(placement.value)}/мес</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium">Название</label>
-              <input className="mt-1 w-full rounded border p-2 text-sm" name="title" maxLength={120} required placeholder="Например: Настройка OBS под ключ" />
+              <label className={labelCls}>Название</label>
+              <input className={inputCls} name="title" maxLength={120} required placeholder="Например: Настройка OBS под ключ" />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium">Короткое описание</label>
-              <input className="mt-1 w-full rounded border p-2 text-sm" name="description" maxLength={220} placeholder="1 строка под баннером" />
+              <label className={labelCls}>Короткое описание</label>
+              <input className={inputCls} name="description" maxLength={220} placeholder="1 строка под баннером" />
             </div>
             <div>
-              <label className="block text-sm font-medium">Картинка/GIF URL</label>
-              <input className="mt-1 w-full rounded border p-2 text-sm" name="imageUrl" type="url" required placeholder="https://..." />
+              <label className={labelCls}>Картинка/GIF URL</label>
+              <input className={inputCls} name="imageUrl" type="url" required placeholder="https://..." />
             </div>
             <div>
-              <label className="block text-sm font-medium">Ссылка перехода</label>
-              <input className="mt-1 w-full rounded border p-2 text-sm" name="targetUrl" type="url" required placeholder="https://..." />
+              <label className={labelCls}>Ссылка перехода</label>
+              <input className={inputCls} name="targetUrl" type="url" required placeholder="https://..." />
             </div>
             <div>
-              <label className="block text-sm font-medium">Старт</label>
-              <input className="mt-1 w-full rounded border p-2 text-sm" name="startsAt" type="datetime-local" />
+              <label className={labelCls}>Старт</label>
+              <input className={inputCls} name="startsAt" type="datetime-local" />
             </div>
             <div>
-              <label className="block text-sm font-medium">Окончание</label>
-              <input className="mt-1 w-full rounded border p-2 text-sm" name="expiresAt" type="datetime-local" />
+              <label className={labelCls}>Окончание</label>
+              <input className={inputCls} name="expiresAt" type="datetime-local" />
             </div>
-            <button className="rounded bg-hot px-4 py-2 text-sm font-semibold text-white md:col-span-2" type="submit">
+            <button className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white md:col-span-2" type="submit">
               Создать рекламу
             </button>
           </form>
-        </TreeBranch>
-        <TreeBranch label={`Активные и архив (${advertisements.length})`}>
-          {advertisements.length === 0 && <p className="text-sm text-zinc-500">Рекламы пока нет.</p>}
+        </details>
+
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">Активные и архив ({advertisements.length})</p>
+        {advertisements.length === 0 && <p className="text-sm text-zinc-500">Рекламы пока нет.</p>}
+        <div className="space-y-3">
           {advertisements.map((ad) => (
-            <TreeLeaf key={ad.id}>
-              <div className="space-y-3">
+            <div key={ad.id} className="rounded-lg border border-zinc-200 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="font-medium">{ad.title}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-zinc-900">{ad.title}</p>
+                    <Badge color={statusColor(ad.status)}>{ad.status}</Badge>
+                  </div>
                   <p className="mt-1 text-xs text-zinc-500">
-                    {adPlacementLabel(ad.placement)} • ${adMonthlyPriceUsd(ad.placement)}/мес • {ad.status} • клики: {ad.clickCount} • создал {ad.createdBy.name || ad.createdBy.email}
-                  </p>
-                  <p className="mt-2 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
-                    Цена размещения: ${adMonthlyPriceUsd(ad.placement)} в месяц
+                    {adPlacementLabel(ad.placement)} • ${adMonthlyPriceUsd(ad.placement)}/мес • клики: {ad.clickCount} • создал {ad.createdBy.name || ad.createdBy.email}
                   </p>
                   {ad.description && <p className="mt-1 text-sm text-zinc-600">{ad.description}</p>}
-                  <a className="mt-1 block truncate text-xs text-accent" href={ad.targetUrl} target="_blank" rel="noreferrer">{ad.targetUrl}</a>
+                  <a className="mt-1 block truncate text-xs text-blue-600" href={ad.targetUrl} target="_blank" rel="noreferrer">{ad.targetUrl}</a>
                 </div>
-                <form action={updateAdvertisementAction} className="grid gap-2 rounded-lg bg-zinc-50 p-3 md:grid-cols-2">
+              </div>
+
+              <details className="mt-3">
+                <summary className="cursor-pointer select-none text-xs font-semibold text-zinc-500">Редактировать размещение</summary>
+                <form action={updateAdvertisementAction} className="mt-2 grid gap-2 rounded-lg bg-zinc-50 p-3 md:grid-cols-2">
                   <input type="hidden" name="adId" value={ad.id} />
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-500">Место рекламы</label>
-                    <select className="mt-1 w-full rounded border p-2 text-sm" name="placement" defaultValue={ad.placement} required>
+                    <label className={labelCls}>Место рекламы</label>
+                    <select className={inputCls} name="placement" defaultValue={ad.placement} required>
                       {adPlacements.map((placement) => (
                         <option key={placement.value} value={placement.value}>{placement.label} — ${adMonthlyPriceUsd(placement.value)}/мес</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-500">Название</label>
-                    <input className="mt-1 w-full rounded border p-2 text-sm" name="title" defaultValue={ad.title} maxLength={120} required />
+                    <label className={labelCls}>Название</label>
+                    <input className={inputCls} name="title" defaultValue={ad.title} maxLength={120} required />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-zinc-500">Описание</label>
-                    <input className="mt-1 w-full rounded border p-2 text-sm" name="description" defaultValue={ad.description || ""} maxLength={220} />
+                    <label className={labelCls}>Описание</label>
+                    <input className={inputCls} name="description" defaultValue={ad.description || ""} maxLength={220} />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-zinc-500">Картинка/GIF именно для этого места</label>
-                    <input className="mt-1 w-full rounded border p-2 text-sm" name="imageUrl" defaultValue={ad.imageUrl} required />
+                    <label className={labelCls}>Картинка/GIF именно для этого места</label>
+                    <input className={inputCls} name="imageUrl" defaultValue={ad.imageUrl} required />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-semibold text-zinc-500">Ссылка именно для этого места</label>
-                    <input className="mt-1 w-full rounded border p-2 text-sm" name="targetUrl" defaultValue={ad.targetUrl} type="url" required />
+                    <label className={labelCls}>Ссылка именно для этого места</label>
+                    <input className={inputCls} name="targetUrl" defaultValue={ad.targetUrl} type="url" required />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-500">Старт</label>
-                    <input className="mt-1 w-full rounded border p-2 text-sm" name="startsAt" type="datetime-local" />
+                    <label className={labelCls}>Старт</label>
+                    <input className={inputCls} name="startsAt" type="datetime-local" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-zinc-500">Окончание</label>
-                    <input className="mt-1 w-full rounded border p-2 text-sm" name="expiresAt" type="datetime-local" />
+                    <label className={labelCls}>Окончание</label>
+                    <input className={inputCls} name="expiresAt" type="datetime-local" />
                   </div>
-                  <button className="rounded bg-hot px-3 py-2 text-sm font-semibold text-white md:col-span-2" type="submit">
+                  <button className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-semibold text-white md:col-span-2" type="submit">
                     Сохранить это место рекламы
                   </button>
                 </form>
-                <div className="flex flex-wrap gap-2">
-                  <form action={toggleAdvertisementAction}>
-                    <input type="hidden" name="adId" value={ad.id} />
-                    <input type="hidden" name="status" value={ad.status === "ACTIVE" ? "PAUSED" : "ACTIVE"} />
-                    <button className="rounded bg-zinc-900 px-3 py-1 text-xs font-medium text-white" type="submit">
-                      {ad.status === "ACTIVE" ? "Пауза" : "Активировать"}
-                    </button>
-                  </form>
-                  <form action={toggleAdvertisementAction}>
-                    <input type="hidden" name="adId" value={ad.id} />
-                    <input type="hidden" name="status" value="ARCHIVED" />
-                    <button className="rounded bg-red-600 px-3 py-1 text-xs font-medium text-white" type="submit">В архив</button>
-                  </form>
-                </div>
-              </div>
-            </TreeLeaf>
-          ))}
-        </TreeBranch>
-      </TreeRoot>
+              </details>
 
-      <TreeRoot title="Отзывы на услуги">
-        <TreeBranch label={`Последние (${listingReviews.length})`}>
-          {listingReviews.length === 0 && <p className="text-sm text-zinc-500">Отзывов пока нет.</p>}
-          {listingReviews.map((review) => (
-            <TreeLeaf key={review.id}>
-              <p>{review.parentId ? "Ответ" : `Оценка ${review.rating || "-"} из 5`} • {review.listing.title}</p>
-              <p className="text-xs text-zinc-500">{review.body} • от {review.user.email || review.user.name}</p>
-              <div className="mt-2 flex gap-2">
-                <form action={deleteListingReviewAction}>
-                  <input type="hidden" name="reviewId" value={review.id} />
-                  <button className="rounded bg-red-600 px-3 py-1 text-white" type="submit">Удалить отзыв</button>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <form action={toggleAdvertisementAction}>
+                  <input type="hidden" name="adId" value={ad.id} />
+                  <input type="hidden" name="status" value={ad.status === "ACTIVE" ? "PAUSED" : "ACTIVE"} />
+                  <button className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white" type="submit">
+                    {ad.status === "ACTIVE" ? "Пауза" : "Активировать"}
+                  </button>
+                </form>
+                <form action={toggleAdvertisementAction}>
+                  <input type="hidden" name="adId" value={ad.id} />
+                  <input type="hidden" name="status" value="ARCHIVED" />
+                  <button className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white" type="submit">В архив</button>
                 </form>
               </div>
-            </TreeLeaf>
+            </div>
           ))}
-        </TreeBranch>
-      </TreeRoot>
+        </div>
+      </Card>
 
-      <TreeRoot title="Будущий модуль платежей">
-        <TreeBranch label={`PENDING (${pendingPayments.length})`}>
-          {pendingPayments.length === 0 && <p className="text-sm text-zinc-500">Нет платежей в очереди.</p>}
+      {/* Reviews */}
+      <Card>
+        <CardTitle>Отзывы на услуги ({listingReviews.length})</CardTitle>
+        {listingReviews.length === 0 && <p className="text-sm text-zinc-500">Отзывов пока нет.</p>}
+        <div className="space-y-2">
+          {listingReviews.map((review) => (
+            <div key={review.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-zinc-200 p-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-zinc-900">
+                  {review.parentId ? "Ответ" : `Оценка ${review.rating || "-"} из 5`} • {review.listing.title}
+                </p>
+                <p className="text-xs text-zinc-500">{review.body} • от {review.user.email || review.user.name}</p>
+              </div>
+              <form action={deleteListingReviewAction}>
+                <input type="hidden" name="reviewId" value={review.id} />
+                <button className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white" type="submit">Удалить</button>
+              </form>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Payments */}
+      <Card>
+        <CardTitle>Платежи — PENDING ({pendingPayments.length})</CardTitle>
+        {pendingPayments.length === 0 && <p className="text-sm text-zinc-500">Нет платежей в очереди.</p>}
+        <div className="space-y-2">
           {pendingPayments.map((payment) => (
-            <TreeLeaf key={payment.id}>
-              <p>{payment.type} • ${payment.amountUsd.toString()} • ref: {payment.referenceType}:{payment.referenceId}</p>
-              <p className="text-xs text-zinc-500">TX: {payment.txHash || "-"}</p>
-              <div className="mt-2 flex gap-2">
+            <div key={payment.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-zinc-200 p-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-zinc-900">{payment.type} • ${payment.amountUsd.toString()} • ref: {payment.referenceType}:{payment.referenceId}</p>
+                <p className="text-xs text-zinc-500">TX: {payment.txHash || "-"}</p>
+              </div>
+              <div className="flex gap-2">
                 <form action={reviewPaymentAction}>
                   <input type="hidden" name="paymentId" value={payment.id} />
                   <input type="hidden" name="decision" value="approve" />
-                  <button className="rounded bg-emerald-600 px-3 py-1 text-white" type="submit">Approve</button>
+                  <button className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white" type="submit">Approve</button>
                 </form>
                 <form action={reviewPaymentAction}>
                   <input type="hidden" name="paymentId" value={payment.id} />
                   <input type="hidden" name="decision" value="reject" />
                   <input type="hidden" name="reason" value="Платеж не подтвержден" />
-                  <button className="rounded bg-red-600 px-3 py-1 text-white" type="submit">Reject</button>
+                  <button className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-medium text-white" type="submit">Reject</button>
                 </form>
               </div>
-            </TreeLeaf>
+            </div>
           ))}
-        </TreeBranch>
-      </TreeRoot>
+        </div>
+      </Card>
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number | string }) {
+function MiniStat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-lg border border-soft bg-white p-3 text-center">
+    <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-center">
       <p className="text-xs text-zinc-500">{label}</p>
-      <p className="mt-1 text-lg font-semibold">{String(value)}</p>
+      <p className="mt-1 text-lg font-semibold text-zinc-900">{String(value)}</p>
     </div>
   );
 }

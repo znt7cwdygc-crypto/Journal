@@ -3,7 +3,7 @@ import Link from "next/link";
 import { adminDeleteContentAction, adminEditArticleAction, adminEditListingAction } from "@/app/actions";
 import { requireRole } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
-import { TreeBranch, TreeLeaf, TreeRoot } from "@/components/tree";
+import { Badge, Table, statusColor } from "@/components/admin/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,7 @@ type Tab = "articles" | "listings" | "products" | "resumes";
 
 const tabs: { key: Tab; label: string }[] = [
   { key: "articles", label: "Статьи" },
-  { key: "listings", label: "Объявления" },
+  { key: "listings", label: "Вакансии/Услуги" },
   { key: "products", label: "Товары" },
   { key: "resumes", label: "Резюме" },
 ];
@@ -29,16 +29,16 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
   const tab: Tab = tabs.some((t) => t.key === rawTab) ? (rawTab as Tab) : "articles";
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Контент</h1>
+    <div className="space-y-5">
+      <h1 className="text-xl font-bold text-zinc-900">Контент</h1>
 
-      <div className="flex gap-1 overflow-x-auto">
+      <div className="flex gap-1 overflow-x-auto border-b border-zinc-200">
         {tabs.map((t) => (
           <Link
             key={t.key}
             href={`/admin/content?tab=${t.key}`}
-            className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium ${
-              t.key === tab ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
+            className={`whitespace-nowrap border-b-2 px-4 py-2 text-sm font-medium ${
+              t.key === tab ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-500 hover:text-zinc-900"
             }`}
           >
             {t.label}
@@ -54,6 +54,50 @@ export default async function ContentPage({ searchParams }: { searchParams: Prom
   );
 }
 
+function EditRow({
+  action,
+  idField,
+  id,
+  title,
+  status,
+}: {
+  action: (formData: FormData) => void;
+  idField: string;
+  id: string;
+  title: string;
+  status: string;
+}) {
+  return (
+    <details>
+      <summary className="cursor-pointer text-xs font-medium text-blue-600">Ред.</summary>
+      <form action={action} className="mt-2 flex flex-wrap items-end gap-2 rounded-lg bg-zinc-50 p-2">
+        <input type="hidden" name={idField} value={id} />
+        <div>
+          <label className="block text-xs font-medium text-zinc-500">Заголовок</label>
+          <input name="title" defaultValue={title} className="mt-1 rounded border border-zinc-300 p-1.5 text-sm" />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-zinc-500">Статус</label>
+          <select name="status" defaultValue={status} className="mt-1 rounded border border-zinc-300 p-1.5 text-sm">
+            {statusOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+        <button type="submit" className="rounded bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white">Сохранить</button>
+      </form>
+    </details>
+  );
+}
+
+function HideBtn({ contentType, id }: { contentType: string; id: string }) {
+  return (
+    <form action={adminDeleteContentAction}>
+      <input type="hidden" name="contentType" value={contentType} />
+      <input type="hidden" name="contentId" value={id} />
+      <button type="submit" className="rounded bg-red-600 px-2 py-1 text-xs text-white">Скрыть</button>
+    </form>
+  );
+}
+
 async function ArticlesTab() {
   const articles = await prisma.article.findMany({
     orderBy: { createdAt: "desc" },
@@ -62,50 +106,35 @@ async function ArticlesTab() {
   });
 
   return (
-    <TreeRoot title={`Статьи (${articles.length})`}>
+    <Table head={
+      <tr>
+        <th className="px-4 py-2">Заголовок</th>
+        <th className="px-4 py-2">Автор</th>
+        <th className="px-4 py-2">Статус</th>
+        <th className="px-4 py-2">Просм.</th>
+        <th className="px-4 py-2">Дата</th>
+        <th className="px-4 py-2">Действия</th>
+      </tr>
+    }>
       {articles.map((a) => (
-        <TreeBranch key={a.id} label={`${a.title} — ${a.status}`} defaultOpen={false}>
-          <TreeLeaf>
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-2 text-xs text-zinc-500">
-                <span>Автор: {a.createdBy.name || a.createdBy.email}</span>
-                <span>Статус: {a.status}</span>
-                <span>Просмотры: {a.viewCount}</span>
-                <span>Создана: {a.createdAt.toLocaleDateString("ru-RU")}</span>
-              </div>
-              <form action={adminEditArticleAction} className="flex flex-wrap items-end gap-2">
-                <input type="hidden" name="articleId" value={a.id} />
-                <div>
-                  <label className="block text-xs font-medium">Заголовок</label>
-                  <input name="title" defaultValue={a.title} className="mt-1 rounded border p-1.5 text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium">Статус</label>
-                  <select name="status" defaultValue={a.status} className="mt-1 rounded border p-1.5 text-sm">
-                    {statusOptions.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
-                <button type="submit" className="rounded bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white">
-                  Сохранить
-                </button>
-              </form>
+        <tr key={a.id} className="even:bg-zinc-50 align-top">
+          <td className="px-4 py-2 font-medium text-zinc-900">{a.title}</td>
+          <td className="px-4 py-2 text-zinc-500">{a.createdBy.name || a.createdBy.email}</td>
+          <td className="px-4 py-2"><Badge color={statusColor(a.status)}>{a.status}</Badge></td>
+          <td className="px-4 py-2 text-zinc-500">{a.viewCount}</td>
+          <td className="px-4 py-2 text-zinc-400">{a.createdAt.toLocaleDateString("ru-RU")}</td>
+          <td className="px-4 py-2">
+            <div className="flex flex-col gap-1">
+              <EditRow action={adminEditArticleAction} idField="articleId" id={a.id} title={a.title} status={a.status} />
               <div className="flex gap-2">
-                <form action={adminDeleteContentAction}>
-                  <input type="hidden" name="contentType" value="article" />
-                  <input type="hidden" name="contentId" value={a.id} />
-                  <button type="submit" className="rounded bg-red-600 px-3 py-1 text-xs text-white">Скрыть/Архив</button>
-                </form>
-                <Link href={`/blog/${a.slug}`} className="rounded bg-zinc-200 px-3 py-1 text-xs" target="_blank">
-                  Открыть
-                </Link>
+                <HideBtn contentType="article" id={a.id} />
+                <Link href={`/blog/${a.slug}`} className="rounded bg-zinc-200 px-2 py-1 text-xs" target="_blank">Открыть</Link>
               </div>
             </div>
-          </TreeLeaf>
-        </TreeBranch>
+          </td>
+        </tr>
       ))}
-    </TreeRoot>
+    </Table>
   );
 }
 
@@ -117,46 +146,34 @@ async function ListingsTab() {
   });
 
   return (
-    <TreeRoot title={`Объявления (${listings.length})`}>
+    <Table head={
+      <tr>
+        <th className="px-4 py-2">Заголовок</th>
+        <th className="px-4 py-2">Автор</th>
+        <th className="px-4 py-2">Тип</th>
+        <th className="px-4 py-2">Статус</th>
+        <th className="px-4 py-2">Просм.</th>
+        <th className="px-4 py-2">Дата</th>
+        <th className="px-4 py-2">Действия</th>
+      </tr>
+    }>
       {listings.map((l) => (
-        <TreeBranch key={l.id} label={`${l.title} — ${l.status}`} defaultOpen={false}>
-          <TreeLeaf>
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-2 text-xs text-zinc-500">
-                <span>Автор: {l.createdBy.name || l.createdBy.email}</span>
-                <span>Тип: {l.type}</span>
-                <span>Статус: {l.status}</span>
-                <span>Просмотры: {l.viewCount}</span>
-                <span>Создано: {l.createdAt.toLocaleDateString("ru-RU")}</span>
-              </div>
-              <form action={adminEditListingAction} className="flex flex-wrap items-end gap-2">
-                <input type="hidden" name="listingId" value={l.id} />
-                <div>
-                  <label className="block text-xs font-medium">Заголовок</label>
-                  <input name="title" defaultValue={l.title} className="mt-1 rounded border p-1.5 text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium">Статус</label>
-                  <select name="status" defaultValue={l.status} className="mt-1 rounded border p-1.5 text-sm">
-                    {statusOptions.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
-                <button type="submit" className="rounded bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white">
-                  Сохранить
-                </button>
-              </form>
-              <form action={adminDeleteContentAction}>
-                <input type="hidden" name="contentType" value="listing" />
-                <input type="hidden" name="contentId" value={l.id} />
-                <button type="submit" className="rounded bg-red-600 px-3 py-1 text-xs text-white">Скрыть/Архив</button>
-              </form>
+        <tr key={l.id} className="even:bg-zinc-50 align-top">
+          <td className="px-4 py-2 font-medium text-zinc-900">{l.title}</td>
+          <td className="px-4 py-2 text-zinc-500">{l.createdBy.name || l.createdBy.email}</td>
+          <td className="px-4 py-2 text-zinc-500">{l.type}</td>
+          <td className="px-4 py-2"><Badge color={statusColor(l.status)}>{l.status}</Badge></td>
+          <td className="px-4 py-2 text-zinc-500">{l.viewCount}</td>
+          <td className="px-4 py-2 text-zinc-400">{l.createdAt.toLocaleDateString("ru-RU")}</td>
+          <td className="px-4 py-2">
+            <div className="flex flex-col gap-1">
+              <EditRow action={adminEditListingAction} idField="listingId" id={l.id} title={l.title} status={l.status} />
+              <HideBtn contentType="listing" id={l.id} />
             </div>
-          </TreeLeaf>
-        </TreeBranch>
+          </td>
+        </tr>
       ))}
-    </TreeRoot>
+    </Table>
   );
 }
 
@@ -168,28 +185,29 @@ async function ProductsTab() {
   });
 
   return (
-    <TreeRoot title={`Товары (${products.length})`}>
+    <Table head={
+      <tr>
+        <th className="px-4 py-2">Заголовок</th>
+        <th className="px-4 py-2">Автор</th>
+        <th className="px-4 py-2">Статус</th>
+        <th className="px-4 py-2">Цена</th>
+        <th className="px-4 py-2">Просм.</th>
+        <th className="px-4 py-2">Дата</th>
+        <th className="px-4 py-2">Действия</th>
+      </tr>
+    }>
       {products.map((p) => (
-        <TreeBranch key={p.id} label={`${p.title} — ${p.status}`} defaultOpen={false}>
-          <TreeLeaf>
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-2 text-xs text-zinc-500">
-                <span>Автор: {p.createdBy.name || p.createdBy.email}</span>
-                <span>Статус: {p.status}</span>
-                <span>Цена: {p.priceRub} руб</span>
-                <span>Просмотры: {p.viewCount}</span>
-                <span>Создан: {p.createdAt.toLocaleDateString("ru-RU")}</span>
-              </div>
-              <form action={adminDeleteContentAction}>
-                <input type="hidden" name="contentType" value="product" />
-                <input type="hidden" name="contentId" value={p.id} />
-                <button type="submit" className="rounded bg-red-600 px-3 py-1 text-xs text-white">Скрыть/Архив</button>
-              </form>
-            </div>
-          </TreeLeaf>
-        </TreeBranch>
+        <tr key={p.id} className="even:bg-zinc-50">
+          <td className="px-4 py-2 font-medium text-zinc-900">{p.title}</td>
+          <td className="px-4 py-2 text-zinc-500">{p.createdBy.name || p.createdBy.email}</td>
+          <td className="px-4 py-2"><Badge color={statusColor(p.status)}>{p.status}</Badge></td>
+          <td className="px-4 py-2 text-zinc-500">{p.priceRub} руб</td>
+          <td className="px-4 py-2 text-zinc-500">{p.viewCount}</td>
+          <td className="px-4 py-2 text-zinc-400">{p.createdAt.toLocaleDateString("ru-RU")}</td>
+          <td className="px-4 py-2"><HideBtn contentType="product" id={p.id} /></td>
+        </tr>
       ))}
-    </TreeRoot>
+    </Table>
   );
 }
 
@@ -201,21 +219,28 @@ async function ResumesTab() {
   });
 
   return (
-    <TreeRoot title={`Резюме (${resumes.length})`}>
+    <Table head={
+      <tr>
+        <th className="px-4 py-2">Заголовок</th>
+        <th className="px-4 py-2">Автор</th>
+        <th className="px-4 py-2">Цель</th>
+        <th className="px-4 py-2">Статус</th>
+        <th className="px-4 py-2">Просм.</th>
+        <th className="px-4 py-2">Дата</th>
+      </tr>
+    }>
       {resumes.map((r) => (
-        <TreeBranch key={r.id} label={`${r.title} — ${r.isPublic ? "Публичное" : "Скрытое"}`} defaultOpen={false}>
-          <TreeLeaf>
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-2 text-xs text-zinc-500">
-                <span>Автор: {r.user.name || r.user.email}</span>
-                <span>Цель: {r.roleGoal}</span>
-                <span>Просмотры: {r.viewCount}</span>
-                <span>Создано: {r.createdAt.toLocaleDateString("ru-RU")}</span>
-              </div>
-            </div>
-          </TreeLeaf>
-        </TreeBranch>
+        <tr key={r.id} className="even:bg-zinc-50">
+          <td className="px-4 py-2 font-medium text-zinc-900">{r.title}</td>
+          <td className="px-4 py-2 text-zinc-500">{r.user.name || r.user.email}</td>
+          <td className="px-4 py-2 text-zinc-500">{r.roleGoal}</td>
+          <td className="px-4 py-2">
+            <Badge color={r.isPublic ? "green" : "gray"}>{r.isPublic ? "Публичное" : "Скрытое"}</Badge>
+          </td>
+          <td className="px-4 py-2 text-zinc-500">{r.viewCount}</td>
+          <td className="px-4 py-2 text-zinc-400">{r.createdAt.toLocaleDateString("ru-RU")}</td>
+        </tr>
       ))}
-    </TreeRoot>
+    </Table>
   );
 }

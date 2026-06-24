@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireRole } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
-import { TreeRoot } from "@/components/tree";
+import { Table } from "@/components/admin/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -28,48 +28,51 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
   ]);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Аудит-лог</h1>
+    <div className="space-y-5">
+      <h1 className="text-xl font-bold text-zinc-900">Аудит-лог</h1>
 
-      <div className="flex gap-1 overflow-x-auto">
-        <Link
-          href="/admin/audit"
-          className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium ${
-            !filterAction ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
-          }`}
+      <form className="flex items-center gap-2">
+        <label className="text-sm text-zinc-500">Тип действия:</label>
+        <select
+          name="action"
+          defaultValue={filterAction ?? ""}
+          className="rounded-lg border border-zinc-300 p-2 text-sm"
         >
-          Все
-        </Link>
-        {actions.map((a) => (
-          <Link
-            key={a.action}
-            href={`/admin/audit?action=${a.action}`}
-            className={`whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium ${
-              filterAction === a.action ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100"
-            }`}
-          >
-            {a.action} ({a._count})
-          </Link>
-        ))}
-      </div>
-
-      <TreeRoot title={`Записи (${logs.length})`}>
-        {logs.length === 0 && <p className="text-sm text-zinc-500">Пусто.</p>}
-        <div className="space-y-1">
-          {logs.map((log) => (
-            <div key={log.id} className="rounded-md border border-soft bg-white px-3 py-2 text-sm">
-              <div className="flex flex-wrap items-baseline gap-2">
-                <span className="font-semibold">{log.action}</span>
-                <span className="text-xs text-zinc-500">{log.targetType}:{log.targetId}</span>
-                <span className="ml-auto text-xs text-zinc-400">
-                  {log.user.name || log.user.email} | {log.createdAt.toLocaleString("ru-RU")}
-                </span>
-              </div>
-              {log.details && <p className="mt-1 text-xs text-zinc-500">{log.details}</p>}
-            </div>
+          <option value="">Все</option>
+          {actions.map((a) => (
+            <option key={a.action} value={a.action}>{a.action} ({a._count})</option>
           ))}
-        </div>
-      </TreeRoot>
+        </select>
+        <button type="submit" className="rounded-lg bg-zinc-900 px-3 py-2 text-sm text-white">Фильтр</button>
+        {filterAction && (
+          <Link href="/admin/audit" className="text-sm text-zinc-500 hover:text-zinc-900">Сброс</Link>
+        )}
+      </form>
+
+      <Table head={
+        <tr>
+          <th className="px-4 py-2">Дата</th>
+          <th className="px-4 py-2">Админ</th>
+          <th className="px-4 py-2">Действие</th>
+          <th className="px-4 py-2">Тип</th>
+          <th className="px-4 py-2">ID</th>
+          <th className="px-4 py-2">Детали</th>
+        </tr>
+      }>
+        {logs.length === 0 && (
+          <tr><td colSpan={6} className="px-4 py-6 text-center text-zinc-500">Пусто.</td></tr>
+        )}
+        {logs.map((log) => (
+          <tr key={log.id} className="even:bg-zinc-50">
+            <td className="whitespace-nowrap px-4 py-2 text-zinc-400">{log.createdAt.toLocaleString("ru-RU")}</td>
+            <td className="px-4 py-2 text-zinc-500">{log.user.name || log.user.email}</td>
+            <td className="px-4 py-2 font-medium text-zinc-900">{log.action}</td>
+            <td className="px-4 py-2 text-zinc-500">{log.targetType}</td>
+            <td className="px-4 py-2 text-zinc-500">{log.targetId}</td>
+            <td className="px-4 py-2 text-zinc-500">{log.details || "—"}</td>
+          </tr>
+        ))}
+      </Table>
     </div>
   );
 }
