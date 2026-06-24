@@ -35,7 +35,7 @@ export default async function PaymentsPage() {
             {pendingPayments.map((payment) => (
               <div key={payment.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-zinc-200 p-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-zinc-900">{payment.type} • ${payment.amountUsd.toString()} • ref: {payment.referenceType}:{payment.referenceId}</p>
+                  <p className="text-sm font-medium text-zinc-900">{payment.type} • ${Number(payment.amountUsd).toFixed(2)} • ref: {payment.referenceType}:{payment.referenceId}</p>
                   <p className="text-xs text-zinc-500">TX: {payment.txHash || "—"}</p>
                 </div>
                 <div className="flex gap-2">
@@ -72,7 +72,7 @@ export default async function PaymentsPage() {
             {recentPayments.map((payment) => (
               <tr key={payment.id} className="even:bg-zinc-50">
                 <td className="px-4 py-2 font-medium text-zinc-900">{payment.type}</td>
-                <td className="px-4 py-2 text-zinc-700">${payment.amountUsd.toString()}</td>
+                <td className="px-4 py-2 text-zinc-700">${Number(payment.amountUsd).toFixed(2)}</td>
                 <td className="px-4 py-2"><Badge color={statusColor(payment.status)}>{payment.status}</Badge></td>
                 <td className="px-4 py-2 text-xs text-zinc-500">{payment.txHash || "—"}</td>
                 <td className="px-4 py-2 text-zinc-400">{payment.createdAt.toLocaleDateString("ru-RU")}</td>

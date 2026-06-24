@@ -48,9 +48,9 @@ export default async function BalancePage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-zinc-700">Сумма (центы)</label>
-            <input className="mt-1 w-full rounded-lg border border-zinc-300 p-2 text-sm" type="number" name="amountCents" min={100} max={10000000} required placeholder="1500 = $15" />
-            <p className="mt-1 text-xs text-zinc-500">1500 = $15, 500 = $5</p>
+            <label className="block text-sm font-medium text-zinc-700">Сумма ($)</label>
+            <input className="mt-1 w-full rounded-lg border border-zinc-300 p-2 text-sm" type="number" name="amountDollars" min={1} max={100000} step={1} required placeholder="15" />
+            <p className="mt-1 text-xs text-zinc-500">Введите сумму в долларах (например: 15, 50, 100)</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-zinc-700">Заметка</label>

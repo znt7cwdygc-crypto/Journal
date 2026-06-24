@@ -1981,7 +1981,8 @@ export async function topUpBalanceAction(formData: FormData) {
   if (!session?.user || session.user.role !== "ADMIN") throw new Error("Недостаточно прав");
 
   const userId = String(formData.get("userId") ?? "");
-  const amountCents = cleanNumber(formData.get("amountCents"), 1, 10000000);
+  const rawDollars = formData.get("amountDollars");
+  const amountCents = rawDollars ? cleanNumber(rawDollars, 1, 100000) * 100 : cleanNumber(formData.get("amountCents"), 1, 10000000);
   const note = cleanText(formData.get("note"), 500) || "Admin top-up";
 
   if (!userId) throw new Error("User ID missing");
