@@ -197,6 +197,8 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <AdBlock placement="home" />
+
       <section className="grid gap-3 md:grid-cols-2">
         <div className="content-card">
           <div className="flex items-center justify-between gap-3">
@@ -242,8 +244,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <AdBlock placement="home" />
-
       <section className="section-card">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -257,34 +257,6 @@ export default async function HomePage() {
             <Link key={title} href={href} className="block rounded-lg border-t-4 border-hot bg-zinc-50 p-4 hover:bg-white hover:shadow-sm">
               <h3 className="font-semibold leading-snug">{title}</h3>
               <p className="mt-2 text-xs leading-5 text-zinc-600">{text}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="content-card">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="inline-flex rounded bg-sun px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-ink">
-              Полезное
-            </p>
-            <h2 className="section-title mt-2">Гайды и страницы под частые вопросы</h2>
-          </div>
-          <Link href="/guides/rabota-webcam-bez-opyta" className="text-sm font-medium text-accent hover:text-teal-900">
-            Начать с гайда
-          </Link>
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          {seoEntryPoints.map((landing, index) => (
-            <Link
-              key={landing.path}
-              href={landing.path}
-              className={`block rounded-lg border p-4 hover:border-hot ${
-                index % 3 === 0 ? "border-red-100 bg-red-50/60" : index % 3 === 1 ? "border-sky-100 bg-sky-50/70" : "border-teal-100 bg-teal-50/70"
-              }`}
-            >
-              <h3 className="font-semibold leading-snug">{landing.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-zinc-700">{landing.description}</p>
             </Link>
           ))}
         </div>
@@ -321,6 +293,34 @@ export default async function HomePage() {
             );
           })}
           {feedArticles.length === 0 && <p className="text-sm text-zinc-500">Пока нет дополнительных статей.</p>}
+        </div>
+      </section>
+
+      <section className="content-card">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="inline-flex rounded bg-sun px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-ink">
+              Полезное
+            </p>
+            <h2 className="section-title mt-2">Гайды и страницы под частые вопросы</h2>
+          </div>
+          <Link href="/guides/rabota-webcam-bez-opyta" className="text-sm font-medium text-accent hover:text-teal-900">
+            Начать с гайда
+          </Link>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {seoEntryPoints.map((landing, index) => (
+            <Link
+              key={landing.path}
+              href={landing.path}
+              className={`block rounded-lg border p-4 hover:border-hot ${
+                index % 3 === 0 ? "border-red-100 bg-red-50/60" : index % 3 === 1 ? "border-sky-100 bg-sky-50/70" : "border-teal-100 bg-teal-50/70"
+              }`}
+            >
+              <h3 className="font-semibold leading-snug">{landing.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-zinc-700">{landing.description}</p>
+            </Link>
+          ))}
         </div>
       </section>
 
