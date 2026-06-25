@@ -7,7 +7,6 @@ import { safeImageUrl } from "@/lib/media";
 import { prisma } from "@/lib/prisma";
 import { articleSeoPath, listingSeoPath, productSeoPath } from "@/lib/seo-url";
 import { siteDescription, siteName, siteUrl } from "@/lib/seo";
-import { seoLandings } from "@/lib/seo-landings";
 
 export const revalidate = 60;
 
@@ -21,21 +20,6 @@ export const metadata: Metadata = {
     url: "/"
   }
 };
-
-const seoEntryPoints = seoLandings.filter((landing) =>
-  [
-    "/guides/rabota-webcam-bez-opyta",
-    "/guides/kak-stat-webcam-modelyu",
-    "/guides/bezopasnost-webcam-modeli",
-    "/vacancies/webcam-model",
-    "/vacancies/operator",
-    "/vacancies/remote",
-    "/services/obs",
-    "/services/legal",
-    "/services/security",
-    "/resumes/models"
-  ].includes(landing.path)
-);
 
 const editorialCollections = [
   ["Лучшие истории недели", "/articles?sort=popular", "Материалы с просмотрами, реакциями и обсуждениями."],
@@ -64,7 +48,7 @@ function formatPrice(value: number) {
 export default async function HomePage() {
   const now = new Date();
   const activeListingWhere = { status: "PUBLISHED" as const, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] };
-  const [articles, vacancyListings, serviceListings, products] = await Promise.all([
+  const [articles, vacancyListings, serviceListings, products, seoEntryPoints] = await Promise.all([
     prisma.article.findMany({
       where: { status: "PUBLISHED" },
       include: { createdBy: true, comments: true, ratings: true },
@@ -95,6 +79,11 @@ export default async function HomePage() {
       },
       orderBy: { createdAt: "desc" },
       take: 4
+    }),
+    prisma.guide.findMany({
+      where: { isPublished: true, showOnHome: true },
+      select: { path: true, title: true, description: true },
+      orderBy: { sortOrder: "asc" }
     })
   ]);
 

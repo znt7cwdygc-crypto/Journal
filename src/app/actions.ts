@@ -2240,3 +2240,79 @@ export async function adminDeleteContentAction(formData: FormData) {
   await logAudit(admin.id, "delete_content", targetType, targetId, reason);
   revalidatePath("/admin");
 }
+
+// ---------------------------------------------------------------------------
+// Guide CRUD (admin only)
+// ---------------------------------------------------------------------------
+
+function guideDataFromForm(fd: FormData) {
+  return {
+    kind: requireText(fd.get("kind"), "kind"),
+    slug: requireText(fd.get("slug"), "slug"),
+    path: requireText(fd.get("path"), "path"),
+    title: requireText(fd.get("title"), "title"),
+    h1: requireText(fd.get("h1"), "h1"),
+    description: requireMultiline(fd.get("description"), "description"),
+    intro: requireMultiline(fd.get("intro"), "intro"),
+    audience: cleanMultiline(fd.get("audience"), 1000) || null,
+    keywords: (cleanText(fd.get("keywords"), 2000) || "").split(",").map((k) => k.trim()).filter(Boolean),
+    sections: requireMultiline(fd.get("sections"), "sections"),
+    faq: requireMultiline(fd.get("faq"), "faq"),
+    ctaLabel: cleanText(fd.get("ctaLabel"), 200) || null,
+    ctaHref: cleanText(fd.get("ctaHref"), 500) || null,
+    related: (cleanText(fd.get("related"), 2000) || "").split(",").map((r) => r.trim()).filter(Boolean),
+    isPublished: fd.get("isPublished") === "on",
+    showOnHome: fd.get("showOnHome") === "on",
+    sortOrder: cleanNumber(fd.get("sortOrder")) ?? 0,
+  };
+}
+
+export async function createGuideAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN"]);
+  const data = guideDataFromForm(formData);
+  const guide = await prisma.guide.create({ data });
+  await logAudit(admin.id, "create_guide", "Guide", guide.id);
+  revalidatePath("/admin/guides");
+  revalidatePath("/");
+  redirect("/admin/guides");
+}
+
+export async function updateGuideAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN"]);
+  const id = requireText(formData.get("id"), "id");
+  const data = guideDataFromForm(formData);
+  await prisma.guide.update({ where: { id }, data });
+  await logAudit(admin.id, "update_guide", "Guide", id);
+  revalidatePath("/admin/guides");
+  revalidatePath("/");
+  redirect("/admin/guides");
+}
+
+export async function deleteGuideAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN"]);
+  const id = requireText(formData.get("id"), "id");
+  await prisma.guide.delete({ where: { id } });
+  await logAudit(admin.id, "delete_guide", "Guide", id);
+  revalidatePath("/admin/guides");
+  revalidatePath("/");
+}
+
+export async function toggleGuideHomeAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN"]);
+  const id = requireText(formData.get("id"), "id");
+  const guide = await prisma.guide.findUniqueOrThrow({ where: { id } });
+  await prisma.guide.update({ where: { id }, data: { showOnHome: !guide.showOnHome } });
+  await logAudit(admin.id, "toggle_guide_home", "Guide", id, `showOnHome → ${!guide.showOnHome}`);
+  revalidatePath("/admin/guides");
+  revalidatePath("/");
+}
+
+export async function toggleGuidePublishAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN"]);
+  const id = requireText(formData.get("id"), "id");
+  const guide = await prisma.guide.findUniqueOrThrow({ where: { id } });
+  await prisma.guide.update({ where: { id }, data: { isPublished: !guide.isPublished } });
+  await logAudit(admin.id, "toggle_guide_publish", "Guide", id, `isPublished → ${!guide.isPublished}`);
+  revalidatePath("/admin/guides");
+  revalidatePath("/");
+}

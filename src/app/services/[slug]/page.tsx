@@ -3,8 +3,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ListingDirectoryCard } from "@/components/directory-card";
 import { SeoLandingPage } from "@/components/seo-landing-page";
-import { getSeoLanding, seoLandingsByKind } from "@/lib/seo-landings";
+import { parseGuide } from "@/lib/guide-helpers";
 import { prisma } from "@/lib/prisma";
+import { seoLandingsByKind } from "@/lib/seo-landings";
 import { auth } from "@/auth";
 
 export const dynamic = "force-dynamic";
@@ -14,17 +15,17 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
-  const landing = getSeoLanding("service", params.slug);
-  if (!landing) return { title: "Услуги не найдены", robots: { index: false, follow: false } };
+  const guide = await prisma.guide.findFirst({ where: { slug: params.slug, kind: "service", isPublished: true } });
+  if (!guide) return { title: "Услуги не найдены", robots: { index: false, follow: false } };
 
   return {
-    title: landing.title,
-    description: landing.description,
-    alternates: { canonical: landing.path },
+    title: guide.title,
+    description: guide.description,
+    alternates: { canonical: guide.path },
     openGraph: {
-      title: landing.title,
-      description: landing.description,
-      url: landing.path
+      title: guide.title,
+      description: guide.description,
+      url: guide.path
     }
   };
 }
@@ -37,8 +38,9 @@ function serviceTerms(slug: string) {
 }
 
 export default async function ServiceLandingPage({ params }: { params: { slug: string } }) {
-  const landing = getSeoLanding("service", params.slug);
-  if (!landing) notFound();
+  const guide = await prisma.guide.findFirst({ where: { slug: params.slug, kind: "service", isPublished: true } });
+  if (!guide) notFound();
+  const landing = parseGuide(guide);
   const session = await auth();
 
   const terms = serviceTerms(params.slug);

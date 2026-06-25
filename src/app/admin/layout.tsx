@@ -27,6 +27,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     { href: "/admin/invites", label: "Инвайты", icon: "🎟️", adminOnly: true },
 
     { section: "МАРКЕТИНГ" },
+    { href: "/admin/guides", label: "Гайды", icon: "📚", adminOnly: true },
     { href: "/admin/ads", label: "Реклама", icon: "📢", adminOnly: true },
     { href: "/admin/reviews", label: "Отзывы", icon: "💬" },
 

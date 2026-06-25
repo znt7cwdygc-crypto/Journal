@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
-import { seoLandings } from "@/lib/seo-landings";
 import { siteUrl } from "@/lib/seo";
 import { articleSeoPath, listingSeoPath, matchProfileSeoPath, productSeoPath, resumeSeoPath } from "@/lib/seo-url";
 
@@ -27,10 +26,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: changeFrequency as MetadataRoute.Sitemap[number]["changeFrequency"]
   }));
 
-  const seoRoutes: MetadataRoute.Sitemap = seoLandings.map((landing) => ({
-    url: siteUrl(landing.path).toString(),
-    lastModified: now,
-    priority: landing.kind === "guide" ? 0.75 : 0.7,
+  const guides = await prisma.guide.findMany({
+    where: { isPublished: true },
+    select: { path: true, kind: true, updatedAt: true }
+  });
+
+  const seoRoutes: MetadataRoute.Sitemap = guides.map((guide) => ({
+    url: siteUrl(guide.path).toString(),
+    lastModified: guide.updatedAt,
+    priority: guide.kind === "guide" ? 0.75 : 0.7,
     changeFrequency: "weekly" as const
   }));
 

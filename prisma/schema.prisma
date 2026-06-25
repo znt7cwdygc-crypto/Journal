@@ -635,3 +635,29 @@ model AuditLog {
   @@index([targetType, targetId])
   @@index([createdAt])
 }
+
+model Guide {
+  id          String   @id @default(cuid())
+  kind        String   // "guide", "vacancy", "service", "resume"
+  slug        String   @unique
+  path        String   @unique // e.g. "/guides/rabota-webcam-bez-opyta"
+  title       String
+  h1          String
+  description String
+  intro       String
+  audience    String?
+  keywords    String[] // array of strings
+  sections    String   // JSON string: [{title, body}]
+  faq         String   // JSON string: [{question, answer}]
+  ctaLabel    String?
+  ctaHref     String?
+  related     String[] // array of paths
+  isPublished Boolean  @default(true)
+  showOnHome  Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([kind, isPublished])
+  @@index([isPublished, showOnHome])
+}

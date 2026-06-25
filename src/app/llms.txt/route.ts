@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { siteDescription, siteName, siteUrl } from "@/lib/seo";
-import { seoLandings } from "@/lib/seo-landings";
 import { articleSeoPath, listingSeoPath, matchProfileSeoPath, productSeoPath } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +12,7 @@ function line(title: string, path: string, description?: string) {
 
 export async function GET() {
   const now = new Date();
-  const [articles, listings, products, matchProfiles] = await Promise.all([
+  const [articles, listings, products, matchProfiles, guides] = await Promise.all([
     prisma.article.findMany({
       where: { status: "PUBLISHED" },
       select: { id: true, title: true, summary: true, topic: true, updatedAt: true },
@@ -37,6 +36,12 @@ export async function GET() {
       select: { id: true, title: true, seekerRole: true, lookingFor: true, city: true, experience: true, workFormat: true, updatedAt: true },
       orderBy: { updatedAt: "desc" },
       take: 20
+    }),
+    prisma.guide.findMany({
+      where: { isPublished: true },
+      select: { h1: true, path: true, description: true },
+      orderBy: { sortOrder: "asc" },
+      take: 40
     })
   ]);
 
@@ -64,7 +69,7 @@ export async function GET() {
     "",
     "## SEO guides and landing pages",
     "",
-    ...seoLandings.slice(0, 40).map((landing) => line(landing.h1, landing.path, landing.description)),
+    ...guides.map((g) => line(g.h1, g.path, g.description)),
     "",
     "## Recent public articles",
     "",
