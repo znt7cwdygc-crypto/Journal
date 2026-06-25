@@ -10,7 +10,7 @@ import { stripArticleHtml } from "@/lib/article-html";
 import { safeImageUrl } from "@/lib/media";
 import { prisma } from "@/lib/prisma";
 import { articleSeoPath } from "@/lib/seo-url";
-import { demoArticles, topicNav } from "@/lib/ugc-demo";
+import { topicNav } from "@/lib/ugc-demo";
 import { siteUrl } from "@/lib/seo";
 import { articleTopic as inferArticleTopic } from "@/lib/topics";
 
@@ -176,26 +176,12 @@ export default async function ArticlesPage({
       <AdBlock placement="articles" />
 
       {articles.length === 0 && !activeTopic && (
-        <section className="grid gap-4">
-          {demoArticles.map((article) => (
-          <article key={article.id} className="content-card">
-              <div className="meta-row">
-                <span className="badge-topic">{article.section}</span>
-                <span>{article.author}</span>
-                <span>{article.readTime}</span>
-              </div>
-              <h2 className="card-title mt-3">{article.title}</h2>
-              <p className="body-copy mt-3">{article.body}</p>
-              <div className="mt-5 grid gap-3 border-t border-zinc-100 pt-4 text-sm sm:flex sm:items-center sm:justify-between">
-                <div className="no-scrollbar flex gap-2 overflow-x-auto text-zinc-600 sm:flex-wrap sm:overflow-visible">
-                  <span className="rounded-full bg-red-50 px-3 py-1 text-hot">{article.reactions} реакций</span>
-                  <span className="rounded-full bg-sky-50 px-3 py-1 text-sky-700">{article.comments} комментариев</span>
-                  <span className="rounded-full bg-yellow-50 px-3 py-1 text-amber-800">{article.reposts} репостов</span>
-                </div>
-                <span className="text-zinc-500">{article.views} просмотров</span>
-              </div>
-            </article>
-          ))}
+        <section className="content-card">
+          <h2 className="font-medium">Лента пока пуста</h2>
+          <p className="mt-2 text-sm text-zinc-600">Здесь будут статьи, истории и разборы от авторов сообщества.</p>
+          <div className="mt-3">
+            <Link className="btn btn-primary text-sm" href="/cabinet">Написать первую статью</Link>
+          </div>
         </section>
       )}
 

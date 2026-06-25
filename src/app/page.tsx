@@ -8,7 +8,6 @@ import { prisma } from "@/lib/prisma";
 import { articleSeoPath, listingSeoPath, productSeoPath } from "@/lib/seo-url";
 import { siteDescription, siteName, siteUrl } from "@/lib/seo";
 import { seoLandings } from "@/lib/seo-landings";
-import { demoArticles } from "@/lib/ugc-demo";
 
 export const revalidate = 60;
 
@@ -99,13 +98,11 @@ export default async function HomePage() {
     })
   ]);
 
-  const realMainArticle = articles[0];
-  const mainArticle = realMainArticle || demoArticles[0];
-  const mainArticleSection = realMainArticle ? "Свежее" : demoArticles[0].section;
-  const mainAuthorLabel = realMainArticle ? realMainArticle.createdBy.name || realMainArticle.createdBy.email || "Автор" : demoArticles[0].author;
-  const mainCommentsLabel = realMainArticle ? `${realMainArticle.comments.length} комментариев` : `${demoArticles[0].comments} комментариев`;
-  const mainViewsLabel = realMainArticle ? `${realMainArticle.viewCount} просмотров` : `${demoArticles[0].views} просмотров`;
-  const mainCoverImage = "coverImage" in mainArticle ? safeImageUrl(mainArticle.coverImage) : null;
+  const mainArticle = articles[0] ?? null;
+  const mainAuthorLabel = mainArticle ? mainArticle.createdBy.name || mainArticle.createdBy.email || "Автор" : "";
+  const mainCommentsLabel = mainArticle ? `${mainArticle.comments.length} комментариев` : "";
+  const mainViewsLabel = mainArticle ? `${mainArticle.viewCount} просмотров` : "";
+  const mainCoverImage = mainArticle ? safeImageUrl(mainArticle.coverImage) : null;
   const secondaryArticles = articles.length > 1 ? articles.slice(1, 4) : [];
   const popularArticles = [...articles].sort((a, b) => b.viewCount + b.repostCount - (a.viewCount + a.repostCount)).slice(0, 4);
   const discussedArticles = [...articles]
@@ -161,30 +158,31 @@ export default async function HomePage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)] lg:items-stretch">
-        <Link href={realMainArticle ? articleSeoPath(realMainArticle) : "/articles"} className="media-card flex min-h-[360px] flex-col lg:min-h-[440px]">
-          <p className="badge-topic mb-3">
-            {mainArticleSection}
-          </p>
-          {mainCoverImage && (
-            <SafeImage
-              className="media-frame shrink-0 sm:aspect-[16/7]"
-              src={mainCoverImage}
-              alt={mainArticle.title}
-              fallback={null}
-            />
-          )}
-          <div className="flex flex-1 flex-col justify-between pt-4">
-            <div>
-              <h2 className="card-title">{mainArticle.title}</h2>
-              <p className="body-copy mt-3 line-clamp-6">{previewText(mainArticle.summary, 320)}</p>
+        {mainArticle ? (
+          <Link href={articleSeoPath(mainArticle)} className="media-card flex min-h-[360px] flex-col lg:min-h-[440px]">
+            <p className="badge-topic mb-3">Свежее</p>
+            {mainCoverImage && (
+              <SafeImage className="media-frame shrink-0 sm:aspect-[16/7]" src={mainCoverImage} alt={mainArticle.title} fallback={null} />
+            )}
+            <div className="flex flex-1 flex-col justify-between pt-4">
+              <div>
+                <h2 className="card-title">{mainArticle.title}</h2>
+                <p className="body-copy mt-3 line-clamp-6">{previewText(mainArticle.summary, 320)}</p>
+              </div>
+              <div className="meta-row pt-5">
+                <span>{mainAuthorLabel}</span>
+                <span>{mainCommentsLabel}</span>
+                <span>{mainViewsLabel}</span>
+              </div>
             </div>
-            <div className="meta-row pt-5">
-              <span>{mainAuthorLabel}</span>
-              <span>{mainCommentsLabel}</span>
-              <span>{mainViewsLabel}</span>
-            </div>
+          </Link>
+        ) : (
+          <div className="media-card flex min-h-[360px] flex-col items-center justify-center text-center lg:min-h-[440px]">
+            <p className="text-lg font-semibold text-zinc-400">Скоро здесь появятся статьи</p>
+            <p className="mt-2 text-sm text-zinc-500">Станьте первым автором сообщества</p>
+            <Link className="btn btn-primary mt-4 text-sm" href="/cabinet">Написать статью</Link>
           </div>
-        </Link>
+        )}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 lg:grid-rows-2">
           {[
             ["Популярное", popularArticles[0] || secondaryArticles[0]],
