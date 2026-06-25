@@ -124,14 +124,20 @@ export default async function HomePage() {
         "@type": "WebSite",
         "name": siteName,
         "description": siteDescription,
-        "url": siteUrl("/").toString()
+        "url": siteUrl("/").toString(),
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": { "@type": "EntryPoint", "urlTemplate": siteUrl("/search?q={search_term_string}").toString() },
+          "query-input": "required name=search_term_string"
+        }
       }) }} />
       <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "Organization",
         "name": siteName,
         "url": siteUrl("/").toString(),
-        "description": siteDescription
+        "description": siteDescription,
+        "logo": { "@type": "ImageObject", "url": siteUrl("/favicon.svg").toString() }
       }) }} />
       <section className="section-card overflow-hidden">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

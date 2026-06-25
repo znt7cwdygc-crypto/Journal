@@ -109,6 +109,14 @@ export default async function ServicesPage({ searchParams }: { searchParams?: { 
         "url": siteUrl("/services").toString(),
         "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
       }) }} />
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Главная", "item": siteUrl("/").toString() },
+          { "@type": "ListItem", "position": 2, "name": "Услуги" }
+        ]
+      }) }} />
       <CatalogPageHeader
         eyebrow="Услуги"
         title="Услуги"

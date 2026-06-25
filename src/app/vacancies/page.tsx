@@ -112,6 +112,14 @@ export default async function VacanciesPage({ searchParams }: { searchParams?: {
         "url": siteUrl("/vacancies").toString(),
         "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
       }) }} />
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Главная", "item": siteUrl("/").toString() },
+          { "@type": "ListItem", "position": 2, "name": "Вакансии" }
+        ]
+      }) }} />
       <CatalogPageHeader
         eyebrow="Работа"
         title="Вакансии"

@@ -218,10 +218,12 @@ export default async function ArticleDetailsPage({
               name: article.createdBy.name || article.createdBy.email || "Автор WebcamExpert",
               url: siteUrl(`/profiles/${article.createdById}`).toString()
             },
+            image: coverImage || siteUrl("/favicon.svg").toString(),
             publisher: {
               "@type": "Organization",
               name: siteName,
-              url: siteUrl("/").toString()
+              url: siteUrl("/").toString(),
+              logo: { "@type": "ImageObject", url: siteUrl("/favicon.svg").toString() }
             }
           })
         }}
