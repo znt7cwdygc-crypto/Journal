@@ -3,7 +3,7 @@ export const siteDescription =
   "UGC-медиа о вебкам-индустрии: личный опыт, разборы, вакансии, резюме, услуги и экспертные материалы.";
 
 export function siteUrl(path = "/") {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://journal-bice-seven.vercel.app";
+  const base = process.env.NEXT_PUBLIC_SITE_URL || "https://mycamdesk.com";
   return new URL(path, base);
 }
 
