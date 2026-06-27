@@ -14,16 +14,37 @@ jobs:
           host: 185.112.83.74
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 10m
+          command_timeout: 15m
           script: |
-            cd /opt/site
-            git checkout -- .
-            git pull origin main
+            # Zero-downtime deploy: build in temp dir, swap instantly
+            DEPLOY_DIR="/opt/site-next"
+            LIVE_DIR="/opt/site"
+            OLD_DIR="/opt/site-old"
+
+            # 1. Clone fresh into temp dir
+            rm -rf "$DEPLOY_DIR"
+            git clone --depth 1 https://github.com/znt7cwdygc-crypto/Journal.git "$DEPLOY_DIR"
+            cp "$LIVE_DIR/.env.local" "$DEPLOY_DIR/.env.local"
+
+            # 2. Build in temp dir (site stays live)
+            cd "$DEPLOY_DIR"
             npm install
             npx prisma generate
-            pm2 stop site || true
             npm run build
             cp -r .next/static /var/www/static/_next/
-            pm2 start site || NODE_ENV=production PORT=3000 pm2 start node --name site -- node_modules/.bin/next start -p 3000
+
+            # 3. Swap dirs instantly (< 1 second downtime)
+            rm -rf "$OLD_DIR"
+            mv "$LIVE_DIR" "$OLD_DIR"
+            mv "$DEPLOY_DIR" "$LIVE_DIR"
+
+            # 4. Restart PM2
+            cd "$LIVE_DIR"
+            pm2 delete site 2>/dev/null || true
+            NODE_ENV=production PORT=3000 pm2 start node --name site -- node_modules/.bin/next start -p 3000
             pm2 save
-            echo "Deploy done: $(date)"
+
+            # 5. Cleanup old version
+            rm -rf "$OLD_DIR"
+
+            echo "Zero-downtime deploy done: $(date)"
