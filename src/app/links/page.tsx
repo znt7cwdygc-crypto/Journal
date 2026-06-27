@@ -35,7 +35,7 @@ export default async function UsefulLinksPage() {
       <div className="grid gap-3 md:grid-cols-2">
         {links.map((item, index) => (
           <Fragment key={item.url}>
-            {index === 4 && <AdBlock placement="links" variant="card" />}
+            {index === 1 && <AdBlock placement="links" variant="card" />}
             <a href={item.url} target="_blank" rel="noreferrer" className="rounded-xl bg-white p-5 shadow-sm transition hover:shadow-md">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-400">{item.topic}</p>
               <p className="mt-1 text-base font-semibold text-ink">{item.title}</p>
