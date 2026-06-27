@@ -11,10 +11,10 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Вакансии",
-  description: "Актуальные вакансии студий и команд WebcamExpert с фильтрацией по городу и формату работы.",
+  description: "Актуальные вакансии студий и команд MyCamDesk с фильтрацией по городу и формату работы.",
   alternates: { canonical: "/vacancies" },
   openGraph: {
-    title: "Вакансии WebcamExpert",
+    title: "Вакансии MyCamDesk",
     description: "Каталог вакансий для моделей, операторов и специалистов индустрии.",
     url: "/vacancies"
   }
@@ -108,9 +108,9 @@ export default async function VacanciesPage({ searchParams }: { searchParams?: {
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "Вакансии",
-        "description": "Актуальные вакансии студий и команд WebcamExpert с фильтрацией по городу и формату работы.",
+        "description": "Актуальные вакансии студий и команд MyCamDesk с фильтрацией по городу и формату работы.",
         "url": siteUrl("/vacancies").toString(),
-        "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
+        "isPartOf": { "@type": "WebSite", "name": "MyCamDesk", "url": siteUrl("/").toString() }
       }) }} />
       <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",

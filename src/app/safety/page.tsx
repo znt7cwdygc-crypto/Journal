@@ -18,7 +18,7 @@ export default function SafetyPage() {
         "@type": "CollectionPage",
         "name": "Безопасность",
         "url": siteUrl("/safety").toString(),
-        "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
+        "isPartOf": { "@type": "WebSite", "name": "MyCamDesk", "url": siteUrl("/").toString() }
       }) }} />
       <TopicLanding topic="Безопасность" title="Безопасность" description="Приватность, документы, договоренности, красные флаги вакансий и спокойные действия в спорных ситуациях." />
     </>

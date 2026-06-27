@@ -163,7 +163,7 @@ export default async function ListingDetailsPage({
         areaServed: listing.city || (listing.employmentType === "REMOTE" ? "Online" : "Russia"),
         provider: {
           "@type": "Person",
-          name: listing.createdBy.name || listing.createdBy.email || "Автор WebcamExpert"
+          name: listing.createdBy.name || listing.createdBy.email || "Автор MyCamDesk"
         },
         offers: {
           "@type": "Offer",
@@ -189,7 +189,7 @@ export default async function ListingDetailsPage({
         url: siteUrl(listingPath).toString(),
         hiringOrganization: {
           "@type": "Organization",
-          name: listing.createdBy.name || listing.createdBy.email || "Автор WebcamExpert",
+          name: listing.createdBy.name || listing.createdBy.email || "Автор MyCamDesk",
           sameAs: siteUrl("/").toString()
         },
         jobLocationType: listing.employmentType === "REMOTE" ? "TELECOMMUTE" : undefined,

@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Модель оператор",
-  description: "Бесплатный раздел поиска связки модель-оператор на WebcamExpert.",
+  description: "Бесплатный раздел поиска связки модель-оператор на MyCamDesk.",
   alternates: { canonical: "/model-operator" },
   openGraph: {
     title: "Модель оператор",
@@ -97,7 +97,7 @@ export default async function ModelOperatorPage({
         "@type": "CollectionPage",
         "name": "Модель оператор",
         "url": siteUrl("/model-operator").toString(),
-        "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
+        "isPartOf": { "@type": "WebSite", "name": "MyCamDesk", "url": siteUrl("/").toString() }
       }) }} />
       <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",

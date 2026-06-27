@@ -11,8 +11,8 @@ export async function Header() {
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-2 px-3 py-2 sm:px-4">
         <div className="flex min-w-0 items-center gap-3">
           <Link href="/" className="flex min-w-0 items-center gap-2 text-base font-semibold tracking-tight text-ink sm:text-lg">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-hot text-sm font-black text-white">WE</span>
-            <span className="truncate">Journal</span>
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-hot text-sm font-black text-white">M</span>
+            <span className="truncate">CamDesk</span>
           </Link>
           <form className="hidden lg:block" action="/search">
             <input

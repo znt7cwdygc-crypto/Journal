@@ -12,10 +12,10 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Услуги",
-  description: "Каталог услуг, экспертов и консультаций WebcamExpert для моделей, студий и команд.",
+  description: "Каталог услуг, экспертов и консультаций MyCamDesk для моделей, студий и команд.",
   alternates: { canonical: "/services" },
   openGraph: {
-    title: "Услуги WebcamExpert",
+    title: "Услуги MyCamDesk",
     description: "Эксперты, сервисы и консультации для участников индустрии.",
     url: "/services"
   }
@@ -105,9 +105,9 @@ export default async function ServicesPage({ searchParams }: { searchParams?: { 
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "Услуги",
-        "description": "Каталог услуг, экспертов и консультаций WebcamExpert для моделей, студий и команд.",
+        "description": "Каталог услуг, экспертов и консультаций MyCamDesk для моделей, студий и команд.",
         "url": siteUrl("/services").toString(),
-        "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
+        "isPartOf": { "@type": "WebSite", "name": "MyCamDesk", "url": siteUrl("/").toString() }
       }) }} />
       <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",

@@ -50,7 +50,7 @@ export async function GET() {
     "",
     siteDescription,
     "",
-    "WebcamExpert Journal is a Russian-language UGC media and community platform about the webcam industry: personal stories, practical guides, discussions, resumes, vacancies, services, authors and trust signals.",
+    "MyCamDesk is a Russian-language UGC media and community platform about the webcam industry: personal stories, practical guides, discussions, resumes, vacancies, services, authors and trust signals.",
     "",
     "## Primary public sections",
     "",

@@ -10,7 +10,7 @@ import { siteDescription, siteName, siteUrl } from "@/lib/seo";
 export const metadata: Metadata = {
   metadataBase: siteUrl(),
   title: {
-    default: "WebcamExpert Journal — UGC-медиа о вебкам-индустрии: статьи, вакансии, резюме, услуги",
+    default: "MyCamDesk — UGC-медиа о вебкам-индустрии: статьи, вакансии, резюме, услуги",
     template: `%s | ${siteName}`
   },
   description: siteDescription,

@@ -12,10 +12,10 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Резюме",
-  description: "Публичные резюме моделей и специалистов WebcamExpert с городом, опытом и откликами.",
+  description: "Публичные резюме моделей и специалистов MyCamDesk с городом, опытом и откликами.",
   alternates: { canonical: "/resumes" },
   openGraph: {
-    title: "Резюме WebcamExpert",
+    title: "Резюме MyCamDesk",
     description: "Каталог публичных резюме участников сообщества.",
     url: "/resumes"
   }
@@ -102,9 +102,9 @@ export default async function ResumesPage({ searchParams }: { searchParams?: { s
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "Резюме",
-        "description": "Публичные резюме моделей и специалистов WebcamExpert с городом, опытом и откликами.",
+        "description": "Публичные резюме моделей и специалистов MyCamDesk с городом, опытом и откликами.",
         "url": siteUrl("/resumes").toString(),
-        "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
+        "isPartOf": { "@type": "WebSite", "name": "MyCamDesk", "url": siteUrl("/").toString() }
       }) }} />
       <CatalogPageHeader
         eyebrow="Работа"

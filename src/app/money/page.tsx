@@ -18,7 +18,7 @@ export default function MoneyPage() {
         "@type": "CollectionPage",
         "name": "Про деньги",
         "url": siteUrl("/money").toString(),
-        "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
+        "isPartOf": { "@type": "WebSite", "name": "MyCamDesk", "url": siteUrl("/").toString() }
       }) }} />
       <TopicLanding topic="Деньги" title="Про деньги" description="Доход, комиссии, расходы на оборудование, выплаты и реальные финансовые разборы без обещаний." />
     </>

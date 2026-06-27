@@ -12,10 +12,10 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Авторы",
-  description: "Авторы, студии, эксперты и участники сообщества WebcamExpert с опубликованными материалами и профилями.",
+  description: "Авторы, студии, эксперты и участники сообщества MyCamDesk с опубликованными материалами и профилями.",
   alternates: { canonical: "/authors" },
   openGraph: {
-    title: "Авторы WebcamExpert",
+    title: "Авторы MyCamDesk",
     description: "Люди и команды сообщества: статьи, услуги, вакансии и резюме.",
     url: "/authors"
   }
@@ -91,7 +91,7 @@ export default async function AuthorsPage({ searchParams }: { searchParams?: { k
         "@type": "CollectionPage",
         "name": "Авторы",
         "url": siteUrl("/authors").toString(),
-        "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
+        "isPartOf": { "@type": "WebSite", "name": "MyCamDesk", "url": siteUrl("/").toString() }
       }) }} />
       <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",

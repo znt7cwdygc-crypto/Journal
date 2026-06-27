@@ -18,7 +18,7 @@ export default function WorkPage() {
         "@type": "CollectionPage",
         "name": "Работа",
         "url": siteUrl("/work").toString(),
-        "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
+        "isPartOf": { "@type": "WebSite", "name": "MyCamDesk", "url": siteUrl("/").toString() }
       }) }} />
       <TopicLanding topic="Работа" title="Работа и формат" description="Вакансии, резюме, график, удаленка, студии, требования и вопросы перед стартом." />
     </>

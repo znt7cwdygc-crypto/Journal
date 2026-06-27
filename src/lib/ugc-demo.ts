@@ -63,7 +63,7 @@ export const demoArticles = [
 export const expertAuthors = [
   ["Марина К.", "финансы и комиссии", "18 материалов"],
   ["Алексей П.", "безопасность сделок", "11 материалов"],
-  ["WebcamExpert", "редакционные гайды", "24 материала"]
+  ["MyCamDesk", "редакционные гайды", "24 материала"]
 ];
 
 export const communityStats = [

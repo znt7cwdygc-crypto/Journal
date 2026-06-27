@@ -1,6 +1,6 @@
 {
-  "name": "WebcamExpert Journal",
-  "short_name": "WE Journal",
+  "name": "MyCamDesk",
+  "short_name": "MyCamDesk",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

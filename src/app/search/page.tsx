@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Поиск",
-  description: "Поиск по материалам, авторам, вакансиям, услугам и резюме WebcamExpert.",
+  description: "Поиск по материалам, авторам, вакансиям, услугам и резюме MyCamDesk.",
   robots: { index: false, follow: true }
 };
 

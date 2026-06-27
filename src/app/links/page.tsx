@@ -4,7 +4,7 @@ import { AdBlock } from "@/components/ad-block";
 
 export const metadata: Metadata = {
   title: "Полезные ссылки",
-  description: "Подборка полезных инструментов и ресурсов для авторов и участников WebcamExpert.",
+  description: "Подборка полезных инструментов и ресурсов для авторов и участников MyCamDesk.",
   alternates: { canonical: "/links" }
 };
 

@@ -132,7 +132,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       siteName,
       publishedTime: article.publishedAt?.toISOString(),
       modifiedTime: article.updatedAt.toISOString(),
-      authors: [article.createdBy.name || article.createdBy.email || "Автор WebcamExpert"]
+      authors: [article.createdBy.name || article.createdBy.email || "Автор MyCamDesk"]
     },
     twitter: {
       card: "summary_large_image",
@@ -215,7 +215,7 @@ export default async function ArticleDetailsPage({
             mainEntityOfPage: siteUrl(canonicalPath).toString(),
             author: {
               "@type": "Person",
-              name: article.createdBy.name || article.createdBy.email || "Автор WebcamExpert",
+              name: article.createdBy.name || article.createdBy.email || "Автор MyCamDesk",
               url: siteUrl(`/profiles/${article.createdById}`).toString()
             },
             image: coverImage || siteUrl("/favicon.svg").toString(),

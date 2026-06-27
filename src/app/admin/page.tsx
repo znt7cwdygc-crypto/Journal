@@ -60,7 +60,7 @@ export default async function AdminPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-zinc-900">Дашборд</h1>
-        <p className="text-sm text-zinc-500">Обзор платформы WebcamExpert Journal</p>
+        <p className="text-sm text-zinc-500">Обзор платформы MyCamDesk</p>
       </div>
 
       {/* Row 1: Users + reports */}

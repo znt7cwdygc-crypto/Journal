@@ -1,4 +1,4 @@
-export const siteName = "WebcamExpert Journal";
+export const siteName = "MyCamDesk";
 export const siteDescription =
   "UGC-медиа о вебкам-индустрии: личный опыт, разборы, вакансии, резюме, услуги и экспертные материалы.";
 

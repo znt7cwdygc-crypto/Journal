@@ -20,8 +20,8 @@ export async function generateMetadata({ searchParams }: { searchParams?: { topi
   const topic = searchParams?.topic && topicNav.includes(searchParams.topic) ? searchParams.topic : undefined;
   const title = topic ? `Материалы на тему ${topic}` : "Материалы, разборы и обсуждения";
   const description = topic
-    ? `Авторские статьи, разборы и обсуждения WebcamExpert по теме ${topic}.`
-    : "Лента авторских историй, экспертных инструкций, разборов и обсуждений сообщества WebcamExpert.";
+    ? `Авторские статьи, разборы и обсуждения MyCamDesk по теме ${topic}.`
+    : "Лента авторских историй, экспертных инструкций, разборов и обсуждений сообщества MyCamDesk.";
 
   return {
     title,
@@ -97,9 +97,9 @@ export default async function ArticlesPage({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "Статьи и материалы сообщества",
-        "description": "Лента авторских историй, экспертных инструкций, разборов и обсуждений сообщества WebcamExpert.",
+        "description": "Лента авторских историй, экспертных инструкций, разборов и обсуждений сообщества MyCamDesk.",
         "url": siteUrl("/articles").toString(),
-        "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
+        "isPartOf": { "@type": "WebSite", "name": "MyCamDesk", "url": siteUrl("/").toString() }
       }) }} />
       <section className="content-card overflow-hidden">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

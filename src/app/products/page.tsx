@@ -11,11 +11,11 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Товары",
-  description: "Товары участников WebcamExpert: оборудование, свет, камеры, мебель и полезные вещи для работы.",
+  description: "Товары участников MyCamDesk: оборудование, свет, камеры, мебель и полезные вещи для работы.",
   alternates: { canonical: "/products" },
   openGraph: {
-    title: "Товары WebcamExpert",
-    description: "Маркетплейс товаров внутри сообщества WebcamExpert.",
+    title: "Товары MyCamDesk",
+    description: "Маркетплейс товаров внутри сообщества MyCamDesk.",
     url: "/products"
   }
 };
@@ -98,9 +98,9 @@ export default async function ProductsPage({ searchParams }: { searchParams?: { 
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "Товары",
-        "description": "Товары участников WebcamExpert: оборудование, свет, камеры, мебель и полезные вещи для работы.",
+        "description": "Товары участников MyCamDesk: оборудование, свет, камеры, мебель и полезные вещи для работы.",
         "url": siteUrl("/products").toString(),
-        "isPartOf": { "@type": "WebSite", "name": "WebcamExpert Journal", "url": siteUrl("/").toString() }
+        "isPartOf": { "@type": "WebSite", "name": "MyCamDesk", "url": siteUrl("/").toString() }
       }) }} />
       <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",

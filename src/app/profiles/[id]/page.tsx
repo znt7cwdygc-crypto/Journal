@@ -65,12 +65,12 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const user = await findProfile(params.id);
   if (!user) return { title: "Профиль не найден", robots: { index: false, follow: false } };
 
-  const name = user.name || user.email || "Автор WebcamExpert";
+  const name = user.name || user.email || "Автор MyCamDesk";
   const profileType = profileLabels[user.profileKind];
   const description = truncateSeo(
     user.profileBio ||
       user.resume?.bio ||
-      `${profileType} на WebcamExpert: опубликованные статьи, вакансии, услуги или публичное резюме участника сообщества.`
+      `${profileType} на MyCamDesk: опубликованные статьи, вакансии, услуги или публичное резюме участника сообщества.`
   );
 
   return {
@@ -78,7 +78,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     description,
     alternates: { canonical: `/profiles/${user.id}` },
     openGraph: {
-      title: `${name} — WebcamExpert`,
+      title: `${name} — MyCamDesk`,
       description,
       url: `/profiles/${user.id}`,
       type: "profile"
@@ -121,7 +121,7 @@ export default async function ProfilePage({
             "@type": "ProfilePage",
             mainEntity: {
               "@type": "Person",
-              name: user.name || user.email || "Автор WebcamExpert",
+              name: user.name || user.email || "Автор MyCamDesk",
               description: truncateSeo(user.profileBio || user.resume?.bio || ""),
               image: user.image || undefined,
               url: siteUrl(`/profiles/${user.id}`).toString()
