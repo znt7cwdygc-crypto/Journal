@@ -91,7 +91,8 @@ function canProvide(accountMode?: string | null) {
 }
 
 async function resolveCoverImage(formData: FormData) {
-  return await saveUploadedImage(formData.get("coverFile")) ?? optionalUrl(formData.get("coverImage"));
+  const title = String(formData.get("title") ?? "");
+  return await saveUploadedImage(formData.get("coverFile"), title || undefined) ?? optionalUrl(formData.get("coverImage"));
 }
 
 async function productImageDataUrl(value: unknown) {

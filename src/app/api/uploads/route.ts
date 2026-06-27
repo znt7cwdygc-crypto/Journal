@@ -13,7 +13,8 @@ export async function POST(request: Request) {
 
   if (!isUploadedFile(file)) return NextResponse.json({ error: "File missing" }, { status: 400 });
   try {
-    const url = await saveUploadedImage(file);
+    const seoContext = String(formData.get("seoContext") ?? "");
+    const url = await saveUploadedImage(file, seoContext || undefined);
     if (!url) return NextResponse.json({ error: "File missing" }, { status: 400 });
     return NextResponse.json({ url });
   } catch (error) {
