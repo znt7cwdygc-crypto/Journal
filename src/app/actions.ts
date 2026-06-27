@@ -894,7 +894,7 @@ export async function submitProductAction(formData: FormData) {
   let productId = "";
   try {
     const title = requireText(formData.get("title"), "название товара", 140);
-    const imageUrl = await productImageDataUrl(formData.get("imageFile"));
+    const imageUrl = await saveUploadedImage(formData.get("imageFile"), `tovar-${title}`) ?? await productImageDataUrl(formData.get("imageFile"));
     if (!imageUrl) throw new Error("Загрузите фото товара");
     const category = requireText(formData.get("category"), "категорию", 80);
     const priceRub = cleanNumber(formData.get("priceRub"), 0, 100000000);
@@ -954,7 +954,8 @@ export async function updateProductAction(formData: FormData) {
   const product = await prisma.product.findFirst({ where: { id: productId, createdById: session.user.id } });
   if (!product) throw new Error("Товар не найден");
 
-  const nextImage = await productImageDataUrl(formData.get("imageFile"));
+  const title = requireText(formData.get("title"), "название товара", 140);
+  const nextImage = await saveUploadedImage(formData.get("imageFile"), `tovar-${title}`) ?? await productImageDataUrl(formData.get("imageFile"));
   await prisma.product.update({
     where: { id: product.id },
     data: {
