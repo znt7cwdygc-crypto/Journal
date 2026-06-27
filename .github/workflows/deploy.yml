@@ -14,12 +14,15 @@ jobs:
           host: 185.112.83.74
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 10m
           script: |
             cd /opt/site
             git pull origin main
-            npm install --production
+            npm install
             npx prisma generate
+            pm2 stop site || true
             npm run build
             cp -r .next/static /var/www/static/_next/
-            pm2 restart site
+            pm2 start site || NODE_ENV=production PORT=3000 pm2 start node --name site -- node_modules/.bin/next start -p 3000
+            pm2 save
             echo "Deploy done: $(date)"
