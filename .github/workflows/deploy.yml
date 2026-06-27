@@ -17,6 +17,7 @@ jobs:
           command_timeout: 10m
           script: |
             cd /opt/site
+            git checkout -- .
             git pull origin main
             npm install
             npx prisma generate
