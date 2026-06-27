@@ -97,7 +97,7 @@ export default async function HomePage() {
   const discussedArticles = [...articles]
     .sort((a, b) => b.comments.length + b.responseCount - (a.comments.length + a.responseCount))
     .slice(0, 4);
-  const feedArticles = articles.slice(1);
+  const feedArticles = articles.length > 1 ? articles.slice(1) : articles;
   const listingBlocks = [
     { title: "Вакансии", href: "/vacancies", items: vacancyListings },
     { title: "Услуги", href: "/services", items: serviceListings }
