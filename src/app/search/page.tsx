@@ -20,7 +20,7 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
   const q = normalizeQuery(searchParams?.q);
   const now = new Date();
 
-  const [articles, authors, listings, resumes, products] = q
+  const [articles, authors, listings, resumes, products, guides] = q
     ? await Promise.all([
         prisma.article.findMany({
           where: {
@@ -108,11 +108,44 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
           },
           orderBy: { createdAt: "desc" },
           take: 10
+        }),
+        prisma.guide.findMany({
+          where: {
+            isPublished: true,
+            OR: [
+              { title: { contains: q, mode: "insensitive" } },
+              { h1: { contains: q, mode: "insensitive" } },
+              { description: { contains: q, mode: "insensitive" } },
+              { intro: { contains: q, mode: "insensitive" } }
+            ]
+          },
+          select: { id: true, path: true, title: true, description: true, kind: true },
+          orderBy: { sortOrder: "asc" },
+          take: 10
         })
       ])
-    : [[], [], [], [], []];
+    : [[], [], [], [], [], []];
 
-  const total = articles.length + authors.length + listings.length + resumes.length + products.length;
+  const usefulLinks = q
+    ? [
+        { title: "OBS Studio", url: "https://obsproject.com", topic: "Стриминг", description: "Бесплатная программа для стриминга и записи видео." },
+        { title: "Canva", url: "https://www.canva.com", topic: "Визуал", description: "Онлайн-редактор для создания баннеров и обложек." },
+        { title: "Chaturbate", url: "https://chaturbate.com", topic: "Платформы", description: "Вебкам-платформа с системой токенов." },
+        { title: "Stripchat", url: "https://stripchat.com", topic: "Платформы", description: "Платформа с VR-поддержкой." },
+        { title: "BongaCams", url: "https://bongacams.com", topic: "Платформы", description: "Популярная платформа с аудиторией из Европы." },
+        { title: "OnlyFans", url: "https://onlyfans.com", topic: "Контент-платформы", description: "Платформа подписной модели для контента." },
+        { title: "Fansly", url: "https://fansly.com", topic: "Контент-платформы", description: "Альтернатива OnlyFans." },
+        { title: "ProtonMail", url: "https://proton.me/mail", topic: "Безопасность", description: "Защищённая почта с шифрованием." },
+        { title: "NordVPN", url: "https://nordvpn.com", topic: "Безопасность", description: "VPN для защиты и обхода блокировок." },
+        { title: "DMCA.com", url: "https://www.dmca.com", topic: "Защита контента", description: "Сервис для удаления пиратского контента." },
+      ].filter(link =>
+        link.title.toLowerCase().includes(q.toLowerCase()) ||
+        link.topic.toLowerCase().includes(q.toLowerCase()) ||
+        link.description.toLowerCase().includes(q.toLowerCase())
+      )
+    : [];
+
+  const total = articles.length + authors.length + listings.length + resumes.length + products.length + guides.length + usefulLinks.length;
 
   return (
     <div className="space-y-5">
@@ -193,6 +226,30 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
               <h2 className="mt-1 font-semibold">{product.title}</h2>
               <p className="mt-2 text-sm text-zinc-600">{product.description}</p>
             </Link>
+          ))}
+        </SearchSection>
+      )}
+
+      {guides.length > 0 && (
+        <SearchSection title="Гайды">
+          {guides.map((guide) => (
+            <Link key={guide.id} href={guide.path} className="block border border-zinc-200 bg-white p-4 hover:border-hot">
+              <p className="text-xs text-zinc-500">{guide.kind === "guide" ? "Гайд" : guide.kind === "vacancy" ? "Вакансии" : guide.kind === "service" ? "Услуги" : "Резюме"}</p>
+              <h2 className="mt-1 font-semibold">{guide.title}</h2>
+              <p className="mt-2 text-sm text-zinc-600">{guide.description}</p>
+            </Link>
+          ))}
+        </SearchSection>
+      )}
+
+      {usefulLinks.length > 0 && (
+        <SearchSection title="Полезные ссылки">
+          {usefulLinks.map((link) => (
+            <a key={link.url} href={link.url} target="_blank" rel="noreferrer" className="block border border-zinc-200 bg-white p-4 hover:border-hot">
+              <p className="text-xs text-zinc-500">{link.topic}</p>
+              <h2 className="mt-1 font-semibold">{link.title}</h2>
+              <p className="mt-2 text-sm text-zinc-600">{link.description}</p>
+            </a>
           ))}
         </SearchSection>
       )}
