@@ -38,7 +38,8 @@ type ModelResumeFormProps = {
   resume?: Partial<ResumeDraft> | null;
 };
 
-const steps = ["Роль", "О себе", "Нагрузка", "Навыки", "Деньги", "Условия", "Команда", "Пожелания", "Контакты", "Итог"];
+const modelSteps = ["Роль", "Формат", "Город и процент", "О себе", "Нагрузка", "Площадки", "Деньги", "Условия", "Команда", "Пожелания", "Контакты", "Итог"];
+const specialistSteps = ["Роль", "О себе", "Нагрузка", "Навыки", "Деньги", "Условия", "Команда", "Пожелания", "Контакты", "Итог"];
 
 /* ── Model options ── */
 const categories = ["Соло", "Парная работа", "Групповые шоу", "Фетиш-ниши", "Мужской кам", "Трансгендерные модели", "Ролевые игры", "Другое"];
@@ -284,6 +285,7 @@ export function ModelResumeForm({ action, resume }: ModelResumeFormProps) {
   const [importance, setImportanceState] = useState<Record<string, Importance>>({});
   const quizRef = useRef<HTMLElement | null>(null);
 
+  const steps = role === "model" ? modelSteps : specialistSteps;
   const lastStep = step === steps.length - 1;
   const progress = Math.round((step / (steps.length - 1)) * 100);
 
@@ -432,244 +434,142 @@ export function ModelResumeForm({ action, resume }: ModelResumeFormProps) {
           </div>
         </div>
 
-        {/* ── Step 1: About ── */}
-        <div className={step === 1 ? "quiz-content space-y-5" : "hidden"}>
+        {/* ══════════════════════════════════════════════════════════ */}
+        {/* ── MODEL STEPS 1-11 ── */}
+        {/* ══════════════════════════════════════════════════════════ */}
+
+        {/* ── Model Step 1: Format ── */}
+        <div className={step === 1 && role === "model" ? "quiz-content space-y-5" : "hidden"}>
+          <h2 className="text-xl font-bold text-ink">Формат работы</h2>
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Формат работы</span>
+            <ChipGroup options={formats} value={formatValue} onChange={(next) => {
+              setFormatValue(next);
+              if (next[0] === "Только онлайн (из дома)") setLocation("Удаленно");
+              else if (location === "Удаленно") setLocation("");
+            }} />
+          </div>
+        </div>
+
+        {/* ── Model Step 2: City + Percent ── */}
+        <div className={step === 2 && role === "model" ? "quiz-content space-y-3" : "hidden"}>
+          <h2 className="text-xl font-bold text-ink">Город и процент</h2>
+          {formatValue[0] !== "Только онлайн (из дома)" && (
+            <ReqCard label="Город" field="location" importance={importance} setImportance={setImportance}>
+              <input className="w-full rounded-xl border border-[#E4E4E1] px-3 py-2 text-sm outline-none focus:border-hot" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Город / район" />
+            </ReqCard>
+          )}
+          <ReqCard label="Минимальный процент от заработка" field="minimumPercent" importance={importance} setImportance={setImportance}>
+            <div className="text-2xl font-bold text-hot">{percent}%</div>
+            <input className="w-full accent-hot" type="range" min="0" max="100" value={percent} onChange={(e) => setPercent(Number(e.target.value))} />
+          </ReqCard>
+        </div>
+
+        {/* ── Model Step 3: About ── */}
+        <div className={step === 3 && role === "model" ? "quiz-content space-y-5" : "hidden"}>
           <h2 className="text-xl font-bold text-ink">О себе</h2>
-          {role === "model" && (
-            <>
-              <div>
-                <span className="mb-2 block text-sm font-semibold">Категория работы</span>
-                <ChipGroup options={categories} value={categoryValue} onChange={setCategoryValue} multi otherPlaceholder="Уточните категорию" />
-              </div>
-              <div>
-                <span className="mb-2 block text-sm font-semibold">Опыт работы</span>
-                <ChipGroup options={experience} value={experienceValue} onChange={setExperienceValue} />
-              </div>
-              <div>
-                <span className="mb-2 block text-sm font-semibold">Сейчас вы</span>
-                <ChipGroup options={status} value={statusValue} onChange={setStatusValue} />
-              </div>
-            </>
-          )}
-          {role === "specialist" && (
-            <>
-              <div>
-                <span className="mb-2 block text-sm font-semibold">Желаемая должность</span>
-                <ChipGroup options={specialistPositions} value={specPosition} onChange={setSpecPosition} multi otherPlaceholder="Уточните должность" />
-              </div>
-              <div>
-                <span className="mb-2 block text-sm font-semibold">Опыт работы</span>
-                <ChipGroup options={specialistExperience} value={specExperience} onChange={setSpecExperience} />
-              </div>
-              <div>
-                <span className="mb-2 block text-sm font-semibold">Сейчас вы</span>
-                <ChipGroup options={status} value={specStatus} onChange={setSpecStatus} />
-              </div>
-            </>
-          )}
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Категория работы</span>
+            <ChipGroup options={categories} value={categoryValue} onChange={setCategoryValue} multi otherPlaceholder="Уточните категорию" />
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Опыт работы</span>
+            <ChipGroup options={experience} value={experienceValue} onChange={setExperienceValue} />
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Сейчас вы</span>
+            <ChipGroup options={status} value={statusValue} onChange={setStatusValue} />
+          </div>
         </div>
 
-        {/* ── Step 2: Format / workload ── */}
-        <div className={step === 2 ? "quiz-content space-y-5" : "hidden"}>
-          <h2 className="text-xl font-bold text-ink">{role === "model" ? "Формат и нагрузка" : "Занятость и график"}</h2>
-          {role === "model" && (
-            <>
-              <div>
-                <span className="mb-2 block text-sm font-semibold">Формат работы</span>
-                <ChipGroup options={formats} value={formatValue} onChange={setFormatValue} />
-              </div>
-              <div>
-                <span className="block text-sm font-semibold">Смен в неделю</span>
-                <div className="text-2xl font-bold text-hot">{shifts} смены</div>
-                <input className="w-full accent-hot" type="range" min="1" max="7" value={shifts} onChange={(e) => setShifts(Number(e.target.value))} />
-              </div>
-              <div>
-                <span className="block text-sm font-semibold">Длительность смены</span>
-                <div className="text-2xl font-bold text-hot">{hours} часов</div>
-                <input className="w-full accent-hot" type="range" min="2" max="12" value={hours} onChange={(e) => setHours(Number(e.target.value))} />
-              </div>
-              <div>
-                <span className="mb-2 block text-sm font-semibold">Средний доход за смену сейчас</span>
-                <ChipGroup options={incomes} value={incomeValue} onChange={setIncomeValue} />
-              </div>
-            </>
-          )}
-          {role === "specialist" && (
-            <>
-              <div>
-                <span className="mb-2 block text-sm font-semibold">Тип занятости</span>
-                <ChipGroup options={specialistEmployment} value={specEmployment} onChange={setSpecEmployment} multi />
-              </div>
-              <div>
-                <span className="mb-2 block text-sm font-semibold">Желаемый график</span>
-                <ChipGroup options={specialistSchedule} value={specSchedule} onChange={setSpecSchedule} />
-              </div>
-              <div>
-                <span className="mb-2 block text-sm font-semibold">Ожидаемый доход</span>
-                <ChipGroup options={specialistIncome} value={specIncome} onChange={setSpecIncome} />
-              </div>
-            </>
-          )}
+        {/* ── Model Step 4: Workload (no format) ── */}
+        <div className={step === 4 && role === "model" ? "quiz-content space-y-5" : "hidden"}>
+          <h2 className="text-xl font-bold text-ink">Нагрузка</h2>
+          <div>
+            <span className="block text-sm font-semibold">Смен в неделю</span>
+            <div className="text-2xl font-bold text-hot">{shifts} смены</div>
+            <input className="w-full accent-hot" type="range" min="1" max="7" value={shifts} onChange={(e) => setShifts(Number(e.target.value))} />
+          </div>
+          <div>
+            <span className="block text-sm font-semibold">Длительность смены</span>
+            <div className="text-2xl font-bold text-hot">{hours} часов</div>
+            <input className="w-full accent-hot" type="range" min="2" max="12" value={hours} onChange={(e) => setHours(Number(e.target.value))} />
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Средний доход за смену сейчас</span>
+            <ChipGroup options={incomes} value={incomeValue} onChange={setIncomeValue} />
+          </div>
         </div>
 
-        {/* ── Step 3: Platforms/Skills ── */}
-        <div className={step === 3 ? "quiz-content space-y-5" : "hidden"}>
-          <h2 className="text-xl font-bold text-ink">{role === "model" ? "Площадки и языки" : "Навыки и образование"}</h2>
-          {role === "model" && (
-            <>
-              <div>
-                <span className="mb-2 block text-sm font-semibold">Доступные сайты</span>
-                <ChipGroup options={sites} value={sitesValue} onChange={setSitesValue} multi otherPlaceholder="Уточните сайт" />
-              </div>
-              <div>
-                <span className="mb-2 block text-sm font-semibold">Языки общения</span>
-                <ChipGroup options={languages} value={languagesValue} onChange={setLanguagesValue} multi otherPlaceholder="Уточните язык" />
-              </div>
-            </>
-          )}
-          {role === "specialist" && (
-            <>
-              <div>
-                <span className="mb-2 block text-sm font-semibold">Навыки</span>
-                <ChipGroup options={specialistSkills} value={specSkills} onChange={setSpecSkills} multi otherPlaceholder="Уточните навык" />
-              </div>
-              <div>
-                <span className="mb-2 block text-sm font-semibold">Образование</span>
-                <ChipGroup options={specialistEducation} value={specEducation} onChange={setSpecEducation} />
-              </div>
-              <div>
-                <span className="mb-2 block text-sm font-semibold">Языки общения</span>
-                <ChipGroup options={languages} value={specLanguages} onChange={setSpecLanguages} multi otherPlaceholder="Уточните язык" />
-              </div>
-            </>
-          )}
+        {/* ── Model Step 5: Platforms & Languages ── */}
+        <div className={step === 5 && role === "model" ? "quiz-content space-y-5" : "hidden"}>
+          <h2 className="text-xl font-bold text-ink">Площадки и языки</h2>
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Доступные сайты</span>
+            <ChipGroup options={sites} value={sitesValue} onChange={setSitesValue} multi otherPlaceholder="Уточните сайт" />
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Языки общения</span>
+            <ChipGroup options={languages} value={languagesValue} onChange={setLanguagesValue} multi otherPlaceholder="Уточните язык" />
+          </div>
         </div>
 
-        {/* ── Step 4: Financial requirements ── */}
-        <div className={step === 4 ? "quiz-content space-y-3" : "hidden"}>
+        {/* ── Model Step 6: Financial (no percent) ── */}
+        <div className={step === 6 && role === "model" ? "quiz-content space-y-3" : "hidden"}>
           <h2 className="text-xl font-bold text-ink">Финансовые требования</h2>
-          {role === "model" && (
-            <>
-              <ReqCard label="Минимальный процент от заработка" field="minimumPercent" importance={importance} setImportance={setImportance}>
-                <div className="text-2xl font-bold text-hot">{percent}%</div>
-                <input className="w-full accent-hot" type="range" min="0" max="100" value={percent} onChange={(e) => setPercent(Number(e.target.value))} />
-              </ReqCard>
-              <ReqCard label="Формат расчета" field="payFormat" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={payFormats} value={payFormatValue} onChange={setPayFormatValue} />
-              </ReqCard>
-              <ReqCard label="Периодичность выплат" field="payoutFrequency" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={payFrequency} value={payFrequencyValue} onChange={setPayFrequencyValue} />
-              </ReqCard>
-              <ReqCard label="Способ выплаты" field="payMethod" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={payMethod} value={payMethodValue} onChange={setPayMethodValue} multi />
-              </ReqCard>
-              <ReqCard label="Бонусная система" field="bonus" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={["Да, нужна", "Без разницы"]} value={bonus} onChange={setBonus} />
-              </ReqCard>
-              <ReqCard label="Штрафы и удержания" field="penalty" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={["Недопустимы", "По согласованию", "Без разницы"]} value={penalty} onChange={setPenalty} />
-              </ReqCard>
-            </>
-          )}
-          {role === "specialist" && (
-            <>
-              <ReqCard label="Минимальная зарплата" field="specSalary" importance={importance} setImportance={setImportance}>
-                <input
-                  className="w-full rounded-xl border border-[#E4E4E1] px-3 py-2 text-sm outline-none focus:border-hot"
-                  value={specSalary}
-                  onChange={(e) => setSpecSalary(e.target.value)}
-                  placeholder="Например, $500"
-                />
-              </ReqCard>
-              <ReqCard label="Формат оплаты" field="specPayFormat" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={specialistPayFormats} value={specPayFormat} onChange={setSpecPayFormat} />
-              </ReqCard>
-              <ReqCard label="Периодичность выплат" field="specPayFrequency" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={specialistPayFrequency} value={specPayFrequency} onChange={setSpecPayFrequency} />
-              </ReqCard>
-              <ReqCard label="Испытательный срок" field="specProbation" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={specialistProbation} value={specProbation} onChange={setSpecProbation} />
-              </ReqCard>
-            </>
-          )}
+          <ReqCard label="Формат расчета" field="payFormat" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={payFormats} value={payFormatValue} onChange={setPayFormatValue} />
+          </ReqCard>
+          <ReqCard label="Периодичность выплат" field="payoutFrequency" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={payFrequency} value={payFrequencyValue} onChange={setPayFrequencyValue} />
+          </ReqCard>
+          <ReqCard label="Способ выплаты" field="payMethod" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={payMethod} value={payMethodValue} onChange={setPayMethodValue} multi />
+          </ReqCard>
+          <ReqCard label="Бонусная система" field="bonus" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={["Да, нужна", "Без разницы"]} value={bonus} onChange={setBonus} />
+          </ReqCard>
+          <ReqCard label="Штрафы и удержания" field="penalty" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={["Недопустимы", "По согласованию", "Без разницы"]} value={penalty} onChange={setPenalty} />
+          </ReqCard>
         </div>
 
-        {/* ── Step 5: Conditions ── */}
-        <div className={step === 5 ? "quiz-content space-y-3" : "hidden"}>
-          <h2 className="text-xl font-bold text-ink">Условия{role === "model" ? " и комфорт" : " работы"}</h2>
-          {role === "model" && (
-            <>
-              <ReqCard label="Тип комнаты" field="room" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={rooms} value={roomValue} onChange={setRoomValue} />
-              </ReqCard>
-              <ReqCard label="Оборудование предоставляется" field="equipmentRequirements" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={equipmentOptions} value={equipmentValue} onChange={setEquipmentValue} multi />
-              </ReqCard>
-              <ReqCard label="График работы" field="studioSchedule" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={studioSchedule} value={scheduleValue} onChange={setScheduleValue} />
-              </ReqCard>
-              <ReqCard label="Безопасность" field="security" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={security} value={securityValue} onChange={setSecurityValue} multi />
-              </ReqCard>
-              <ReqCard label="Локация" field="location" importance={importance} setImportance={setImportance}>
-                <input className="w-full rounded-xl border border-[#E4E4E1] px-3 py-2 text-sm outline-none focus:border-hot" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Город / район" />
-              </ReqCard>
-              <ReqCard label="Удобства" field="amenities" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={amenities} value={amenitiesValue} onChange={setAmenitiesValue} multi />
-              </ReqCard>
-            </>
-          )}
-          {role === "specialist" && (
-            <>
-              <ReqCard label="Формат работы" field="specWorkFormat" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={specialistWorkFormat} value={specWorkFormat} onChange={setSpecWorkFormat} />
-              </ReqCard>
-              <ReqCard label="Оборудование от работодателя" field="specEquipment" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={specialistEquipmentNeeded} value={specEquipment} onChange={setSpecEquipment} />
-              </ReqCard>
-              <ReqCard label="Локация" field="specLocation" importance={importance} setImportance={setImportance}>
-                <input className="w-full rounded-xl border border-[#E4E4E1] px-3 py-2 text-sm outline-none focus:border-hot" value={specLocationValue} onChange={(e) => setSpecLocationValue(e.target.value)} placeholder="Город / район" />
-              </ReqCard>
-              <ReqCard label="Доп. условия" field="specBenefits" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={specialistBenefits} value={specBenefits} onChange={setSpecBenefits} multi />
-              </ReqCard>
-            </>
-          )}
+        {/* ── Model Step 7: Conditions (no city) ── */}
+        <div className={step === 7 && role === "model" ? "quiz-content space-y-3" : "hidden"}>
+          <h2 className="text-xl font-bold text-ink">Условия и комфорт</h2>
+          <ReqCard label="Тип комнаты" field="room" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={rooms} value={roomValue} onChange={setRoomValue} />
+          </ReqCard>
+          <ReqCard label="Оборудование предоставляется" field="equipmentRequirements" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={equipmentOptions} value={equipmentValue} onChange={setEquipmentValue} multi />
+          </ReqCard>
+          <ReqCard label="График работы" field="studioSchedule" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={studioSchedule} value={scheduleValue} onChange={setScheduleValue} />
+          </ReqCard>
+          <ReqCard label="Безопасность" field="security" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={security} value={securityValue} onChange={setSecurityValue} multi />
+          </ReqCard>
+          <ReqCard label="Удобства" field="amenities" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={amenities} value={amenitiesValue} onChange={setAmenitiesValue} multi />
+          </ReqCard>
         </div>
 
-        {/* ── Step 6: Team ── */}
-        <div className={step === 6 ? "quiz-content space-y-3" : "hidden"}>
+        {/* ── Model Step 8: Team ── */}
+        <div className={step === 8 && role === "model" ? "quiz-content space-y-3" : "hidden"}>
           <h2 className="text-xl font-bold text-ink">Состав коллектива</h2>
-          {role === "model" && (
-            <>
-              <ReqCard label="Состав моделей на студии" field="modelsTeam" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={teamOptions} value={modelsTeam} onChange={setModelsTeam} />
-              </ReqCard>
-              <ReqCard label="Пол администраторов/коучей/тренеров" field="adminsGender" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={adminOptions} value={adminsGender} onChange={setAdminsGender} />
-              </ReqCard>
-              <ReqCard label="Пол управляющего/директора" field="managerGender" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={managerOptions} value={managerGender} onChange={setManagerGender} />
-              </ReqCard>
-            </>
-          )}
-          {role === "specialist" && (
-            <>
-              <ReqCard label="Пол руководителя" field="specManagerGender" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={specialistManagerGender} value={specMgrGender} onChange={setSpecMgrGender} />
-              </ReqCard>
-              <ReqCard label="Состав команды" field="specTeamGender" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={specialistTeamGender} value={specTeamGender} onChange={setSpecTeamGender} />
-              </ReqCard>
-              <ReqCard label="Размер команды" field="specTeamSize" importance={importance} setImportance={setImportance}>
-                <ChipGroup options={specialistTeamSize} value={specTeamSize} onChange={setSpecTeamSize} />
-              </ReqCard>
-            </>
-          )}
+          <ReqCard label="Состав моделей на студии" field="modelsTeam" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={teamOptions} value={modelsTeam} onChange={setModelsTeam} />
+          </ReqCard>
+          <ReqCard label="Пол администраторов/коучей/тренеров" field="adminsGender" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={adminOptions} value={adminsGender} onChange={setAdminsGender} />
+          </ReqCard>
+          <ReqCard label="Пол управляющего/директора" field="managerGender" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={managerOptions} value={managerGender} onChange={setManagerGender} />
+          </ReqCard>
         </div>
 
-        {/* ── Step 7: Additional wishes (shared) ── */}
-        <div className={step === 7 ? "quiz-content space-y-5" : "hidden"}>
+        {/* ── Model Step 9: Wishes ── */}
+        <div className={step === 9 && role === "model" ? "quiz-content space-y-5" : "hidden"}>
           <h2 className="text-xl font-bold text-ink">Дополнительные пожелания</h2>
           <div>
             <span className="mb-2 block text-sm font-semibold">Быстрый выбор</span>
@@ -678,85 +578,213 @@ export function ModelResumeForm({ action, resume }: ModelResumeFormProps) {
           <textarea className="min-h-28 w-full rounded-xl border border-[#E4E4E1] px-3 py-3 text-sm leading-6 outline-none focus:border-hot" value={wishesText} onChange={(e) => setWishesText(e.target.value)} placeholder="Напишите, если есть что-то еще важное..." />
         </div>
 
-        {/* ── Step 8: Contacts (shared) ── */}
-        <div className={step === 8 ? "quiz-content space-y-4" : "hidden"}>
+        {/* ── Model Step 10: Contacts ── */}
+        <div className={step === 10 && role === "model" ? "quiz-content space-y-4" : "hidden"}>
           <h2 className="text-xl font-bold text-ink">Контакты</h2>
           <input className="w-full rounded-xl border border-[#E4E4E1] px-3 py-3 text-sm outline-none focus:border-hot" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="Telegram / телефон" />
           <input className="w-full rounded-xl border border-[#E4E4E1] px-3 py-3 text-sm outline-none focus:border-hot" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email, необязательно" />
           <p className="text-xs leading-5 text-zinc-500">Контакт видят авторизованные пользователи.</p>
         </div>
 
-        {/* ── Step 9: Summary ── */}
-        <div className={step === 9 ? "quiz-content space-y-4" : "hidden"}>
+        {/* ── Model Step 11: Summary ── */}
+        <div className={step === 11 && role === "model" ? "quiz-content space-y-4" : "hidden"}>
           <h2 className="text-xl font-bold text-ink">Резюме готово</h2>
           <div className="h-2 overflow-hidden rounded-full bg-[#E4E4E1]">
             <div className="h-full rounded-full bg-emerald-500" style={{ width: `${fill}%` }} />
           </div>
           <p className="text-xs text-zinc-500">Заполнено на {fill}%</p>
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">Формат и город</p>
+            <SummaryRow label="Формат" value={join(formatValue)} />
+            <SummaryRow label="Город" value={location} />
+            <RequirementSummaryRow label="Минимальный процент" value={`${percent}%`} level={importance.minimumPercent || "none"} />
+          </div>
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">О себе</p>
+            <SummaryRow label="Категории" value={join(categoryValue)} />
+            <SummaryRow label="Опыт" value={join(experienceValue)} />
+            <SummaryRow label="Смены" value={`${shifts} в неделю по ${hours} часов`} />
+            <SummaryRow label="Сайты" value={join(sitesValue)} />
+            <SummaryRow label="Языки" value={join(languagesValue)} />
+          </div>
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">Требования</p>
+            <RequirementSummaryRow label="Формат расчета" value={join(payFormatValue)} level={importance.payFormat || "none"} />
+            <RequirementSummaryRow label="Частота выплат" value={join(payFrequencyValue)} level={importance.payoutFrequency || "none"} />
+            <RequirementSummaryRow label="Способ выплаты" value={join(payMethodValue)} level={importance.payMethod || "none"} />
+            <RequirementSummaryRow label="Комната" value={join(roomValue)} level={importance.room || "none"} />
+            <RequirementSummaryRow label="Оборудование" value={join(equipmentValue)} level={importance.equipmentRequirements || "none"} />
+            <RequirementSummaryRow label="График студии" value={join(scheduleValue)} level={importance.studioSchedule || "none"} />
+            <RequirementSummaryRow label="Безопасность" value={join(securityValue)} level={importance.security || "none"} />
+            <RequirementSummaryRow label="Удобства" value={join(amenitiesValue)} level={importance.amenities || "none"} />
+          </div>
+        </div>
 
-          {role === "model" && (
-            <>
-              <div>
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">О себе</p>
-                <SummaryRow label="Категории" value={join(categoryValue)} />
-                <SummaryRow label="Опыт" value={join(experienceValue)} />
-                <SummaryRow label="Формат" value={join(formatValue)} />
-                <SummaryRow label="Смены" value={`${shifts} в неделю по ${hours} часов`} />
-                <SummaryRow label="Сайты" value={join(sitesValue)} />
-                <SummaryRow label="Языки" value={join(languagesValue)} />
-              </div>
-              <div>
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">Требования</p>
-                <RequirementSummaryRow label="Минимальный процент" value={`${percent}%`} level={importance.minimumPercent || "none"} />
-                <RequirementSummaryRow label="Формат расчета" value={join(payFormatValue)} level={importance.payFormat || "none"} />
-                <RequirementSummaryRow label="Частота выплат" value={join(payFrequencyValue)} level={importance.payoutFrequency || "none"} />
-                <RequirementSummaryRow label="Способ выплаты" value={join(payMethodValue)} level={importance.payMethod || "none"} />
-                <RequirementSummaryRow label="Комната" value={join(roomValue)} level={importance.room || "none"} />
-                <RequirementSummaryRow label="Оборудование" value={join(equipmentValue)} level={importance.equipmentRequirements || "none"} />
-                <RequirementSummaryRow label="График студии" value={join(scheduleValue)} level={importance.studioSchedule || "none"} />
-                <RequirementSummaryRow label="Безопасность" value={join(securityValue)} level={importance.security || "none"} />
-                <RequirementSummaryRow label="Локация" value={location} level={importance.location || "none"} />
-                <RequirementSummaryRow label="Удобства" value={join(amenitiesValue)} level={importance.amenities || "none"} />
-              </div>
-            </>
-          )}
+        {/* ══════════════════════════════════════════════════════════ */}
+        {/* ── SPECIALIST STEPS 1-9 ── */}
+        {/* ══════════════════════════════════════════════════════════ */}
 
-          {role === "specialist" && (
-            <>
-              <div>
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">О себе</p>
-                <SummaryRow label="Должность" value={join(specPosition)} />
-                <SummaryRow label="Опыт" value={join(specExperience)} />
-                <SummaryRow label="Статус" value={join(specStatus)} />
-                <SummaryRow label="Занятость" value={join(specEmployment)} />
-                <SummaryRow label="График" value={join(specSchedule)} />
-                <SummaryRow label="Доход" value={join(specIncome)} />
-                <SummaryRow label="Навыки" value={join(specSkills)} />
-                <SummaryRow label="Образование" value={join(specEducation)} />
-                <SummaryRow label="Языки" value={join(specLanguages)} />
-              </div>
-              <div>
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">Финансы</p>
-                <RequirementSummaryRow label="Мин. зарплата" value={specSalary} level={importance.specSalary || "none"} />
-                <RequirementSummaryRow label="Формат оплаты" value={join(specPayFormat)} level={importance.specPayFormat || "none"} />
-                <RequirementSummaryRow label="Периодичность" value={join(specPayFrequency)} level={importance.specPayFrequency || "none"} />
-                <RequirementSummaryRow label="Испыт. срок" value={join(specProbation)} level={importance.specProbation || "none"} />
-              </div>
-              <div>
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">Условия</p>
-                <RequirementSummaryRow label="Формат работы" value={join(specWorkFormat)} level={importance.specWorkFormat || "none"} />
-                <RequirementSummaryRow label="Оборудование" value={join(specEquipment)} level={importance.specEquipment || "none"} />
-                <RequirementSummaryRow label="Локация" value={specLocationValue} level={importance.specLocation || "none"} />
-                <RequirementSummaryRow label="Доп. условия" value={join(specBenefits)} level={importance.specBenefits || "none"} />
-              </div>
-              <div>
-                <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">Команда</p>
-                <RequirementSummaryRow label="Пол руководителя" value={join(specMgrGender)} level={importance.specManagerGender || "none"} />
-                <RequirementSummaryRow label="Состав команды" value={join(specTeamGender)} level={importance.specTeamGender || "none"} />
-                <RequirementSummaryRow label="Размер команды" value={join(specTeamSize)} level={importance.specTeamSize || "none"} />
-              </div>
-            </>
-          )}
+        {/* ── Specialist Step 1: About ── */}
+        <div className={step === 1 && role === "specialist" ? "quiz-content space-y-5" : "hidden"}>
+          <h2 className="text-xl font-bold text-ink">О себе</h2>
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Желаемая должность</span>
+            <ChipGroup options={specialistPositions} value={specPosition} onChange={setSpecPosition} multi otherPlaceholder="Уточните должность" />
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Опыт работы</span>
+            <ChipGroup options={specialistExperience} value={specExperience} onChange={setSpecExperience} />
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Сейчас вы</span>
+            <ChipGroup options={status} value={specStatus} onChange={setSpecStatus} />
+          </div>
+        </div>
+
+        {/* ── Specialist Step 2: Employment & Schedule ── */}
+        <div className={step === 2 && role === "specialist" ? "quiz-content space-y-5" : "hidden"}>
+          <h2 className="text-xl font-bold text-ink">Занятость и график</h2>
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Тип занятости</span>
+            <ChipGroup options={specialistEmployment} value={specEmployment} onChange={setSpecEmployment} multi />
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Желаемый график</span>
+            <ChipGroup options={specialistSchedule} value={specSchedule} onChange={setSpecSchedule} />
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Ожидаемый доход</span>
+            <ChipGroup options={specialistIncome} value={specIncome} onChange={setSpecIncome} />
+          </div>
+        </div>
+
+        {/* ── Specialist Step 3: Skills & Education ── */}
+        <div className={step === 3 && role === "specialist" ? "quiz-content space-y-5" : "hidden"}>
+          <h2 className="text-xl font-bold text-ink">Навыки и образование</h2>
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Навыки</span>
+            <ChipGroup options={specialistSkills} value={specSkills} onChange={setSpecSkills} multi otherPlaceholder="Уточните навык" />
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Образование</span>
+            <ChipGroup options={specialistEducation} value={specEducation} onChange={setSpecEducation} />
+          </div>
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Языки общения</span>
+            <ChipGroup options={languages} value={specLanguages} onChange={setSpecLanguages} multi otherPlaceholder="Уточните язык" />
+          </div>
+        </div>
+
+        {/* ── Specialist Step 4: Financial ── */}
+        <div className={step === 4 && role === "specialist" ? "quiz-content space-y-3" : "hidden"}>
+          <h2 className="text-xl font-bold text-ink">Финансовые требования</h2>
+          <ReqCard label="Минимальная зарплата" field="specSalary" importance={importance} setImportance={setImportance}>
+            <input
+              className="w-full rounded-xl border border-[#E4E4E1] px-3 py-2 text-sm outline-none focus:border-hot"
+              value={specSalary}
+              onChange={(e) => setSpecSalary(e.target.value)}
+              placeholder="Например, $500"
+            />
+          </ReqCard>
+          <ReqCard label="Формат оплаты" field="specPayFormat" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={specialistPayFormats} value={specPayFormat} onChange={setSpecPayFormat} />
+          </ReqCard>
+          <ReqCard label="Периодичность выплат" field="specPayFrequency" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={specialistPayFrequency} value={specPayFrequency} onChange={setSpecPayFrequency} />
+          </ReqCard>
+          <ReqCard label="Испытательный срок" field="specProbation" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={specialistProbation} value={specProbation} onChange={setSpecProbation} />
+          </ReqCard>
+        </div>
+
+        {/* ── Specialist Step 5: Conditions ── */}
+        <div className={step === 5 && role === "specialist" ? "quiz-content space-y-3" : "hidden"}>
+          <h2 className="text-xl font-bold text-ink">Условия работы</h2>
+          <ReqCard label="Формат работы" field="specWorkFormat" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={specialistWorkFormat} value={specWorkFormat} onChange={setSpecWorkFormat} />
+          </ReqCard>
+          <ReqCard label="Оборудование от работодателя" field="specEquipment" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={specialistEquipmentNeeded} value={specEquipment} onChange={setSpecEquipment} />
+          </ReqCard>
+          <ReqCard label="Локация" field="specLocation" importance={importance} setImportance={setImportance}>
+            <input className="w-full rounded-xl border border-[#E4E4E1] px-3 py-2 text-sm outline-none focus:border-hot" value={specLocationValue} onChange={(e) => setSpecLocationValue(e.target.value)} placeholder="Город / район" />
+          </ReqCard>
+          <ReqCard label="Доп. условия" field="specBenefits" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={specialistBenefits} value={specBenefits} onChange={setSpecBenefits} multi />
+          </ReqCard>
+        </div>
+
+        {/* ── Specialist Step 6: Team ── */}
+        <div className={step === 6 && role === "specialist" ? "quiz-content space-y-3" : "hidden"}>
+          <h2 className="text-xl font-bold text-ink">Состав коллектива</h2>
+          <ReqCard label="Пол руководителя" field="specManagerGender" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={specialistManagerGender} value={specMgrGender} onChange={setSpecMgrGender} />
+          </ReqCard>
+          <ReqCard label="Состав команды" field="specTeamGender" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={specialistTeamGender} value={specTeamGender} onChange={setSpecTeamGender} />
+          </ReqCard>
+          <ReqCard label="Размер команды" field="specTeamSize" importance={importance} setImportance={setImportance}>
+            <ChipGroup options={specialistTeamSize} value={specTeamSize} onChange={setSpecTeamSize} />
+          </ReqCard>
+        </div>
+
+        {/* ── Specialist Step 7: Wishes ── */}
+        <div className={step === 7 && role === "specialist" ? "quiz-content space-y-5" : "hidden"}>
+          <h2 className="text-xl font-bold text-ink">Дополнительные пожелания</h2>
+          <div>
+            <span className="mb-2 block text-sm font-semibold">Быстрый выбор</span>
+            <ChipGroup options={quickWishes} value={wishes} onChange={setWishes} multi />
+          </div>
+          <textarea className="min-h-28 w-full rounded-xl border border-[#E4E4E1] px-3 py-3 text-sm leading-6 outline-none focus:border-hot" value={wishesText} onChange={(e) => setWishesText(e.target.value)} placeholder="Напишите, если есть что-то еще важное..." />
+        </div>
+
+        {/* ── Specialist Step 8: Contacts ── */}
+        <div className={step === 8 && role === "specialist" ? "quiz-content space-y-4" : "hidden"}>
+          <h2 className="text-xl font-bold text-ink">Контакты</h2>
+          <input className="w-full rounded-xl border border-[#E4E4E1] px-3 py-3 text-sm outline-none focus:border-hot" value={contact} onChange={(e) => setContact(e.target.value)} placeholder="Telegram / телефон" />
+          <input className="w-full rounded-xl border border-[#E4E4E1] px-3 py-3 text-sm outline-none focus:border-hot" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email, необязательно" />
+          <p className="text-xs leading-5 text-zinc-500">Контакт видят авторизованные пользователи.</p>
+        </div>
+
+        {/* ── Specialist Step 9: Summary ── */}
+        <div className={step === 9 && role === "specialist" ? "quiz-content space-y-4" : "hidden"}>
+          <h2 className="text-xl font-bold text-ink">Резюме готово</h2>
+          <div className="h-2 overflow-hidden rounded-full bg-[#E4E4E1]">
+            <div className="h-full rounded-full bg-emerald-500" style={{ width: `${fill}%` }} />
+          </div>
+          <p className="text-xs text-zinc-500">Заполнено на {fill}%</p>
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">О себе</p>
+            <SummaryRow label="Должность" value={join(specPosition)} />
+            <SummaryRow label="Опыт" value={join(specExperience)} />
+            <SummaryRow label="Статус" value={join(specStatus)} />
+            <SummaryRow label="Занятость" value={join(specEmployment)} />
+            <SummaryRow label="График" value={join(specSchedule)} />
+            <SummaryRow label="Доход" value={join(specIncome)} />
+            <SummaryRow label="Навыки" value={join(specSkills)} />
+            <SummaryRow label="Образование" value={join(specEducation)} />
+            <SummaryRow label="Языки" value={join(specLanguages)} />
+          </div>
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">Финансы</p>
+            <RequirementSummaryRow label="Мин. зарплата" value={specSalary} level={importance.specSalary || "none"} />
+            <RequirementSummaryRow label="Формат оплаты" value={join(specPayFormat)} level={importance.specPayFormat || "none"} />
+            <RequirementSummaryRow label="Периодичность" value={join(specPayFrequency)} level={importance.specPayFrequency || "none"} />
+            <RequirementSummaryRow label="Испыт. срок" value={join(specProbation)} level={importance.specProbation || "none"} />
+          </div>
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">Условия</p>
+            <RequirementSummaryRow label="Формат работы" value={join(specWorkFormat)} level={importance.specWorkFormat || "none"} />
+            <RequirementSummaryRow label="Оборудование" value={join(specEquipment)} level={importance.specEquipment || "none"} />
+            <RequirementSummaryRow label="Локация" value={specLocationValue} level={importance.specLocation || "none"} />
+            <RequirementSummaryRow label="Доп. условия" value={join(specBenefits)} level={importance.specBenefits || "none"} />
+          </div>
+          <div>
+            <p className="mb-2 text-xs font-bold uppercase tracking-[0.08em] text-zinc-500">Команда</p>
+            <RequirementSummaryRow label="Пол руководителя" value={join(specMgrGender)} level={importance.specManagerGender || "none"} />
+            <RequirementSummaryRow label="Состав команды" value={join(specTeamGender)} level={importance.specTeamGender || "none"} />
+            <RequirementSummaryRow label="Размер команды" value={join(specTeamSize)} level={importance.specTeamSize || "none"} />
+          </div>
         </div>
 
         <div className="quiz-footer">
