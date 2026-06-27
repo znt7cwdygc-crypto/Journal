@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getAdvertisementForPlacement } from "@/lib/ads";
 import { prisma } from "@/lib/prisma";
 import { serviceTopic } from "@/lib/topics";
 
@@ -191,6 +192,43 @@ async function getRailData() {
   };
 }
 
+async function SidebarAd() {
+  const ad = await getAdvertisementForPlacement("sidebar");
+
+  if (ad) {
+    return (
+      <a
+        className="relative block overflow-hidden border border-zinc-200 bg-zinc-950 p-4 text-white transition hover:border-hot"
+        href={`/ads/${ad.id}/click`}
+        rel="sponsored noopener noreferrer"
+        target="_blank"
+      >
+        {ad.imageUrl && (
+          <img className="absolute inset-0 h-full w-full object-cover opacity-80" src={ad.imageUrl} alt="" loading="lazy" />
+        )}
+        <div className="relative">
+          <p className="text-xs font-bold uppercase tracking-[0.14em] text-hot">Реклама</p>
+          <h2 className="mt-3 text-xl font-semibold leading-tight">{ad.title}</h2>
+          {ad.description && <p className="mt-2 text-sm leading-6 text-zinc-300">{ad.description}</p>}
+        </div>
+      </a>
+    );
+  }
+
+  return (
+    <section className="overflow-hidden border border-zinc-200 bg-zinc-950 p-4 text-white">
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-hot">Реклама</p>
+      <h2 className="mt-3 text-xl font-semibold leading-tight">Ваш сервис для вебкам-аудитории</h2>
+      <p className="mt-2 text-sm leading-6 text-zinc-300">
+        Разместите нативный блок для моделей, операторов, студий или специалистов.
+      </p>
+      <Link href="/cabinet#services" className="mt-4 inline-flex rounded-lg bg-hot px-4 py-2 text-sm font-semibold text-white hover:bg-red-600">
+        Разместить услугу
+      </Link>
+    </section>
+  );
+}
+
 export async function ShellRail() {
   const { topics, queries } = await getRailData();
 
@@ -224,16 +262,7 @@ export async function ShellRail() {
           </div>
         </section>
 
-        <section className="overflow-hidden border border-zinc-200 bg-zinc-950 p-4 text-white">
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-hot">Реклама</p>
-          <h2 className="mt-3 text-xl font-semibold leading-tight">Ваш сервис для вебкам-аудитории</h2>
-          <p className="mt-2 text-sm leading-6 text-zinc-300">
-            Разместите нативный блок для моделей, операторов, студий или специалистов.
-          </p>
-          <Link href="/cabinet#services" className="mt-4 inline-flex rounded-lg bg-hot px-4 py-2 text-sm font-semibold text-white hover:bg-red-600">
-            Разместить услугу
-          </Link>
-        </section>
+        <SidebarAd />
       </div>
     </aside>
   );

@@ -10,7 +10,8 @@ export const adPlacements = [
   { value: "model-operator", label: "Модель оператор" },
   { value: "cabinet", label: "Личный кабинет" },
   { value: "authors", label: "Авторы" },
-  { value: "links", label: "Полезные ссылки" }
+  { value: "links", label: "Полезные ссылки" },
+  { value: "sidebar", label: "Боковая панель (все страницы)" }
 ] as const;
 
 export type AdPlacement = (typeof adPlacements)[number]["value"];
@@ -33,7 +34,8 @@ export const adMonthlyPricesUsd: Record<AdPlacement, number> = {
   "model-operator": 80,
   cabinet: 70,
   authors: 60,
-  links: 50
+  links: 50,
+  sidebar: 200
 };
 
 export function adMonthlyPriceUsd(value: string) {
@@ -81,7 +83,8 @@ export function adRevalidatePaths(placement?: string) {
     "model-operator": ["/model-operator"],
     cabinet: ["/cabinet"],
     authors: ["/authors"],
-    links: ["/links"]
+    links: ["/links"],
+    sidebar: ["/"]
   };
 
   return [...common, ...(placement ? map[placement] || [] : Object.values(map).flat())];
