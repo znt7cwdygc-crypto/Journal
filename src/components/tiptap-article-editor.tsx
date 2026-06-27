@@ -38,7 +38,7 @@ function plainTextToHtml(value: string) {
 }
 
 function normalizeImagePath(src: string) {
-  return src.startsWith("/uploads/") ? src.replace("/uploads/", "/media/") : src;
+  return src.startsWith("/media/") ? src.replace("/media/", "/uploads/") : src;
 }
 
 function ToolbarButton({
@@ -141,6 +141,8 @@ export function TiptapArticleEditor({ name, initialContent }: TiptapArticleEdito
     if (!editor) return;
     const formData = new FormData();
     formData.append("file", file);
+    const titleInput = document.querySelector<HTMLInputElement>('input[name="title"]');
+    formData.append("seoContext", titleInput?.value || "article-image");
     setUploadMessage("");
 
     try {
