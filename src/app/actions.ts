@@ -2371,3 +2371,62 @@ export async function toggleGuidePublishAction(formData: FormData) {
   revalidatePath("/admin/guides");
   revalidatePath("/");
 }
+
+/* ── Useful Links ── */
+
+export async function createUsefulLinkAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN"]);
+  const title = requireText(formData.get("title"), "title");
+  const url = requireText(formData.get("url"), "url");
+  const topic = requireText(formData.get("topic"), "topic");
+  const description = requireMultiline(formData.get("description"), "description");
+  const sortOrder = cleanNumber(formData.get("sortOrder")) ?? 0;
+  const isPublished = formData.get("isPublished") === "on";
+
+  const link = await prisma.usefulLink.create({
+    data: { title, url, topic, description, sortOrder, isPublished },
+  });
+  await logAudit(admin.id, "create_useful_link", "UsefulLink", link.id);
+  revalidatePath("/admin/links");
+  revalidatePath("/links");
+  redirect("/admin/links");
+}
+
+export async function updateUsefulLinkAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN"]);
+  const id = requireText(formData.get("id"), "id");
+  const title = requireText(formData.get("title"), "title");
+  const url = requireText(formData.get("url"), "url");
+  const topic = requireText(formData.get("topic"), "topic");
+  const description = requireMultiline(formData.get("description"), "description");
+  const sortOrder = cleanNumber(formData.get("sortOrder")) ?? 0;
+  const isPublished = formData.get("isPublished") === "on";
+
+  await prisma.usefulLink.update({
+    where: { id },
+    data: { title, url, topic, description, sortOrder, isPublished },
+  });
+  await logAudit(admin.id, "update_useful_link", "UsefulLink", id);
+  revalidatePath("/admin/links");
+  revalidatePath("/links");
+  redirect("/admin/links");
+}
+
+export async function deleteUsefulLinkAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN"]);
+  const id = requireText(formData.get("id"), "id");
+  await prisma.usefulLink.delete({ where: { id } });
+  await logAudit(admin.id, "delete_useful_link", "UsefulLink", id);
+  revalidatePath("/admin/links");
+  revalidatePath("/links");
+}
+
+export async function toggleUsefulLinkAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN"]);
+  const id = requireText(formData.get("id"), "id");
+  const link = await prisma.usefulLink.findUniqueOrThrow({ where: { id } });
+  await prisma.usefulLink.update({ where: { id }, data: { isPublished: !link.isPublished } });
+  await logAudit(admin.id, "toggle_useful_link", "UsefulLink", id, `isPublished → ${!link.isPublished}`);
+  revalidatePath("/admin/links");
+  revalidatePath("/links");
+}

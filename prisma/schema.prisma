@@ -661,3 +661,17 @@ model Guide {
   @@index([kind, isPublished])
   @@index([isPublished, showOnHome])
 }
+
+model UsefulLink {
+  id          String   @id @default(cuid())
+  title       String
+  url         String
+  topic       String
+  description String
+  isPublished Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isPublished, sortOrder])
+}

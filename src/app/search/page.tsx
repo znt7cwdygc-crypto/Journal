@@ -127,22 +127,18 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
     : [[], [], [], [], [], []];
 
   const usefulLinks = q
-    ? [
-        { title: "OBS Studio", url: "https://obsproject.com", topic: "Стриминг", description: "Бесплатная программа для стриминга и записи видео." },
-        { title: "Canva", url: "https://www.canva.com", topic: "Визуал", description: "Онлайн-редактор для создания баннеров и обложек." },
-        { title: "Chaturbate", url: "https://chaturbate.com", topic: "Платформы", description: "Вебкам-платформа с системой токенов." },
-        { title: "Stripchat", url: "https://stripchat.com", topic: "Платформы", description: "Платформа с VR-поддержкой." },
-        { title: "BongaCams", url: "https://bongacams.com", topic: "Платформы", description: "Популярная платформа с аудиторией из Европы." },
-        { title: "OnlyFans", url: "https://onlyfans.com", topic: "Контент-платформы", description: "Платформа подписной модели для контента." },
-        { title: "Fansly", url: "https://fansly.com", topic: "Контент-платформы", description: "Альтернатива OnlyFans." },
-        { title: "ProtonMail", url: "https://proton.me/mail", topic: "Безопасность", description: "Защищённая почта с шифрованием." },
-        { title: "NordVPN", url: "https://nordvpn.com", topic: "Безопасность", description: "VPN для защиты и обхода блокировок." },
-        { title: "DMCA.com", url: "https://www.dmca.com", topic: "Защита контента", description: "Сервис для удаления пиратского контента." },
-      ].filter(link =>
-        link.title.toLowerCase().includes(q.toLowerCase()) ||
-        link.topic.toLowerCase().includes(q.toLowerCase()) ||
-        link.description.toLowerCase().includes(q.toLowerCase())
-      )
+    ? await prisma.usefulLink.findMany({
+        where: {
+          isPublished: true,
+          OR: [
+            { title: { contains: q, mode: "insensitive" } },
+            { topic: { contains: q, mode: "insensitive" } },
+            { description: { contains: q, mode: "insensitive" } },
+          ],
+        },
+        select: { title: true, url: true, topic: true, description: true },
+        take: 10,
+      })
     : [];
 
   const total = articles.length + authors.length + listings.length + resumes.length + products.length + guides.length + usefulLinks.length;
