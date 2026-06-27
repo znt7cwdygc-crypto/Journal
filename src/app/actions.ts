@@ -16,6 +16,7 @@ import { articleSeoPath } from "@/lib/seo-url";
 import { articleTopic } from "@/lib/topics";
 import { isUploadedFile, saveUploadedImage } from "@/lib/uploaded-image";
 import { cleanMultiline, cleanNumber, cleanText, makeSlug, optionalUrl, requireMultiline, requireText } from "@/lib/validation";
+import { sendEmail, verificationEmail, inviteReceivedEmail, inviteAcceptedEmail, inviteDeclinedEmail, contactsExchangedModelEmail, balanceTopUpEmail } from "@/lib/email";
 
 function ensureAdult(formData: FormData) {
   if (formData.get("adult") !== "on") throw new Error("Нужно подтвердить 18+");
@@ -49,6 +50,18 @@ export async function registerAction(formData: FormData) {
       isAdultConfirmed: true
     }
   });
+
+  // Send verification email
+  const token = crypto.randomUUID();
+  await prisma.verificationToken.create({
+    data: {
+      identifier: email,
+      token,
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000)
+    }
+  });
+  const vEmail = verificationEmail(name, token);
+  sendEmail(email, vEmail.subject, vEmail.html);
 
   await signIn("credentials", { email, password, redirectTo: "/cabinet" });
 }
@@ -1869,6 +1882,14 @@ export async function sendInviteAction(formData: FormData) {
     });
   });
 
+  // Email notification to model
+  const modelUser = await prisma.user.findUnique({ where: { id: resume.userId }, select: { email: true } });
+  if (modelUser?.email) {
+    const resumeFull = await prisma.resume.findUnique({ where: { id: resumeId }, select: { title: true } });
+    const { subject, html } = inviteReceivedEmail(resumeFull?.title ?? "Резюме", message, offeredPercent);
+    sendEmail(modelUser.email, subject, html);
+  }
+
   revalidatePath("/resumes");
   revalidatePath("/cabinet");
   redirect(`/cabinet?invited=1#invites-sent`);
@@ -1913,6 +1934,23 @@ export async function respondInviteAction(formData: FormData) {
         data: { holdUsd: { decrement: cost } }
       });
     });
+
+    // Email to studio: contact received
+    const studioUser = await prisma.user.findUnique({ where: { id: invite.studioId }, select: { email: true, name: true, tgHandle: true } });
+    const modelResume = await prisma.resume.findUnique({ where: { id: invite.resumeId }, select: { title: true, contactEmail: true, contactTelegram: true } });
+    if (studioUser?.email && modelResume) {
+      const contact = [modelResume.contactTelegram, modelResume.contactEmail].filter(Boolean).join(" • ");
+      const ea = inviteAcceptedEmail(modelResume.title, contact || "Контакт в кабинете");
+      sendEmail(studioUser.email, ea.subject, ea.html);
+    }
+
+    // Email to model: studio contacts
+    const modelUser = await prisma.user.findUnique({ where: { id: invite.modelId }, select: { email: true } });
+    if (modelUser?.email && studioUser) {
+      const studioContact = studioUser.tgHandle || studioUser.email || "Контакт в кабинете";
+      const em = contactsExchangedModelEmail(studioUser.name || "Студия", studioContact);
+      sendEmail(modelUser.email, em.subject, em.html);
+    }
   } else {
     await prisma.$transaction(async (tx) => {
       await tx.invite.update({
@@ -1938,6 +1976,14 @@ export async function respondInviteAction(formData: FormData) {
         }
       });
     });
+
+    // Email to studio: invite declined
+    const decStudioUser = await prisma.user.findUnique({ where: { id: invite.studioId }, select: { email: true } });
+    const decResume = await prisma.resume.findUnique({ where: { id: invite.resumeId }, select: { title: true } });
+    if (decStudioUser?.email && decResume) {
+      const ed = inviteDeclinedEmail(decResume.title, declineReason);
+      sendEmail(decStudioUser.email, ed.subject, ed.html);
+    }
   }
 
   revalidatePath("/cabinet");
@@ -2006,6 +2052,13 @@ export async function topUpBalanceAction(formData: FormData) {
   ]);
 
   await logAudit(session.user.id, "top_up_balance", "USER", userId, JSON.stringify({ amountCents, note }));
+
+  // Email notification
+  const targetUser = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+  if (targetUser?.email) {
+    const bt = balanceTopUpEmail(amountCents);
+    sendEmail(targetUser.email, bt.subject, bt.html);
+  }
 
   revalidatePath("/admin");
   revalidatePath("/cabinet");
