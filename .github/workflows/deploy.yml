@@ -1,0 +1,25 @@
+name: Deploy to server
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 185.112.83.74
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/site
+            git pull origin main
+            npm install --production
+            npx prisma generate
+            npm run build
+            cp -r .next/static /var/www/static/_next/
+            pm2 restart site
+            echo "Deploy done: $(date)"
