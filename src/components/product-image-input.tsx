@@ -20,7 +20,6 @@ export function ProductImageInput({
   const isUploading = photos.some((p) => p.uploading);
 
   async function uploadFile(file: File) {
-    if (photos.length >= 3) return;
     if (!file.type.startsWith("image/")) {
       setError("Выберите изображение (JPG, PNG, WebP)");
       return;
@@ -31,9 +30,12 @@ export function ProductImageInput({
     }
     setError("");
 
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
     const tempUrl = URL.createObjectURL(file);
-    const idx = photos.length;
-    setPhotos((prev) => [...prev, { url: tempUrl, uploading: true }]);
+    setPhotos((prev) => {
+      if (prev.length >= 3) return prev;
+      return [...prev, { url: tempUrl, uploading: true, _id: tempId }];
+    });
 
     try {
       const fd = new FormData();
@@ -43,10 +45,10 @@ export function ProductImageInput({
       if (!res.ok) throw new Error("Upload failed");
       const { url } = await res.json();
       setPhotos((prev) =>
-        prev.map((p, i) => (i === idx ? { url, uploading: false } : p))
+        prev.map((p) => ((p as any)._id === tempId ? { url, uploading: false } : p))
       );
     } catch {
-      setPhotos((prev) => prev.filter((_, i) => i !== idx));
+      setPhotos((prev) => prev.filter((p) => (p as any)._id !== tempId));
       setError("Не удалось загрузить фото, попробуйте ещё раз");
     } finally {
       URL.revokeObjectURL(tempUrl);
