@@ -53,6 +53,20 @@ async function requireVerifiedEmail(userId: string) {
   if (!user?.emailVerified) redirect("/cabinet?verifyRequired=1");
 }
 
+async function requireActiveSessionUser() {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, blockedPermanently: true, blockedUntil: true }
+  });
+  if (!user) redirect("/auth/signin");
+  if (isUserBlocked(user)) throw new Error("Ваш аккаунт заблокирован. Действие недоступно.");
+
+  return session.user;
+}
+
 const passwordResetIdentifier = (email: string) => `password-reset:${email}`;
 
 export async function registerAction(formData: FormData) {
@@ -547,11 +561,10 @@ function buildMatchProfileBio(formData: FormData) {
 }
 
 export async function updateProfileSettingsAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   await prisma.user.update({
-    where: { id: session.user.id },
+    where: { id: sessionUser.id },
     data: {
       accountMode: normalizeAccountMode(String(formData.get("accountMode") ?? "CONSUMER")),
       profileKind: normalizeProfileKind(String(formData.get("profileKind") ?? "MODEL"))
@@ -563,18 +576,17 @@ export async function updateProfileSettingsAction(formData: FormData) {
 }
 
 export async function updatePublicProfileAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   let avatarUrl: string | null = null;
   try {
-    avatarUrl = await saveUploadedImage(formData.get("avatarFile"), `avatar-${session.user.id}`);
+    avatarUrl = await saveUploadedImage(formData.get("avatarFile"), `avatar-${sessionUser.id}`);
   } catch {
     // Avatar upload failed — save profile without avatar change
   }
 
   await prisma.user.update({
-    where: { id: session.user.id },
+    where: { id: sessionUser.id },
     data: {
       name: requireText(formData.get("name"), "имя", 120),
       ...(avatarUrl ? { image: avatarUrl } : {}),
@@ -584,15 +596,14 @@ export async function updatePublicProfileAction(formData: FormData) {
 
   revalidatePath("/cabinet");
   revalidatePath("/authors");
-  revalidatePath(`/profiles/${session.user.id}`);
+  revalidatePath(`/profiles/${sessionUser.id}`);
   revalidatePath("/articles");
   redirect("/cabinet?updated=publicProfile");
 }
 
 export async function addArticleCommentAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
-  await requireVerifiedEmail(session.user.id);
+  const sessionUser = await requireActiveSessionUser();
+  await requireVerifiedEmail(sessionUser.id);
 
   const articleId = String(formData.get("articleId") ?? "");
   const parentId = cleanText(formData.get("parentId"), 120) || null;
@@ -600,15 +611,14 @@ export async function addArticleCommentAction(formData: FormData) {
   if (!articleId || body.length < 2) throw new Error("Комментарий слишком короткий");
 
   await prisma.articleComment.create({
-    data: { articleId, parentId, userId: session.user.id, body }
+    data: { articleId, parentId, userId: sessionUser.id, body }
   });
 
   await revalidateArticle(articleId);
 }
 
 export async function likeCommentAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const commentId = String(formData.get("commentId") ?? "");
   if (!commentId) throw new Error("Comment ID missing");
@@ -616,27 +626,26 @@ export async function likeCommentAction(formData: FormData) {
   if (!comment) throw new Error("Комментарий не найден");
 
   await prisma.commentLike.upsert({
-    where: { commentId_userId: { commentId, userId: session.user.id } },
+    where: { commentId_userId: { commentId, userId: sessionUser.id } },
     update: {},
-    create: { commentId, userId: session.user.id }
+    create: { commentId, userId: sessionUser.id }
   });
 
   await revalidateArticle(comment.articleId);
 }
 
 export async function rateArticleAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
-  await requireVerifiedEmail(session.user.id);
+  const sessionUser = await requireActiveSessionUser();
+  await requireVerifiedEmail(sessionUser.id);
 
   const articleId = String(formData.get("articleId") ?? "");
   const value = Number(formData.get("value") ?? 0);
   if (!articleId || value < 1 || value > 5) throw new Error("Оценка должна быть от 1 до 5");
 
   await prisma.articleRating.upsert({
-    where: { articleId_userId: { articleId, userId: session.user.id } },
+    where: { articleId_userId: { articleId, userId: sessionUser.id } },
     update: { value },
-    create: { articleId, userId: session.user.id, value }
+    create: { articleId, userId: sessionUser.id, value }
   });
 
   await revalidateArticle(articleId);
@@ -644,8 +653,7 @@ export async function rateArticleAction(formData: FormData) {
 
 
 export async function repostArticleAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  await requireActiveSessionUser();
 
   const articleId = String(formData.get("articleId") ?? "");
   if (!articleId) throw new Error("Article ID missing");
@@ -659,8 +667,7 @@ export async function repostArticleAction(formData: FormData) {
 }
 
 export async function respondToArticleAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  await requireActiveSessionUser();
 
   const articleId = String(formData.get("articleId") ?? "");
   if (!articleId) throw new Error("Article ID missing");
@@ -674,8 +681,7 @@ export async function respondToArticleAction(formData: FormData) {
 }
 
 export async function respondToListingAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  await requireActiveSessionUser();
 
   const listingId = String(formData.get("listingId") ?? "");
   if (!listingId) throw new Error("Listing ID missing");
@@ -689,8 +695,7 @@ export async function respondToListingAction(formData: FormData) {
 }
 
 export async function respondToProductAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  await requireActiveSessionUser();
 
   const productId = String(formData.get("productId") ?? "");
   if (!productId) throw new Error("Product ID missing");
@@ -704,8 +709,7 @@ export async function respondToProductAction(formData: FormData) {
 }
 
 export async function respondToResumeAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  await requireActiveSessionUser();
 
   const resumeId = String(formData.get("resumeId") ?? "");
   if (!resumeId) throw new Error("Resume ID missing");
@@ -719,27 +723,23 @@ export async function respondToResumeAction(formData: FormData) {
 }
 
 async function requirePaidUser() {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { id: true, email: true, name: true, role: true, accountMode: true, emailVerified: true }
+    where: { id: sessionUser.id },
+    select: { id: true, email: true, name: true, role: true, accountMode: true, emailVerified: true, blockedPermanently: true, blockedUntil: true }
   });
 
   if (!user) redirect("/auth/signin");
+  if (isUserBlocked(user)) throw new Error("Ваш аккаунт заблокирован. Действие недоступно.");
   if (!user.emailVerified) redirect("/cabinet?verifyRequired=1");
   if (!canProvide(user.accountMode) && user.role !== "ADMIN") throw new Error("Включите режим поставщика услуг");
   return user;
 }
 
 export async function submitBlogArticleAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
-  await requireVerifiedEmail(session.user.id);
-
-  const blockCheck = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedPermanently: true, blockedUntil: true } });
-  if (blockCheck && isUserBlocked(blockCheck)) throw new Error("Ваш аккаунт заблокирован. Публикация контента недоступна.");
+  const sessionUser = await requireActiveSessionUser();
+  await requireVerifiedEmail(sessionUser.id);
 
   const title = requireText(formData.get("title"), "заголовок", 140);
   const summary = requireText(formData.get("summary"), "краткое описание", 260);
@@ -752,7 +752,7 @@ export async function submitBlogArticleAction(formData: FormData) {
   const slug = makeSlug(title);
 
   if (articleId) {
-    const existing = await prisma.article.findFirst({ where: { id: articleId, createdById: session.user.id } });
+    const existing = await prisma.article.findFirst({ where: { id: articleId, createdById: sessionUser.id } });
     if (existing) {
       const article = await prisma.article.update({
         where: { id: existing.id },
@@ -788,7 +788,7 @@ export async function submitBlogArticleAction(formData: FormData) {
       kind: "BLOG",
       status: ContentStatus.PUBLISHED,
       publishedAt: new Date(),
-      createdById: session.user.id
+      createdById: sessionUser.id
     }
   });
 
@@ -798,8 +798,7 @@ export async function submitBlogArticleAction(formData: FormData) {
 }
 
 export async function saveBlogDraftAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const title = cleanText(formData.get("title"), 140) || "Черновик без заголовка";
   const summary = cleanText(formData.get("summary"), 260) || "Короткое описание появится здесь.";
@@ -810,7 +809,7 @@ export async function saveBlogDraftAction(formData: FormData) {
   const coverImage = await resolveCoverImage(formData);
 
   if (draftId) {
-    const existing = await prisma.article.findFirst({ where: { id: draftId, createdById: session.user.id } });
+    const existing = await prisma.article.findFirst({ where: { id: draftId, createdById: sessionUser.id } });
     if (existing) {
       await prisma.article.update({
         where: { id: existing.id },
@@ -832,7 +831,7 @@ export async function saveBlogDraftAction(formData: FormData) {
       coverImage,
       kind: "BLOG",
       status: ContentStatus.DRAFT,
-      createdById: session.user.id
+      createdById: sessionUser.id
     }
   });
 
@@ -841,12 +840,11 @@ export async function saveBlogDraftAction(formData: FormData) {
 }
 
 export async function updateBlogArticleAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
-  await requireVerifiedEmail(session.user.id);
+  const sessionUser = await requireActiveSessionUser();
+  await requireVerifiedEmail(sessionUser.id);
 
   const articleId = cleanText(formData.get("draftId"), 120);
-  const existing = await prisma.article.findFirst({ where: { id: articleId, createdById: session.user.id } });
+  const existing = await prisma.article.findFirst({ where: { id: articleId, createdById: sessionUser.id } });
   if (!existing) throw new Error("Статья не найдена");
 
   const title = requireText(formData.get("title"), "заголовок", 140);
@@ -878,13 +876,12 @@ export async function updateBlogArticleAction(formData: FormData) {
 }
 
 export async function toggleArticleVisibilityAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const articleId = cleanText(formData.get("articleId"), 120);
-  const article = await prisma.article.findFirst({ where: { id: articleId, createdById: session.user.id } });
+  const article = await prisma.article.findFirst({ where: { id: articleId, createdById: sessionUser.id } });
   if (!article) throw new Error("Статья не найдена");
-  if (article.status !== ContentStatus.PUBLISHED) await requireVerifiedEmail(session.user.id);
+  if (article.status !== ContentStatus.PUBLISHED) await requireVerifiedEmail(sessionUser.id);
 
   await prisma.article.update({
     where: { id: article.id },
@@ -901,11 +898,10 @@ export async function toggleArticleVisibilityAction(formData: FormData) {
 }
 
 export async function deleteArticleAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const articleId = cleanText(formData.get("articleId"), 120);
-  const article = await prisma.article.findFirst({ where: { id: articleId, createdById: session.user.id } });
+  const article = await prisma.article.findFirst({ where: { id: articleId, createdById: sessionUser.id } });
   if (!article) throw new Error("Статья не найдена");
 
   await prisma.$transaction([
@@ -971,9 +967,6 @@ export async function submitArticleAction(formData: FormData) {
 export async function submitListingAction(formData: FormData) {
   const user = await requirePaidUser();
 
-  const blockCheck = await prisma.user.findUnique({ where: { id: user.id }, select: { blockedPermanently: true, blockedUntil: true } });
-  if (blockCheck && isUserBlocked(blockCheck)) throw new Error("Ваш аккаунт заблокирован. Публикация контента недоступна.");
-
   const kind = String(formData.get("kind") ?? "VACANCY") as ListingType;
   const type = kind === "SERVICE" ? ListingType.SERVICE : ListingType.VACANCY;
   const employmentType = String(formData.get("employmentType") ?? "REMOTE");
@@ -1004,12 +997,11 @@ export async function submitListingAction(formData: FormData) {
 }
 
 export async function updateListingAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const listingId = cleanText(formData.get("listingId"), 120);
   const employmentType = String(formData.get("employmentType") ?? "REMOTE");
-  const listing = await prisma.listing.findFirst({ where: { id: listingId, createdById: session.user.id } });
+  const listing = await prisma.listing.findFirst({ where: { id: listingId, createdById: sessionUser.id } });
   if (!listing) throw new Error("Размещение не найдено");
   const baseDescription = requireMultiline(formData.get("description"), "описание", 1200);
   const description = buildListingDescription(formData, listing.type, baseDescription);
@@ -1033,13 +1025,12 @@ export async function updateListingAction(formData: FormData) {
 }
 
 export async function toggleListingVisibilityAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const listingId = cleanText(formData.get("listingId"), 120);
-  const listing = await prisma.listing.findFirst({ where: { id: listingId, createdById: session.user.id } });
+  const listing = await prisma.listing.findFirst({ where: { id: listingId, createdById: sessionUser.id } });
   if (!listing) throw new Error("Размещение не найдено");
-  if (listing.status !== ContentStatus.PUBLISHED) await requireVerifiedEmail(session.user.id);
+  if (listing.status !== ContentStatus.PUBLISHED) await requireVerifiedEmail(sessionUser.id);
 
   await prisma.listing.update({
     where: { id: listing.id },
@@ -1057,12 +1048,11 @@ export async function toggleListingVisibilityAction(formData: FormData) {
 }
 
 export async function renewListingAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
-  await requireVerifiedEmail(session.user.id);
+  const sessionUser = await requireActiveSessionUser();
+  await requireVerifiedEmail(sessionUser.id);
 
   const listingId = cleanText(formData.get("listingId"), 120);
-  const listing = await prisma.listing.findFirst({ where: { id: listingId, createdById: session.user.id } });
+  const listing = await prisma.listing.findFirst({ where: { id: listingId, createdById: sessionUser.id } });
   if (!listing) throw new Error("Размещение не найдено");
   if (listing.status !== ContentStatus.ARCHIVED) throw new Error("Продлить можно только архивное размещение");
 
@@ -1078,11 +1068,10 @@ export async function renewListingAction(formData: FormData) {
 }
 
 export async function deleteListingAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const listingId = cleanText(formData.get("listingId"), 120);
-  const listing = await prisma.listing.findFirst({ where: { id: listingId, createdById: session.user.id } });
+  const listing = await prisma.listing.findFirst({ where: { id: listingId, createdById: sessionUser.id } });
   if (!listing) throw new Error("Размещение не найдено");
 
   await prisma.listing.delete({ where: { id: listing.id } });
@@ -1094,12 +1083,8 @@ export async function deleteListingAction(formData: FormData) {
 }
 
 export async function submitProductAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
-  await requireVerifiedEmail(session.user.id);
-
-  const blockCheck = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedPermanently: true, blockedUntil: true } });
-  if (blockCheck && isUserBlocked(blockCheck)) throw new Error("Ваш аккаунт заблокирован. Публикация контента недоступна.");
+  const sessionUser = await requireActiveSessionUser();
+  await requireVerifiedEmail(sessionUser.id);
 
   let productId = "";
   try {
@@ -1118,7 +1103,7 @@ export async function submitProductAction(formData: FormData) {
     const contact = requireText(formData.get("contact"), "контакт", 180);
     const recentDuplicate = await prisma.product.findFirst({
       where: {
-        createdById: session.user.id,
+        createdById: sessionUser.id,
         title,
         priceRub,
         contact,
@@ -1145,7 +1130,7 @@ export async function submitProductAction(formData: FormData) {
           images,
           status: ContentStatus.PUBLISHED,
           expiresAt: productExpiresAt(),
-          createdById: session.user.id
+          createdById: sessionUser.id
         }
       });
       productId = product.id;
@@ -1161,11 +1146,10 @@ export async function submitProductAction(formData: FormData) {
 }
 
 export async function updateProductAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const productId = cleanText(formData.get("productId"), 120);
-  const product = await prisma.product.findFirst({ where: { id: productId, createdById: session.user.id } });
+  const product = await prisma.product.findFirst({ where: { id: productId, createdById: sessionUser.id } });
   if (!product) throw new Error("Товар не найден");
 
   const title = requireText(formData.get("title"), "название товара", 140);
@@ -1195,13 +1179,12 @@ export async function updateProductAction(formData: FormData) {
 }
 
 export async function toggleProductVisibilityAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const productId = cleanText(formData.get("productId"), 120);
-  const product = await prisma.product.findFirst({ where: { id: productId, createdById: session.user.id } });
+  const product = await prisma.product.findFirst({ where: { id: productId, createdById: sessionUser.id } });
   if (!product) throw new Error("Товар не найден");
-  if (product.status !== ContentStatus.PUBLISHED) await requireVerifiedEmail(session.user.id);
+  if (product.status !== ContentStatus.PUBLISHED) await requireVerifiedEmail(sessionUser.id);
 
   await prisma.product.update({
     where: { id: product.id },
@@ -1218,12 +1201,11 @@ export async function toggleProductVisibilityAction(formData: FormData) {
 }
 
 export async function renewProductAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
-  await requireVerifiedEmail(session.user.id);
+  const sessionUser = await requireActiveSessionUser();
+  await requireVerifiedEmail(sessionUser.id);
 
   const productId = cleanText(formData.get("productId"), 120);
-  const product = await prisma.product.findFirst({ where: { id: productId, createdById: session.user.id } });
+  const product = await prisma.product.findFirst({ where: { id: productId, createdById: sessionUser.id } });
   if (!product) throw new Error("Товар не найден");
   if (product.status !== ContentStatus.ARCHIVED) throw new Error("Продлить можно только архивный товар");
 
@@ -1238,11 +1220,10 @@ export async function renewProductAction(formData: FormData) {
 }
 
 export async function deleteProductAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const productId = cleanText(formData.get("productId"), 120);
-  const product = await prisma.product.findFirst({ where: { id: productId, createdById: session.user.id } });
+  const product = await prisma.product.findFirst({ where: { id: productId, createdById: sessionUser.id } });
   if (!product) throw new Error("Товар не найден");
 
   await prisma.product.delete({ where: { id: product.id } });
@@ -1253,21 +1234,20 @@ export async function deleteProductAction(formData: FormData) {
 }
 
 export async function followAuthorAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const authorId = String(formData.get("authorId") ?? "");
   const next = safeInternalPath(cleanText(formData.get("next"), 500), `/profiles/${authorId}`);
-  if (!authorId || authorId === session.user.id) redirect(withStatusParam(next, "follow", "skipped"));
+  if (!authorId || authorId === sessionUser.id) redirect(withStatusParam(next, "follow", "skipped"));
 
   const existing = await prisma.follow.findUnique({
-    where: { followerId_authorId: { followerId: session.user.id, authorId } }
+    where: { followerId_authorId: { followerId: sessionUser.id, authorId } }
   });
 
   if (existing) {
     await prisma.follow.delete({ where: { id: existing.id } });
   } else {
-    await prisma.follow.create({ data: { followerId: session.user.id, authorId } });
+    await prisma.follow.create({ data: { followerId: sessionUser.id, authorId } });
   }
 
   revalidatePath(`/profiles/${authorId}`);
@@ -1277,19 +1257,18 @@ export async function followAuthorAction(formData: FormData) {
 }
 
 export async function followTopicAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const topic = normalizeTopic(formData.get("topic"), "", "");
   const next = safeInternalPath(cleanText(formData.get("next"), 500), "/articles");
   const existing = await prisma.topicFollow.findUnique({
-    where: { userId_topic: { userId: session.user.id, topic } }
+    where: { userId_topic: { userId: sessionUser.id, topic } }
   });
 
   if (existing) {
     await prisma.topicFollow.delete({ where: { id: existing.id } });
   } else {
-    await prisma.topicFollow.create({ data: { userId: session.user.id, topic } });
+    await prisma.topicFollow.create({ data: { userId: sessionUser.id, topic } });
   }
 
   revalidatePath("/articles");
@@ -1298,21 +1277,20 @@ export async function followTopicAction(formData: FormData) {
 }
 
 export async function saveListingAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const listingId = String(formData.get("listingId") ?? "");
   const next = safeInternalPath(cleanText(formData.get("next"), 500), "/cabinet#materials");
   if (!listingId) throw new Error("Listing ID missing");
   const existing = await prisma.savedListing.findUnique({
-    where: { userId_listingId: { userId: session.user.id, listingId } }
+    where: { userId_listingId: { userId: sessionUser.id, listingId } }
   });
 
   if (existing) {
     await prisma.savedListing.delete({ where: { id: existing.id } });
   } else {
     await prisma.savedListing.create({
-      data: { userId: session.user.id, listingId }
+      data: { userId: sessionUser.id, listingId }
     });
   }
 
@@ -1322,20 +1300,19 @@ export async function saveListingAction(formData: FormData) {
 }
 
 export async function saveProductAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const productId = String(formData.get("productId") ?? "");
   const next = safeInternalPath(cleanText(formData.get("next"), 500), "/cabinet#materials");
   if (!productId) throw new Error("Product ID missing");
   const existing = await prisma.savedProduct.findUnique({
-    where: { userId_productId: { userId: session.user.id, productId } }
+    where: { userId_productId: { userId: sessionUser.id, productId } }
   });
 
   if (existing) {
     await prisma.savedProduct.delete({ where: { id: existing.id } });
   } else {
-    await prisma.savedProduct.create({ data: { userId: session.user.id, productId } });
+    await prisma.savedProduct.create({ data: { userId: sessionUser.id, productId } });
   }
 
   await revalidateProduct(productId);
@@ -1344,20 +1321,19 @@ export async function saveProductAction(formData: FormData) {
 }
 
 export async function saveResumeAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const resumeId = cleanText(formData.get("resumeId"), 120);
   const next = safeInternalPath(cleanText(formData.get("next"), 500), "/resumes");
   if (!resumeId) throw new Error("Resume ID missing");
   const existing = await prisma.savedResume.findUnique({
-    where: { userId_resumeId: { userId: session.user.id, resumeId } }
+    where: { userId_resumeId: { userId: sessionUser.id, resumeId } }
   });
 
   if (existing) {
     await prisma.savedResume.delete({ where: { id: existing.id } });
   } else {
-    await prisma.savedResume.create({ data: { userId: session.user.id, resumeId } });
+    await prisma.savedResume.create({ data: { userId: sessionUser.id, resumeId } });
   }
 
   revalidatePath("/resumes");
@@ -1366,20 +1342,19 @@ export async function saveResumeAction(formData: FormData) {
 }
 
 export async function saveMatchProfileAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const matchProfileId = cleanText(formData.get("matchProfileId"), 120);
   const next = safeInternalPath(cleanText(formData.get("next"), 500), "/model-operator");
   if (!matchProfileId) throw new Error("Match profile ID missing");
   const existing = await prisma.savedMatchProfile.findUnique({
-    where: { userId_matchProfileId: { userId: session.user.id, matchProfileId } }
+    where: { userId_matchProfileId: { userId: sessionUser.id, matchProfileId } }
   });
 
   if (existing) {
     await prisma.savedMatchProfile.delete({ where: { id: existing.id } });
   } else {
-    await prisma.savedMatchProfile.create({ data: { userId: session.user.id, matchProfileId } });
+    await prisma.savedMatchProfile.create({ data: { userId: sessionUser.id, matchProfileId } });
   }
 
   revalidatePath("/model-operator");
@@ -1388,9 +1363,8 @@ export async function saveMatchProfileAction(formData: FormData) {
 }
 
 export async function addListingReviewAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
-  await requireVerifiedEmail(session.user.id);
+  const sessionUser = await requireActiveSessionUser();
+  await requireVerifiedEmail(sessionUser.id);
 
   const listingId = cleanText(formData.get("listingId"), 120);
   const parentId = cleanText(formData.get("parentId"), 120) || null;
@@ -1399,20 +1373,20 @@ export async function addListingReviewAction(formData: FormData) {
   if (!listing || listing.type !== ListingType.SERVICE) throw new Error("Отзывы можно оставлять только на услуги");
 
   if (parentId) {
-    if (listing.createdById !== session.user.id) throw new Error("Отвечать на отзыв может только автор услуги");
+    if (listing.createdById !== sessionUser.id) throw new Error("Отвечать на отзыв может только автор услуги");
     const parent = await prisma.listingReview.findFirst({ where: { id: parentId, listingId: listing.id, parentId: null, isHidden: false } });
     if (!parent) throw new Error("Отзыв не найден");
 
     await prisma.listingReview.create({
-      data: { listingId: listing.id, userId: session.user.id, parentId: parent.id, body, rating: null }
+      data: { listingId: listing.id, userId: sessionUser.id, parentId: parent.id, body, rating: null }
     });
   } else {
-    if (listing.createdById === session.user.id) throw new Error("Нельзя оставлять отзыв на собственную услугу");
+    if (listing.createdById === sessionUser.id) throw new Error("Нельзя оставлять отзыв на собственную услугу");
     const rating = Number(formData.get("rating") ?? 0);
     if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new Error("Оценка должна быть от 1 до 5");
 
     await prisma.listingReview.create({
-      data: { listingId: listing.id, userId: session.user.id, body, rating }
+      data: { listingId: listing.id, userId: sessionUser.id, body, rating }
     });
   }
 
@@ -1422,9 +1396,8 @@ export async function addListingReviewAction(formData: FormData) {
 }
 
 export async function updateOwnListingReviewAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
-  await requireVerifiedEmail(session.user.id);
+  const sessionUser = await requireActiveSessionUser();
+  await requireVerifiedEmail(sessionUser.id);
 
   const reviewId = cleanText(formData.get("reviewId"), 120);
   const body = requireMultiline(formData.get("body"), "отзыв", 1600);
@@ -1432,11 +1405,11 @@ export async function updateOwnListingReviewAction(formData: FormData) {
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new Error("Оценка должна быть от 1 до 5");
 
   const review = await prisma.listingReview.findFirst({
-    where: { id: reviewId, userId: session.user.id, parentId: null, isHidden: false },
+    where: { id: reviewId, userId: sessionUser.id, parentId: null, isHidden: false },
     include: { listing: { select: { id: true, type: true, createdById: true } } }
   });
   if (!review || review.listing.type !== ListingType.SERVICE) throw new Error("Отзыв не найден");
-  if (review.listing.createdById === session.user.id) throw new Error("Нельзя редактировать отзыв на собственную услугу");
+  if (review.listing.createdById === sessionUser.id) throw new Error("Нельзя редактировать отзыв на собственную услугу");
 
   await prisma.listingReview.update({ where: { id: review.id }, data: { body, rating } });
 
@@ -1446,12 +1419,11 @@ export async function updateOwnListingReviewAction(formData: FormData) {
 }
 
 export async function deleteOwnListingReviewAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const reviewId = cleanText(formData.get("reviewId"), 120);
   const review = await prisma.listingReview.findFirst({
-    where: { id: reviewId, userId: session.user.id, parentId: null, isHidden: false },
+    where: { id: reviewId, userId: sessionUser.id, parentId: null, isHidden: false },
     select: { id: true, listingId: true }
   });
   if (!review) throw new Error("Отзыв не найден");
@@ -1482,8 +1454,7 @@ export type ReportContentState = {
 };
 
 export async function reportContentAction(_state: ReportContentState, formData: FormData): Promise<ReportContentState> {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const targetType = String(formData.get("targetType") ?? "");
   const targetId = String(formData.get("targetId") ?? "");
@@ -1500,7 +1471,7 @@ export async function reportContentAction(_state: ReportContentState, formData: 
       targetType: targetType as never,
       targetId,
       reason,
-      reporterId: session.user.id
+      reporterId: sessionUser.id
     }
   });
 
@@ -1796,12 +1767,8 @@ function buildModelResumeQuizBio(formData: FormData) {
 }
 
 export async function createResumeAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
-  await requireVerifiedEmail(session.user.id);
-
-  const blockCheck = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedPermanently: true, blockedUntil: true } });
-  if (blockCheck && isUserBlocked(blockCheck)) throw new Error("Ваш аккаунт заблокирован. Публикация контента недоступна.");
+  const sessionUser = await requireActiveSessionUser();
+  await requireVerifiedEmail(sessionUser.id);
 
   const title = requireText(formData.get("title"), "заголовок резюме", 140);
   const roleGoal = requireText(formData.get("roleGoal"), "желаемая роль", 120);
@@ -1816,7 +1783,7 @@ export async function createResumeAction(formData: FormData) {
       : requireMultiline(formData.get("bio"), "о себе", 6000);
 
   const resume = await prisma.resume.upsert({
-    where: { userId: session.user.id },
+    where: { userId: sessionUser.id },
     update: {
       title,
       bio,
@@ -1830,7 +1797,7 @@ export async function createResumeAction(formData: FormData) {
       expiresAt: resumeExpiresAt()
     },
     create: {
-      userId: session.user.id,
+      userId: sessionUser.id,
       title,
       bio,
       city: cleanText(formData.get("city"), 120) || null,
@@ -1848,11 +1815,10 @@ export async function createResumeAction(formData: FormData) {
 }
 
 export async function renewResumeAction() {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
-  await requireVerifiedEmail(session.user.id);
+  const sessionUser = await requireActiveSessionUser();
+  await requireVerifiedEmail(sessionUser.id);
 
-  const resume = await prisma.resume.findUnique({ where: { userId: session.user.id } });
+  const resume = await prisma.resume.findUnique({ where: { userId: sessionUser.id } });
   if (!resume) throw new Error("Резюме не найдено");
   if (!resume.expiresAt || resume.expiresAt > new Date()) throw new Error("Продлить можно только архивное резюме");
 
@@ -1867,15 +1833,11 @@ export async function renewResumeAction() {
 }
 
 export async function submitMatchProfileAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
-  await requireVerifiedEmail(session.user.id);
-
-  const blockCheck = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedPermanently: true, blockedUntil: true } });
-  if (blockCheck && isUserBlocked(blockCheck)) throw new Error("Ваш аккаунт заблокирован. Публикация контента недоступна.");
+  const sessionUser = await requireActiveSessionUser();
+  await requireVerifiedEmail(sessionUser.id);
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: sessionUser.id },
     select: { id: true, profileKind: true }
   });
   if (!user) redirect("/auth/signin");
@@ -1935,11 +1897,10 @@ export async function submitMatchProfileAction(formData: FormData) {
 }
 
 export async function renewMatchProfileAction() {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
-  await requireVerifiedEmail(session.user.id);
+  const sessionUser = await requireActiveSessionUser();
+  await requireVerifiedEmail(sessionUser.id);
 
-  const profile = await prisma.matchProfile.findUnique({ where: { userId: session.user.id } });
+  const profile = await prisma.matchProfile.findUnique({ where: { userId: sessionUser.id } });
   if (!profile) throw new Error("Анкета не найдена");
 
   await prisma.matchProfile.update({
@@ -1953,8 +1914,7 @@ export async function renewMatchProfileAction() {
 }
 
 export async function respondToMatchProfileAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  await requireActiveSessionUser();
 
   const profileId = cleanText(formData.get("matchProfileId"), 120);
   await prisma.matchProfile.update({
@@ -2060,14 +2020,10 @@ function inviteCostCents(roleGoal: string) {
 }
 
 export async function sendInviteAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
-
-  const blockCheck = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedPermanently: true, blockedUntil: true } });
-  if (blockCheck && isUserBlocked(blockCheck)) throw new Error("Ваш аккаунт заблокирован. Публикация контента недоступна.");
+  const sessionUser = await requireActiveSessionUser();
 
   const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
+    where: { id: sessionUser.id },
     select: { id: true, accountMode: true }
   });
   if (!user || !canProvide(user.accountMode)) throw new Error("Включите режим поставщика услуг");
@@ -2159,8 +2115,7 @@ export async function sendInviteAction(formData: FormData) {
 }
 
 export async function respondInviteAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const inviteId = String(formData.get("inviteId") ?? "");
   const response = String(formData.get("response") ?? "");
@@ -2170,7 +2125,7 @@ export async function respondInviteAction(formData: FormData) {
 
   const invite = await prisma.invite.findUnique({ where: { id: inviteId } });
   if (!invite) throw new Error("Инвайт не найден");
-  if (invite.modelId !== session.user.id) throw new Error("Нет доступа");
+  if (invite.modelId !== sessionUser.id) throw new Error("Нет доступа");
   if (invite.status !== InviteStatus.PENDING) throw new Error("Инвайт уже обработан");
 
   const cost = invite.amountUsd;
@@ -2254,8 +2209,7 @@ export async function respondInviteAction(formData: FormData) {
 }
 
 export async function reportInviteMismatchAction(formData: FormData) {
-  const session = await auth();
-  if (!session?.user) redirect("/auth/signin");
+  const sessionUser = await requireActiveSessionUser();
 
   const inviteId = String(formData.get("inviteId") ?? "");
   const reason = cleanText(formData.get("reason"), 500);
@@ -2264,7 +2218,7 @@ export async function reportInviteMismatchAction(formData: FormData) {
 
   const invite = await prisma.invite.findUnique({ where: { id: inviteId } });
   if (!invite) throw new Error("Инвайт не найден");
-  if (invite.modelId !== session.user.id) throw new Error("Нет доступа");
+  if (invite.modelId !== sessionUser.id) throw new Error("Нет доступа");
   if (invite.status !== InviteStatus.ACCEPTED) throw new Error("Жалоба возможна только на принятый инвайт");
 
   await prisma.$transaction([
@@ -2273,7 +2227,7 @@ export async function reportInviteMismatchAction(formData: FormData) {
         targetType: "INVITE",
         targetId: inviteId,
         reason,
-        reporterId: session.user.id
+        reporterId: sessionUser.id
       }
     }),
     prisma.user.update({
@@ -2433,17 +2387,17 @@ export async function blockUserAction(formData: FormData) {
   if (!target) throw new Error("Пользователь не найден");
   if (target.role === "ADMIN") throw new Error("Нельзя заблокировать администратора");
 
-  if (blockType === "permanent") {
+  if (blockType === "permanent" || days <= 0) {
     await prisma.user.update({
       where: { id: targetUserId },
-      data: { blockedPermanently: true, blockReason: reason }
+      data: { blockedPermanently: true, blockedUntil: null, blockReason: reason }
     });
   } else {
     const until = new Date();
     until.setDate(until.getDate() + (days || 7));
     await prisma.user.update({
       where: { id: targetUserId },
-      data: { blockedUntil: until, blockReason: reason }
+      data: { blockedPermanently: false, blockedUntil: until, blockReason: reason }
     });
   }
 
@@ -2470,7 +2424,7 @@ export async function unblockUserAction(formData: FormData) {
 export async function changeUserRoleAction(formData: FormData) {
   const admin = await requireRole(["ADMIN"]);
   const targetUserId = String(formData.get("userId") ?? "");
-  const newRole = String(formData.get("role") ?? "") as UserRole;
+  const newRole = String(formData.get("role") ?? formData.get("newRole") ?? "") as UserRole;
   if (!targetUserId || !["USER", "ADMIN", "MODERATOR"].includes(newRole)) throw new Error("Invalid data");
 
   const target = await prisma.user.findUnique({ where: { id: targetUserId } });
@@ -2500,13 +2454,15 @@ export async function adminEditArticleAction(formData: FormData) {
       ...(title ? { title } : {}),
       ...(summary ? { summary } : {}),
       ...(body ? { body } : {}),
-      ...(["DRAFT", "PENDING_REVIEW", "PUBLISHED", "ARCHIVED", "REJECTED"].includes(status) ? { status } : {})
+      ...(["DRAFT", "PENDING_REVIEW", "APPROVED", "PUBLISHED", "ARCHIVED", "REJECTED"].includes(status) ? { status } : {})
     }
   });
 
   await logAudit(admin.id, "edit_article", "ARTICLE", articleId, JSON.stringify({ title, status }));
   revalidatePath("/admin");
+  revalidatePath("/admin/content");
   revalidatePath("/articles");
+  redirect("/admin/content?tab=articles");
 }
 
 export async function adminEditListingAction(formData: FormData) {
@@ -2525,38 +2481,135 @@ export async function adminEditListingAction(formData: FormData) {
     data: {
       ...(title ? { title } : {}),
       ...(description ? { description } : {}),
-      ...(["DRAFT", "PENDING_REVIEW", "PUBLISHED", "ARCHIVED", "REJECTED"].includes(status) ? { status } : {})
+      ...(["DRAFT", "PENDING_REVIEW", "APPROVED", "PUBLISHED", "ARCHIVED", "REJECTED"].includes(status) ? { status } : {})
     }
   });
 
   await logAudit(admin.id, "edit_listing", "LISTING", listingId, JSON.stringify({ title, status }));
   revalidatePath("/admin");
+  revalidatePath("/admin/content");
   revalidatePath("/vacancies");
   revalidatePath("/services");
+  redirect("/admin/content?tab=listings");
+}
+
+export async function adminEditProductAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN", "MODERATOR"]);
+  const productId = String(formData.get("productId") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const status = String(formData.get("status") ?? "") as ContentStatus;
+
+  if (!productId) throw new Error("Product ID missing");
+  const product = await prisma.product.findUnique({ where: { id: productId } });
+  if (!product) throw new Error("Товар не найден");
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: {
+      ...(title ? { title } : {}),
+      ...(["DRAFT", "PENDING_REVIEW", "APPROVED", "PUBLISHED", "ARCHIVED", "REJECTED"].includes(status) ? { status } : {}),
+      ...(status === ContentStatus.ARCHIVED ? { hiddenReason: "Скрыто администратором" } : {}),
+      ...(status === ContentStatus.PUBLISHED ? { hiddenReason: null } : {})
+    }
+  });
+
+  await logAudit(admin.id, "edit_product", "PRODUCT", productId, JSON.stringify({ title, status }));
+  revalidatePath("/admin");
+  revalidatePath("/admin/content");
+  revalidatePath("/products");
+  redirect("/admin/content?tab=products");
+}
+
+export async function adminEditResumeAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN", "MODERATOR"]);
+  const resumeId = String(formData.get("resumeId") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const roleGoal = String(formData.get("roleGoal") ?? "").trim();
+  const isPublic = String(formData.get("isPublic") ?? "true") === "true";
+
+  if (!resumeId) throw new Error("Resume ID missing");
+  const resume = await prisma.resume.findUnique({ where: { id: resumeId } });
+  if (!resume) throw new Error("Резюме не найдено");
+
+  await prisma.resume.update({
+    where: { id: resumeId },
+    data: {
+      ...(title ? { title } : {}),
+      ...(roleGoal ? { roleGoal } : {}),
+      isPublic,
+      hiddenByInactivity: !isPublic ? true : false,
+      ...(isPublic ? { lastVisitedAt: new Date(), expiresAt: resume.expiresAt && resume.expiresAt > new Date() ? resume.expiresAt : resumeExpiresAt() } : {})
+    }
+  });
+
+  await logAudit(admin.id, "edit_resume", "RESUME", resumeId, JSON.stringify({ title, roleGoal, isPublic }));
+  revalidatePath("/admin");
+  revalidatePath("/admin/content");
+  revalidatePath("/resumes");
+  redirect("/admin/content?tab=resumes");
+}
+
+export async function adminEditMatchProfileAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN", "MODERATOR"]);
+  const matchProfileId = String(formData.get("matchProfileId") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const status = String(formData.get("status") ?? "") as ContentStatus;
+
+  if (!matchProfileId) throw new Error("Match profile ID missing");
+  const profile = await prisma.matchProfile.findUnique({ where: { id: matchProfileId } });
+  if (!profile) throw new Error("Анкета не найдена");
+
+  await prisma.matchProfile.update({
+    where: { id: matchProfileId },
+    data: {
+      ...(title ? { title } : {}),
+      ...(["DRAFT", "PENDING_REVIEW", "APPROVED", "PUBLISHED", "ARCHIVED", "REJECTED"].includes(status) ? { status } : {}),
+      ...(status === ContentStatus.ARCHIVED ? { hiddenReason: "Скрыто администратором" } : {}),
+      ...(status === ContentStatus.PUBLISHED ? { hiddenReason: null } : {})
+    }
+  });
+
+  await logAudit(admin.id, "edit_match_profile", "MATCH_PROFILE", matchProfileId, JSON.stringify({ title, status }));
+  revalidatePath("/admin");
+  revalidatePath("/admin/content");
+  revalidatePath("/model-operator");
+  redirect("/admin/content?tab=matches");
 }
 
 export async function adminDeleteContentAction(formData: FormData) {
   const admin = await requireRole(["ADMIN", "MODERATOR"]);
-  const targetType = String(formData.get("targetType") ?? "");
-  const targetId = String(formData.get("targetId") ?? "");
+  const rawType = String(formData.get("targetType") ?? formData.get("contentType") ?? "");
+  const targetType = rawType.toUpperCase();
+  const targetId = String(formData.get("targetId") ?? formData.get("contentId") ?? "");
   const reason = String(formData.get("reason") ?? "").trim();
 
   if (!targetId || !targetType) throw new Error("Missing target");
 
   if (targetType === "ARTICLE") {
-    await prisma.article.update({ where: { id: targetId }, data: { status: "ARCHIVED", hiddenReason: reason || "Удалено администратором" } });
+    await prisma.article.update({ where: { id: targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: reason || "Удалено администратором" } });
   } else if (targetType === "LISTING") {
-    await prisma.listing.update({ where: { id: targetId }, data: { status: "ARCHIVED", hiddenReason: reason || "Удалено администратором" } });
+    await prisma.listing.update({ where: { id: targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: reason || "Удалено администратором" } });
   } else if (targetType === "PRODUCT") {
-    await prisma.product.update({ where: { id: targetId }, data: { status: "ARCHIVED", hiddenReason: reason || "Удалено администратором" } });
+    await prisma.product.update({ where: { id: targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: reason || "Удалено администратором" } });
   } else if (targetType === "RESUME") {
-    await prisma.resume.update({ where: { id: targetId }, data: { isPublic: false } });
+    await prisma.resume.update({ where: { id: targetId }, data: { isPublic: false, hiddenByInactivity: true } });
+  } else if (targetType === "MATCH_PROFILE") {
+    await prisma.matchProfile.update({ where: { id: targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: reason || "Удалено администратором" } });
   } else {
     throw new Error("Неизвестный тип контента");
   }
 
   await logAudit(admin.id, "delete_content", targetType, targetId, reason);
   revalidatePath("/admin");
+  revalidatePath("/admin/content");
+  revalidatePath("/articles");
+  revalidatePath("/vacancies");
+  revalidatePath("/services");
+  revalidatePath("/products");
+  revalidatePath("/resumes");
+  revalidatePath("/model-operator");
+  const tab = targetType === "ARTICLE" ? "articles" : targetType === "LISTING" ? "listings" : targetType === "PRODUCT" ? "products" : targetType === "RESUME" ? "resumes" : "matches";
+  redirect(`/admin/content?tab=${tab}`);
 }
 
 // ---------------------------------------------------------------------------
