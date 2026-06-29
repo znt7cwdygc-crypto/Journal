@@ -5,7 +5,7 @@ const menuGroups = [
     title: "Контент",
     links: [
       ["Лента", "/articles"],
-      ["Гайды", "/guides/rabota-webcam-bez-opyta"]
+      ["Гайды", "/guides"]
     ]
   },
   {
