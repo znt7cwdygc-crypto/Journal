@@ -103,7 +103,7 @@ export default async function HomePage() {
       where: { isPublished: true, showOnHome: true },
       select: { path: true, title: true, description: true, category: true },
       orderBy: { sortOrder: "asc" },
-      take: 4
+      take: 8
     })
   ]);
 
