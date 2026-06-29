@@ -96,7 +96,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
               <td className="px-4 py-2">
                 <form action={changeUserRoleAction} className="flex items-center gap-1">
                   <input type="hidden" name="userId" value={u.id} />
-                  <select name="newRole" defaultValue={u.role} className="rounded border border-zinc-300 p-1 text-xs">
+                  <select name="role" defaultValue={u.role} className="rounded border border-zinc-300 p-1 text-xs">
                     <option value="USER">USER</option>
                     <option value="MODERATOR">MODERATOR</option>
                     <option value="ADMIN">ADMIN</option>
@@ -130,6 +130,7 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                     <summary className="cursor-pointer rounded bg-red-600 px-2 py-1 text-xs font-medium text-white">Блок</summary>
                     <form action={blockUserAction} className="absolute right-0 z-10 mt-1 w-56 space-y-2 rounded-lg border border-zinc-200 bg-white p-3 shadow-lg">
                       <input type="hidden" name="userId" value={u.id} />
+                      <input type="hidden" name="blockType" value="auto" />
                       <div>
                         <label className="block text-xs font-medium text-zinc-500">Дней (0 = навсегда)</label>
                         <input type="number" name="days" min={0} defaultValue={0} className="mt-1 w-full rounded border border-zinc-300 p-1.5 text-sm" />
