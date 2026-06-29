@@ -11,8 +11,8 @@ import { siteDescription, siteName, siteUrl } from "@/lib/seo";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "UGC-медиа о вебкам-индустрии — статьи, вакансии, резюме, услуги",
-  description: siteDescription,
+  title: "MyCamDesk — UGC-медиа о вебкам-индустрии: статьи, вакансии, резюме, услуги",
+  description: "MyCamDesk — UGC-медиа о вебкам-индустрии. Личный опыт, разборы, вакансии студий, резюме моделей и операторов, услуги экспертов. Всё в одном сообществе.",
   alternates: { canonical: "/" },
   openGraph: {
     title: siteName,
@@ -143,7 +143,8 @@ export default async function HomePage() {
         "name": siteName,
         "url": siteUrl("/").toString(),
         "description": siteDescription,
-        "logo": { "@type": "ImageObject", "url": siteUrl("/favicon.svg").toString() }
+        "logo": { "@type": "ImageObject", "url": siteUrl("/favicon.svg").toString() },
+        "sameAs": []
       }) }} />
       <section className="section-card overflow-hidden">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

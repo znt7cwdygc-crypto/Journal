@@ -11,8 +11,8 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Резюме",
-  description: "Публичные резюме моделей и специалистов MyCamDesk с городом, опытом и откликами.",
+  title: "Резюме специалистов вебкам-индустрии — MyCamDesk",
+  description: "Публичные резюме моделей, операторов и специалистов вебкам-индустрии с указанием города, опыта и контактов. Найдите сотрудника на MyCamDesk.",
   alternates: { canonical: "/resumes" },
   openGraph: {
     title: "Резюме MyCamDesk",

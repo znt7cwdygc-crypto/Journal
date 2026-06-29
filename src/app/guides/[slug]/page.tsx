@@ -19,7 +19,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       title: guide.title,
       description: guide.description,
       url: guide.path,
-      type: "article"
+      type: "article",
+      images: [{ url: siteUrl("/favicon.svg").toString() }]
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: guide.title,
+      description: guide.description
     }
   };
 }
@@ -42,6 +48,26 @@ export default async function GuidePage({ params }: { params: { slug: string } }
           { "@type": "ListItem", "position": 2, "name": "Гайды", "item": siteUrl("/guides").toString() },
           { "@type": "ListItem", "position": 3, "name": guide.title }
         ]
+      }) }} />
+
+      {/* Article JSON-LD */}
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": guide.h1,
+        "description": guide.description,
+        "datePublished": raw.createdAt.toISOString(),
+        "dateModified": raw.updatedAt.toISOString(),
+        "author": { "@type": "Organization", "name": "MyCamDesk" },
+        "publisher": {
+          "@type": "Organization",
+          "name": "MyCamDesk",
+          "logo": { "@type": "ImageObject", "url": siteUrl("/favicon.svg").toString() }
+        },
+        "mainEntityOfPage": {
+          "@type": "WebPage",
+          "@id": siteUrl(raw.path).toString()
+        }
       }) }} />
 
       {/* FAQ JSON-LD */}

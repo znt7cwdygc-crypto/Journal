@@ -6,13 +6,14 @@ import type { Metadata } from "next";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Гайды",
-  description: "Понятные материалы о работе, безопасности, деньгах, студиях, оборудовании и продвижении.",
+  title: "Гайды по вебкам-индустрии — MyCamDesk",
+  description: "Понятные гайды о работе в вебкам-индустрии: безопасность, деньги, студии, оборудование, продвижение и частые вопросы новичков. Всё в одном месте.",
   alternates: { canonical: "/guides" },
   openGraph: {
-    title: "Гайды MyCamDesk",
-    description: "Понятные материалы о работе, безопасности, деньгах, студиях, оборудовании и продвижении.",
-    url: "/guides"
+    title: "Гайды по вебкам-индустрии — MyCamDesk",
+    description: "Понятные гайды о работе в вебкам-индустрии: безопасность, деньги, студии, оборудование, продвижение и частые вопросы новичков.",
+    url: "/guides",
+    images: [{ url: siteUrl("/favicon.svg").toString() }]
   }
 };
 
