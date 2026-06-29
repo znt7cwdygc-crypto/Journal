@@ -13,6 +13,7 @@ type ProductFormValues = {
   description?: string;
   contact?: string;
   imageUrl?: string | null;
+  images?: string[];
 };
 
 const categories = ["Оборудование", "Свет", "Камеры", "Компьютеры", "Мебель", "Декор", "Одежда", "Другое"];
@@ -33,7 +34,7 @@ export function ProductForm({
       <div className="border-b border-zinc-100 p-3 sm:p-4">
         <label className="form-label" htmlFor="product-image">Фото товара</label>
         <div className="mt-1">
-          <ProductImageInput imageUrl={product?.imageUrl} title={product?.title} required={!product?.imageUrl} />
+          <ProductImageInput images={product?.images?.length ? product.images : product?.imageUrl ? [product.imageUrl] : []} required={!product?.imageUrl && !product?.images?.length} />
         </div>
       </div>
 

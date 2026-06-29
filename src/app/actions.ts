@@ -907,7 +907,10 @@ export async function submitProductAction(formData: FormData) {
   let productId = "";
   try {
     const title = requireText(formData.get("title"), "название товара", 140);
-    const imageUrl = await saveUploadedImage(formData.get("imageFile"), `tovar-${title}`) ?? await productImageDataUrl(formData.get("imageFile"));
+    const productImages = formData.getAll("productImages").map(String).filter(Boolean).slice(0, 3);
+    const legacyImage = await saveUploadedImage(formData.get("imageFile"), `tovar-${title}`) ?? await productImageDataUrl(formData.get("imageFile"));
+    const images = productImages.length > 0 ? productImages : legacyImage ? [legacyImage] : [];
+    const imageUrl = images[0] || null;
     if (!imageUrl) throw new Error("Загрузите фото товара");
     const category = requireText(formData.get("category"), "категорию", 80);
     const priceRub = cleanNumber(formData.get("priceRub"), 0, 100000000);
@@ -942,6 +945,7 @@ export async function submitProductAction(formData: FormData) {
           description,
           contact,
           imageUrl,
+          images,
           status: ContentStatus.PUBLISHED,
           expiresAt: productExpiresAt(),
           createdById: session.user.id
@@ -968,7 +972,10 @@ export async function updateProductAction(formData: FormData) {
   if (!product) throw new Error("Товар не найден");
 
   const title = requireText(formData.get("title"), "название товара", 140);
-  const nextImage = await saveUploadedImage(formData.get("imageFile"), `tovar-${title}`) ?? await productImageDataUrl(formData.get("imageFile"));
+  const productImages = formData.getAll("productImages").map(String).filter(Boolean).slice(0, 3);
+  const legacyImage = await saveUploadedImage(formData.get("imageFile"), `tovar-${title}`) ?? await productImageDataUrl(formData.get("imageFile"));
+  const images = productImages.length > 0 ? productImages : legacyImage ? [legacyImage] : product.images?.length ? product.images : product.imageUrl ? [product.imageUrl] : [];
+  const imageUrl = images[0] || product.imageUrl;
   await prisma.product.update({
     where: { id: product.id },
     data: {
@@ -980,7 +987,8 @@ export async function updateProductAction(formData: FormData) {
       condition: normalizeProductCondition(formData.get("condition")),
       description: requireMultiline(formData.get("description"), "описание", 3000),
       contact: requireText(formData.get("contact"), "контакт", 180),
-      imageUrl: nextImage ?? product.imageUrl
+      imageUrl,
+      images,
     }
   });
 

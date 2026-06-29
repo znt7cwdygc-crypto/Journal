@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default async function EditProductPage({ params }: { params: { id: string } }) {
   const user = await requireUser();
-  const product = await prisma.product.findFirst({ where: { id: params.id, createdById: user.id } });
+  const product = await prisma.product.findFirst({ where: { id: params.id, createdById: user.id }, select: { id: true, title: true, category: true, priceRub: true, city: true, delivery: true, condition: true, description: true, contact: true, imageUrl: true, images: true, status: true } });
   if (!product) notFound();
 
   const isPublished = product.status === "PUBLISHED";

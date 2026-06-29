@@ -2,116 +2,130 @@
 
 import { useRef, useState } from "react";
 
+type PhotoItem = { url: string; uploading?: boolean };
+
 export function ProductImageInput({
-  imageUrl,
-  title,
-  required
+  images = [],
+  required,
 }: {
-  imageUrl?: string | null;
-  title?: string;
+  images?: string[];
   required?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [preview, setPreview] = useState(imageUrl ?? "");
-  const [fileName, setFileName] = useState(imageUrl ? "Текущее фото товара" : "");
+  const [photos, setPhotos] = useState<PhotoItem[]>(
+    images.filter(Boolean).map((url) => ({ url }))
+  );
+  const [error, setError] = useState("");
 
-  function showPreview(file?: File) {
-    if (!file || !file.type.startsWith("image/")) return;
+  const isUploading = photos.some((p) => p.uploading);
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPreview(String(reader.result ?? ""));
-      setFileName(file.name);
-    };
-    reader.readAsDataURL(file);
+  async function uploadFile(file: File) {
+    if (photos.length >= 3) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Выберите изображение (JPG, PNG, WebP)");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Файл слишком большой (макс. 5 МБ)");
+      return;
+    }
+    setError("");
+
+    const tempUrl = URL.createObjectURL(file);
+    const idx = photos.length;
+    setPhotos((prev) => [...prev, { url: tempUrl, uploading: true }]);
+
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("seoContext", "product-photo");
+      const res = await fetch("/api/uploads", { method: "POST", body: fd });
+      if (!res.ok) throw new Error("Upload failed");
+      const { url } = await res.json();
+      setPhotos((prev) =>
+        prev.map((p, i) => (i === idx ? { url, uploading: false } : p))
+      );
+    } catch {
+      setPhotos((prev) => prev.filter((_, i) => i !== idx));
+      setError("Не удалось загрузить фото, попробуйте ещё раз");
+    } finally {
+      URL.revokeObjectURL(tempUrl);
+    }
   }
 
-  function clearPreview() {
-    setPreview("");
-    setFileName("");
-    if (inputRef.current) inputRef.current.value = "";
+  function remove(index: number) {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
   }
+
+  const readyPhotos = photos.filter((p) => !p.uploading);
 
   return (
     <div className="space-y-2">
+      {/* Hidden inputs for form submission */}
+      {readyPhotos.map((p, i) => (
+        <input key={`hidden-${i}`} type="hidden" name="productImages" value={p.url} />
+      ))}
+
+      {/* Thumbnails row */}
+      <div className="flex gap-2 flex-wrap">
+        {photos.map((photo, i) => (
+          <div
+            key={i}
+            className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-zinc-200"
+          >
+            <img
+              className={`h-full w-full object-cover ${photo.uploading ? "opacity-40" : ""}`}
+              src={photo.url}
+              alt=""
+            />
+            {photo.uploading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600" />
+              </div>
+            )}
+            {!photo.uploading && (
+              <button
+                type="button"
+                className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-xs text-white hover:bg-red-600"
+                onClick={() => remove(i)}
+              >
+                &times;
+              </button>
+            )}
+          </div>
+        ))}
+        {photos.length < 3 && (
+          <button
+            type="button"
+            className="flex h-20 w-20 shrink-0 flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 text-zinc-400 transition hover:border-[#ff4d2e] hover:text-[#ff4d2e]"
+            onClick={() => inputRef.current?.click()}
+            disabled={isUploading}
+          >
+            <span className="text-2xl leading-none">+</span>
+            <span className="mt-0.5 text-[10px]">Фото</span>
+          </button>
+        )}
+      </div>
+
       <input
         ref={inputRef}
-        className="sr-only"
-        id="product-image"
         type="file"
-        name="imageFile"
         accept="image/*"
-        required={required && !preview}
-        onChange={(event) => showPreview(event.currentTarget.files?.[0])}
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) uploadFile(file);
+          e.target.value = "";
+        }}
       />
 
-      {!preview ? (
-        <button
-          className={`flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed px-4 py-3 text-center transition ${
-            isDragging ? "border-[#ff4d2e] bg-[#fff1ed]" : "border-zinc-300 bg-white hover:border-[#ff4d2e] hover:bg-[#fff1ed]"
-          }`}
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          onDragEnter={(event) => {
-            event.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragOver={(event) => {
-            event.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragLeave={(event) => {
-            event.preventDefault();
-            setIsDragging(false);
-          }}
-          onDrop={(event) => {
-            event.preventDefault();
-            setIsDragging(false);
-            const file = event.dataTransfer.files?.[0];
-            if (!file) return;
+      {error && <p className="text-xs text-red-600">{error}</p>}
 
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            if (inputRef.current) inputRef.current.files = dataTransfer.files;
-            showPreview(file);
-          }}
-        >
-          <svg className="mb-1 text-zinc-500" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <rect x="3" y="5" width="18" height="14" rx="2" />
-            <circle cx="9" cy="10" r="1.3" />
-            <path d="M21 16l-5-5-3 3-2-2-4 4" />
-          </svg>
-          <span className="text-sm font-semibold leading-5 text-ink">Перетащите фото или нажмите для выбора</span>
-          <span className="mt-1 text-xs text-zinc-500">JPG, PNG, WebP или GIF до 350 КБ</span>
-        </button>
-      ) : (
-        <div className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-white p-2">
-          <img className="h-12 w-12 flex-none rounded-md object-cover" src={preview} alt={title || "Фото товара"} />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-ink">{fileName || "Фото товара"}</p>
-            <p className="mt-1 text-xs text-zinc-500">Это фото будет показано в карточке и на странице товара.</p>
-          </div>
-          <button
-            className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-zinc-100 text-zinc-700 hover:bg-red-50 hover:text-red-700"
-            type="button"
-            title="Убрать фото"
-            onClick={clearPreview}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
-          </button>
-        </div>
+      {required && readyPhotos.length === 0 && (
+        <input type="hidden" name="_photoRequired" value="" required />
       )}
 
-      <div className="flex gap-2 rounded-lg bg-cyan-50 px-3 py-2 text-xs leading-5 text-cyan-900">
-        <svg className="mt-0.5 flex-none text-cyan-700" width="16" height="16" viewBox="0 0 24 24" fill="none" strokeWidth="2" stroke="currentColor">
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 8v5M12 16h.01" />
-        </svg>
-        <p>Фото показывается на странице товара и в карточке объявления.</p>
-      </div>
+      <p className="text-xs text-zinc-400">До 3 фото &bull; JPG, PNG, WebP до 5 МБ</p>
     </div>
   );
 }

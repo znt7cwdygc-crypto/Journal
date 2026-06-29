@@ -23,6 +23,7 @@ type ProductCardItem = {
   description: string;
   contact: string;
   imageUrl: string | null;
+  images?: string[];
   viewCount: number;
   responseCount: number;
   createdAt: Date;
@@ -72,7 +73,7 @@ export function ProductDirectoryCard({
       </div>
 
       <Link href={productPath} className="mt-3 block">
-        {product.imageUrl && <img className="aspect-[4/3] w-full rounded-lg object-cover" src={product.imageUrl} alt={product.title} />}
+        {(product.images?.[0] || product.imageUrl) && <img className="aspect-[4/3] w-full rounded-lg object-cover" src={product.images?.[0] || product.imageUrl!} alt={product.title} />}
         <h3 className="mt-3 text-xl font-semibold leading-tight text-ink">{product.title}</h3>
         <p className="mt-3 inline-flex rounded-lg bg-zinc-900 px-3 py-2 text-base font-bold text-white">{formatPrice(product.priceRub)} ₽</p>
         <p className="mt-3 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-zinc-700">{product.description}</p>

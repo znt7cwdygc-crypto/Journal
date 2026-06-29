@@ -5,6 +5,7 @@ import { saveProductAction } from "@/app/actions";
 import { auth } from "@/auth";
 import { ContactReveal } from "@/components/contact-reveal";
 import { ReportButton } from "@/components/report-button";
+import { ProductImageCarousel } from "@/components/product-image-carousel";
 import { prisma } from "@/lib/prisma";
 import { siteUrl, truncateSeo } from "@/lib/seo";
 import { idFromSeoParam, pathTail, productSeoPath } from "@/lib/seo-url";
@@ -101,7 +102,7 @@ export default async function ProductDetailsPage({
             "@type": "Product",
             name: product.title,
             description: product.description,
-            image: product.imageUrl ? [product.imageUrl] : undefined,
+            image: product.images?.length ? product.images : product.imageUrl ? [product.imageUrl] : undefined,
             category: product.category,
             sku: product.id,
             offers: {
@@ -143,7 +144,10 @@ export default async function ProductDetailsPage({
         <span className="rounded-full bg-sky-50 px-3 py-1 text-sky-700">{product.city || "Город не указан"}</span>
       </div>
 
-      {product.imageUrl && <img className="mt-5 aspect-[4/3] w-full rounded-lg object-cover" src={product.imageUrl} alt={product.title} />}
+      <ProductImageCarousel
+        images={product.images?.length ? product.images : product.imageUrl ? [product.imageUrl] : []}
+        title={product.title}
+      />
 
       <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">

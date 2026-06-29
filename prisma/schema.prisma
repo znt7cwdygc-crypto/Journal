@@ -356,6 +356,7 @@ model Product {
   description   String
   contact       String
   imageUrl      String?
+  images        String[]
   status        ContentStatus    @default(PUBLISHED)
   hiddenReason  String?
   viewCount     Int              @default(0)
