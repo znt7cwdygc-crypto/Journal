@@ -383,7 +383,12 @@ export async function updatePublicProfileAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
 
-  const avatarUrl = await saveUploadedImage(formData.get("avatarFile"), `avatar-${session.user.id}`);
+  let avatarUrl: string | null = null;
+  try {
+    avatarUrl = await saveUploadedImage(formData.get("avatarFile"), `avatar-${session.user.id}`);
+  } catch {
+    // Avatar upload failed — save profile without avatar change
+  }
 
   await prisma.user.update({
     where: { id: session.user.id },
