@@ -106,6 +106,28 @@ export function GuideForm({ action, guide }: { action: (fd: FormData) => Promise
         </Card>
 
         <Card>
+          <CardTitle>Категория и быстрый ответ</CardTitle>
+          <div className="grid gap-4">
+            <Field label="Категория" name="category" defaultValue={guide?.category || ""} placeholder="Новичкам, Деньги, Безопасность..." />
+            <TextArea label="Быстрый ответ (quickAnswer)" name="quickAnswer" defaultValue={guide?.quickAnswer || ""} rows={3} placeholder="Краткий ответ для сниппета" />
+            <TextArea
+              label="Чеклист (JSON)"
+              name="checklist"
+              defaultValue={guide?.checklist || '[]'}
+              rows={4}
+              placeholder='["Пункт 1", "Пункт 2", "Пункт 3"]'
+            />
+            <TextArea
+              label="Частые ошибки (JSON)"
+              name="mistakes"
+              defaultValue={guide?.mistakes || '[]'}
+              rows={4}
+              placeholder='["Ошибка 1", "Ошибка 2"]'
+            />
+          </div>
+        </Card>
+
+        <Card>
           <CardTitle>FAQ (JSON)</CardTitle>
           <TextArea
             label="Вопросы и ответы"

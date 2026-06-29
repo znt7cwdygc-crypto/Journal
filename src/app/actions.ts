@@ -2632,6 +2632,10 @@ function guideDataFromForm(fd: FormData) {
     ctaLabel: cleanText(fd.get("ctaLabel"), 200) || null,
     ctaHref: cleanText(fd.get("ctaHref"), 500) || null,
     related: (cleanText(fd.get("related"), 2000) || "").split(",").map((r) => r.trim()).filter(Boolean),
+    category: cleanText(fd.get("category"), 200) || null,
+    quickAnswer: cleanMultiline(fd.get("quickAnswer"), 2000) || null,
+    checklist: cleanMultiline(fd.get("checklist"), 5000) || null,
+    mistakes: cleanMultiline(fd.get("mistakes"), 5000) || null,
     isPublished: fd.get("isPublished") === "on",
     showOnHome: fd.get("showOnHome") === "on",
     sortOrder: cleanNumber(fd.get("sortOrder")) ?? 0,
@@ -2644,6 +2648,7 @@ export async function createGuideAction(formData: FormData) {
   const guide = await prisma.guide.create({ data });
   await logAudit(admin.id, "create_guide", "Guide", guide.id);
   revalidatePath("/admin/guides");
+  revalidatePath("/guides");
   revalidatePath("/");
   redirect("/admin/guides");
 }
@@ -2655,6 +2660,7 @@ export async function updateGuideAction(formData: FormData) {
   await prisma.guide.update({ where: { id }, data });
   await logAudit(admin.id, "update_guide", "Guide", id);
   revalidatePath("/admin/guides");
+  revalidatePath("/guides");
   revalidatePath("/");
   redirect("/admin/guides");
 }

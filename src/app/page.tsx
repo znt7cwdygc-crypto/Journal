@@ -326,21 +326,25 @@ export default async function HomePage() {
             </p>
             <h2 className="section-title mt-2">Гайды и страницы под частые вопросы</h2>
           </div>
-          <Link href="/guides/rabota-webcam-bez-opyta" className="text-sm font-medium text-accent hover:text-teal-900">
-            Начать с гайда
+          <Link href="/guides" className="text-sm font-medium text-accent hover:text-teal-900">
+            Все гайды
           </Link>
         </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-2">
-          {seoEntryPoints.map((landing, index) => (
+        <div className="mt-4 grid gap-3 grid-cols-2 lg:grid-cols-4">
+          {seoEntryPoints.map((landing) => (
             <Link
               key={landing.path}
               href={landing.path}
-              className={`block rounded-lg border p-4 hover:border-hot ${
-                index % 3 === 0 ? "border-red-100 bg-red-50/60" : index % 3 === 1 ? "border-sky-100 bg-sky-50/70" : "border-teal-100 bg-teal-50/70"
-              }`}
+              className="group flex flex-col rounded-lg border border-zinc-100 bg-zinc-50 p-3 transition hover:border-hot hover:bg-white hover:shadow-sm sm:p-4"
             >
-              <h3 className="font-semibold leading-snug">{landing.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-zinc-700">{landing.description}</p>
+              {landing.description && (
+                <span className="w-fit rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-hot ring-1 ring-zinc-100 group-hover:ring-red-100 sm:px-2.5 sm:py-1 sm:text-[11px]">
+                  Гайд
+                </span>
+              )}
+              <h3 className="mt-2 text-sm font-semibold leading-snug sm:mt-3">{landing.title}</h3>
+              <p className="mt-1 flex-1 text-xs leading-5 text-zinc-600 line-clamp-3 sm:mt-2">{landing.description}</p>
+              <span className="mt-2 text-xs font-semibold text-accent sm:mt-3">Читать →</span>
             </Link>
           ))}
         </div>
