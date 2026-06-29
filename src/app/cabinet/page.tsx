@@ -503,7 +503,7 @@ export default async function CabinetPage({
         </section>
       )}
 
-      <details id="blog" data-cabinet-panel className="group rounded-lg bg-white shadow-sm" open={isEditingArticle}>
+      <details key={articleJustCreated ? "blog-closed" : "blog"} id="blog" data-cabinet-panel className="group rounded-lg bg-white shadow-sm" open={isEditingArticle && !articleJustCreated}>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
           <div className="min-w-0">
             <h2 className="font-semibold">Статья</h2>
