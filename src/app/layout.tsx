@@ -20,9 +20,7 @@ export const metadata: Metadata = {
     apple: [{ url: "/favicon.svg" }],
   },
   manifest: "/manifest.json",
-  alternates: {
-    canonical: "/"
-  },
+  alternates: {},
   openGraph: {
     type: "website",
     locale: "ru_RU",

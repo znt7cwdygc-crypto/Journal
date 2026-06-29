@@ -183,12 +183,37 @@ export default async function ListingDetailsPage({
   const summary = isService ? serviceSummary(listing.description) : listing.description;
   const vacancyText = !isService ? vacancyStructuredText(listing.description) : "";
   const serviceFields = isService ? serviceStructuredText(listing.description) : [];
+  const serviceDescription = isService
+    ? structuredValue(listing.description, "Что входит") || summary
+    : "";
+  const companyName = structuredValue(listing.description, "Компания");
+  const salaryRaw = structuredValue(listing.description, "Оплата") || structuredValue(listing.description, "Цена");
+  const salaryNumbers = salaryRaw ? salaryRaw.match(/[\d\s]+/g)?.map((s) => parseInt(s.replace(/\s/g, ""), 10)).filter((n) => n > 0) : [];
+  const baseSalary = salaryNumbers && salaryNumbers.length > 0
+    ? {
+        "@type": "MonetaryAmount",
+        currency: salaryRaw.includes("$") || salaryRaw.includes("USD") ? "USD" : "RUB",
+        value: {
+          "@type": "QuantitativeValue",
+          ...(salaryNumbers.length >= 2
+            ? { minValue: salaryNumbers[0], maxValue: salaryNumbers[1] }
+            : { value: salaryNumbers[0] }),
+          unitText: "MONTH"
+        }
+      }
+    : undefined;
+  const googleEmploymentType =
+    listing.employmentType === "REMOTE" ? "FULL_TIME"
+    : listing.employmentType === "OFFICE" ? "FULL_TIME"
+    : listing.employmentType === "HYBRID" ? "FULL_TIME"
+    : "FULL_TIME";
+
   const listingJsonLd = isService
     ? {
         "@context": "https://schema.org",
         "@type": "Service",
         name: listing.title,
-        description: summary,
+        description: serviceDescription,
         areaServed: listing.city || (listing.employmentType === "REMOTE" ? "Online" : "Russia"),
         provider: {
           "@type": "Person",
@@ -209,7 +234,7 @@ export default async function ListingDetailsPage({
         description: listing.description,
         datePosted: listing.createdAt.toISOString(),
         validThrough: listing.expiresAt?.toISOString(),
-        employmentType: listing.employmentType || undefined,
+        employmentType: googleEmploymentType,
         identifier: {
           "@type": "PropertyValue",
           name: siteName,
@@ -218,9 +243,10 @@ export default async function ListingDetailsPage({
         url: siteUrl(listingPath).toString(),
         hiringOrganization: {
           "@type": "Organization",
-          name: listing.createdBy.name || listing.createdBy.email || "Автор MyCamDesk",
+          name: companyName || listing.createdBy.name || listing.createdBy.email || "Автор MyCamDesk",
           sameAs: siteUrl("/").toString()
         },
+        baseSalary,
         jobLocationType: listing.employmentType === "REMOTE" ? "TELECOMMUTE" : undefined,
         applicantLocationRequirements:
           listing.employmentType === "REMOTE"
