@@ -90,8 +90,11 @@ function vacancyStructuredText(description: string) {
   const lines = [
     "О ВАКАНСИИ",
     data["Роль"] ? `Роль: ${data["Роль"]}` : null,
+    data["Работодатель"] ? `Работодатель: ${data["Работодатель"]}` : null,
+    data["Компания"] ? `Компания: ${data["Компания"]}` : null,
     data["График"] ? `График: ${data["График"]}` : null,
     data["Занятость"] ? `Занятость: ${data["Занятость"]}` : null,
+    data["Район"] ? `Район: ${data["Район"]}` : null,
     "",
     "ОПЛАТА",
     data["Оплата"] ? `Оплата: ${data["Оплата"]}` : null,
@@ -101,15 +104,40 @@ function vacancyStructuredText(description: string) {
     data["Требования"] || null,
     "",
     "УСЛОВИЯ",
-    data["Условия"] ? `Условия: ${data["Условия"]}` : null,
+    data["Условия"] || null,
     data["Дополнительные условия"] ? `О работодателе: ${data["Дополнительные условия"]}` : null,
+    data["Контактное лицо"] ? `Контактное лицо: ${data["Контактное лицо"]}` : null,
+    data["Сайт"] ? `Сайт: ${data["Сайт"]}` : null,
     data["Кто не подойдет"] ? `Жесткие фильтры: ${data["Кто не подойдет"]}` : null,
-    "",
-    "КОРОТКО",
-    data["Коротко"] || null
   ].filter((line) => line !== null);
 
   return lines.join("\n").trim() || description;
+}
+
+function serviceStructuredText(description: string) {
+  const data = structuredBlocks(description);
+  const fields: [string, string | undefined][] = [
+    ["Для кого", data["Для кого"]],
+    ["Категория", data["Категория"]],
+    ["Что входит", data["Что входит"]],
+    ["Формат оказания", data["Формат оказания"]],
+    ["Срок выполнения", data["Срок выполнения"]],
+    ["Гарантии", data["Гарантии"]],
+    ["Формат оплаты", data["Формат оплаты"]],
+    ["Способ оплаты", data["Способ оплаты"]],
+    ["Предоплата", data["Предоплата"]],
+    ["Мин. объём заказа", data["Мин. объём заказа"]],
+    ["Бесплатная консультация", data["Бесплатная консультация"]],
+    ["Скидки", data["Скидки"]],
+    ["Тип исполнителя", data["Тип исполнителя"]],
+    ["Опыт", data["Опыт"]],
+    ["Портфолио", data["Портфолио"]],
+    ["Об исполнителе", data["Об исполнителе"]],
+    ["Контактное лицо", data["Контактное лицо"]],
+    ["Сайт", data["Сайт"]],
+  ];
+
+  return fields.filter(([, v]) => v).map(([label, value]) => ({ label, value: value! }));
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
@@ -154,6 +182,7 @@ export default async function ListingDetailsPage({
   const price = isService ? structuredValue(listing.description, "Цена") : "";
   const summary = isService ? serviceSummary(listing.description) : listing.description;
   const vacancyText = !isService ? vacancyStructuredText(listing.description) : "";
+  const serviceFields = isService ? serviceStructuredText(listing.description) : [];
   const listingJsonLd = isService
     ? {
         "@context": "https://schema.org",
@@ -269,7 +298,14 @@ export default async function ListingDetailsPage({
       {price && <p className="mt-4 inline-flex rounded-xl bg-zinc-900 px-4 py-2 text-lg font-bold text-white">{price}</p>}
       {isService && summary !== listing.description && <p className="mt-4 text-lg leading-7 text-zinc-700">{summary}</p>}
       {isService ? (
-        <p className="mt-4 whitespace-pre-wrap text-base leading-8 text-zinc-800">{listing.description}</p>
+        <div className="mt-4 space-y-2">
+          {serviceFields.map(({ label, value }) => (
+            <div key={label} className="flex gap-2 border-b border-zinc-100 py-2 text-sm">
+              <span className="min-w-[140px] shrink-0 text-zinc-500">{label}</span>
+              <span className="whitespace-pre-wrap font-medium text-zinc-800">{value}</span>
+            </div>
+          ))}
+        </div>
       ) : (
         <ImportanceBio text={vacancyText} />
       )}
