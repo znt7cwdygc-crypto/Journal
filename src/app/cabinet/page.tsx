@@ -25,6 +25,7 @@ import {
   updateProfileSettingsAction
 } from "@/app/actions";
 import { AdBlock } from "@/components/ad-block";
+import { AvatarUpload } from "@/components/avatar-upload";
 import { ArticleEditorForm } from "@/components/article-editor-form";
 import { CabinetPanelRouter } from "@/components/cabinet-panel-router";
 import { InviteCard } from "@/components/invite-card";
@@ -327,19 +328,7 @@ export default async function CabinetPage({
           </summary>
           <div className="space-y-3 px-4 pb-4">
             <form action={updatePublicProfileAction} className="space-y-3">
-              <div className="flex items-center gap-4">
-                {dbUser.image ? (
-                  <img className="h-14 w-14 rounded-full object-cover" src={dbUser.image} alt="" />
-                ) : (
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-hot text-xl font-black text-white">
-                    {(dbUser.name || "U").slice(0, 1).toUpperCase()}
-                  </div>
-                )}
-                <label className="inline-flex cursor-pointer rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50">
-                  Загрузить фото
-                  <input type="file" name="avatarFile" accept="image/*" className="hidden" />
-                </label>
-              </div>
+              <AvatarUpload currentImage={dbUser.image} fallbackLetter={(dbUser.name || "U").slice(0, 1).toUpperCase()} />
               <input className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="name" defaultValue={dbUser.name ?? ""} placeholder="Имя или псевдоним" required />
               <textarea className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="profileBio" defaultValue={dbUser.profileBio ?? ""} placeholder="Пару слов о себе" rows={2} />
               <button className="w-full rounded-lg bg-hot py-2 text-xs font-semibold text-white" type="submit">Сохранить профиль</button>
