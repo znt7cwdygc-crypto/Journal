@@ -2,10 +2,11 @@ name: Deploy to server
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Deploy via SSH
@@ -53,4 +54,30 @@ jobs:
 
             # 5. Cleanup
             rm -rf "$OLD_DIR"
-            echo "Deploy done: $(date)"
+            echo "Production deploy done: $(date)"
+
+  deploy-dev:
+    if: github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy dev via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 185.112.83.74
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 15m
+          script: |
+            cd /opt/site-dev
+            git fetch origin dev
+            git checkout dev
+            git reset --hard origin/dev
+            cp /opt/env.production .env.local
+            npm install
+            npx prisma generate
+            DATABASE_URL="postgresql://journalapp:JrnL-db-2026-secure@localhost:5432/journaldb" npx prisma db push --accept-data-loss 2>&1 | tail -1
+            npm run build
+            pm2 delete site-dev 2>/dev/null || true
+            NODE_ENV=production PORT=3001 pm2 start node --name site-dev -- node_modules/.bin/next start -p 3001
+            pm2 save
+            echo "Dev deploy done: $(date)"
