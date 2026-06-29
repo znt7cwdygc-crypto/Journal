@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/access";
 import {
+  changePasswordAction,
   createResumeAction,
   deleteArticleAction,
   deleteListingAction,
@@ -10,6 +11,7 @@ import {
   renewMatchProfileAction,
   renewProductAction,
   renewResumeAction,
+  resendVerificationEmailAction,
   saveBlogDraftAction,
   submitBlogArticleAction,
   submitListingAction,
@@ -18,6 +20,7 @@ import {
   toggleArticleVisibilityAction,
   toggleListingVisibilityAction,
   toggleProductVisibilityAction,
+  updateEmailAction,
   updatePublicProfileAction,
   updateProfileSettingsAction
 } from "@/app/actions";
@@ -109,6 +112,12 @@ export default async function CabinetPage({
     inviteResponse?: string | string[];
     inviteReport?: string | string[];
     invited?: string | string[];
+    verifyRequired?: string | string[];
+    verifySent?: string | string[];
+    emailUpdated?: string | string[];
+    emailError?: string | string[];
+    passwordUpdated?: string | string[];
+    passwordError?: string | string[];
   };
 }) {
   const user = await requireUser();
@@ -253,6 +262,12 @@ export default async function CabinetPage({
       : "product-new";
   const inviteResponseParam = searchValue(searchParams?.inviteResponse);
   const inviteReportParam = searchValue(searchParams?.inviteReport);
+  const verifyRequired = searchValue(searchParams?.verifyRequired) === "1";
+  const verifySent = searchValue(searchParams?.verifySent) === "1";
+  const emailUpdated = searchValue(searchParams?.emailUpdated);
+  const emailError = searchValue(searchParams?.emailError);
+  const passwordUpdated = searchValue(searchParams?.passwordUpdated) === "1";
+  const passwordError = searchValue(searchParams?.passwordError);
   const profileName = dbUser.name || dbUser.email || "Профиль";
   const accountModeLabel =
     dbUser.accountMode === "PROVIDER"
@@ -262,11 +277,31 @@ export default async function CabinetPage({
         : "Ищу услуги / работу";
   const profileKindLabel = profileKindLabels[String(dbUser.profileKind || "MODEL")] || "Профиль";
   const canPublishMatchProfile = dbUser.profileKind === "MODEL" || dbUser.profileKind === "OPERATOR";
+  const emailVerified = Boolean(dbUser.emailVerified);
 
   return (
     <div className="space-y-4">
       <CabinetPanelRouter />
       <ProductPublishCleanup active={productJustCreated} />
+      {!emailVerified && (
+        <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-semibold">Подтвердите почту</h2>
+              <p className="mt-1 leading-5">
+                Без подтверждения email нельзя публиковать статьи, вакансии, услуги, товары, резюме, анкеты, комментарии и отзывы.
+              </p>
+              {verifyRequired && <p className="mt-2 font-medium text-amber-900">Сначала подтвердите email, потом повторите действие.</p>}
+              {verifySent && <p className="mt-2 font-medium text-emerald-700">Письмо отправлено повторно. Проверьте почту и папку спам.</p>}
+            </div>
+            <form action={resendVerificationEmailAction} className="shrink-0">
+              <button className="rounded-lg bg-ink px-4 py-2 text-xs font-semibold text-white" type="submit">
+                Отправить письмо еще раз
+              </button>
+            </form>
+          </div>
+        </section>
+      )}
       <section className="rounded-lg bg-white shadow-sm">
         {/* Top row: avatar + name + quick stats */}
         <div className="flex items-center gap-4 p-4">
@@ -326,6 +361,40 @@ export default async function CabinetPage({
                 <option value="OTHER">Другое</option>
               </select>
               <button className="col-span-2 rounded-lg bg-zinc-900 py-1.5 text-xs font-semibold text-white" type="submit">Обновить режим</button>
+            </form>
+          </div>
+        </details>
+
+        <details className="border-t border-zinc-100">
+          <summary className="flex cursor-pointer list-none items-center justify-center gap-1 px-4 py-2 text-xs font-medium text-zinc-400 hover:text-ink">
+            Безопасность и доступ
+          </summary>
+          <div className="grid gap-4 px-4 pb-4 md:grid-cols-2">
+            <form action={updateEmailAction} className="space-y-3 rounded-lg border border-zinc-100 p-3">
+              <div>
+                <p className="text-sm font-semibold">Email</p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  {emailVerified ? "Почта подтверждена." : "Почта не подтверждена."} При смене email потребуется новое подтверждение.
+                </p>
+              </div>
+              {emailUpdated === "1" && <p className="rounded bg-emerald-50 px-3 py-2 text-xs text-emerald-800">Email изменен. Мы отправили письмо для подтверждения.</p>}
+              {emailUpdated === "same" && <p className="rounded bg-zinc-50 px-3 py-2 text-xs text-zinc-600">Этот email уже указан в профиле.</p>}
+              {emailError && <p className="rounded bg-red-50 px-3 py-2 text-xs text-red-700">{emailError === "exists" ? "Этот email уже занят." : emailError === "current" ? "Текущий пароль указан неверно." : "Не удалось изменить email."}</p>}
+              <input className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="email" type="email" defaultValue={dbUser.email ?? ""} placeholder="Новый email" required />
+              <input className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="currentPassword" type="password" placeholder="Текущий пароль" required />
+              <button className="w-full rounded-lg bg-zinc-900 py-2 text-xs font-semibold text-white" type="submit">Изменить email</button>
+            </form>
+            <form action={changePasswordAction} className="space-y-3 rounded-lg border border-zinc-100 p-3">
+              <div>
+                <p className="text-sm font-semibold">Пароль</p>
+                <p className="mt-1 text-xs text-zinc-500">Новый пароль должен быть не короче 6 символов.</p>
+              </div>
+              {passwordUpdated && <p className="rounded bg-emerald-50 px-3 py-2 text-xs text-emerald-800">Пароль обновлен.</p>}
+              {passwordError && <p className="rounded bg-red-50 px-3 py-2 text-xs text-red-700">{passwordError === "current" ? "Текущий пароль указан неверно." : "Пароли не совпадают или слишком короткие."}</p>}
+              <input className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="currentPassword" type="password" placeholder="Текущий пароль" required />
+              <input className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="password" type="password" placeholder="Новый пароль" minLength={6} required />
+              <input className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="passwordConfirm" type="password" placeholder="Повторите новый пароль" minLength={6} required />
+              <button className="w-full rounded-lg bg-hot py-2 text-xs font-semibold text-white" type="submit">Изменить пароль</button>
             </form>
           </div>
         </details>

@@ -33,6 +33,20 @@ export function verificationEmail(name: string, token: string) {
   };
 }
 
+export function passwordResetEmail(name: string, token: string) {
+  const link = `${SITE_URL}/auth/reset-password?token=${token}`;
+  return {
+    subject: "Сброс пароля — MyCamDesk",
+    html: emailLayout(`
+      <h2>Привет${name ? `, ${name}` : ""}!</h2>
+      <p>Вы запросили сброс пароля на MyCamDesk. Ссылка действует 30 минут.</p>
+      <a href="${link}" style="display:inline-block;background:#FF4D2E;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;margin:16px 0;">Задать новый пароль</a>
+      <p style="color:#888;font-size:13px;">Или скопируйте ссылку: ${link}</p>
+      <p style="color:#888;font-size:13px;">Если вы не запрашивали сброс пароля — просто проигнорируйте это письмо.</p>
+    `)
+  };
+}
+
 export function inviteReceivedEmail(resumeTitle: string, message: string, offeredPercent: number | null) {
   return {
     subject: "Новый инвайт на ваше резюме — MyCamDesk",
