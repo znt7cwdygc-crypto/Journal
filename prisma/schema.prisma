@@ -646,9 +646,13 @@ model Guide {
   h1          String
   description String
   intro       String
-  audience    String?
+  category    String?  // "Новичкам", "Деньги", "Безопасность", etc.
+  audience    String?  // "Для моделей без опыта"
+  quickAnswer String?  // short answer for featured snippet
   keywords    String[] // array of strings
   sections    String   // JSON string: [{title, body}]
+  checklist   String?  // JSON string: ["item1", "item2"]
+  mistakes    String?  // JSON string: ["mistake1", "mistake2"]
   faq         String   // JSON string: [{question, answer}]
   ctaLabel    String?
   ctaHref     String?

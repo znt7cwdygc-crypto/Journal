@@ -1,8 +1,25 @@
 import type { Guide } from "@prisma/client";
 import type { GuidePageData } from "@/components/seo-landing-page";
 
-/** Parse a Guide DB row into the shape used by SeoLandingPage */
-export function parseGuide(guide: Guide): GuidePageData {
+export type ParsedGuide = GuidePageData & {
+  category: string | null;
+  quickAnswer: string | null;
+  checklist: string[];
+  mistakes: string[];
+};
+
+function safeJsonArray(value: string | null | undefined): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Parse a Guide DB row into the shape used by guide pages */
+export function parseGuide(guide: Guide): ParsedGuide {
   return {
     kind: guide.kind,
     slug: guide.slug,
@@ -18,5 +35,9 @@ export function parseGuide(guide: Guide): GuidePageData {
     ctaLabel: guide.ctaLabel,
     ctaHref: guide.ctaHref,
     related: guide.related,
+    category: guide.category ?? null,
+    quickAnswer: guide.quickAnswer ?? null,
+    checklist: safeJsonArray(guide.checklist),
+    mistakes: safeJsonArray(guide.mistakes),
   };
 }
