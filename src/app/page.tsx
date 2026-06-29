@@ -191,6 +191,9 @@ export default async function HomePage() {
       </section>
 
       <AdBlock placement="home" />
+      <div className="xl:hidden">
+        <AdBlock placement="sidebar" />
+      </div>
 
       <section className="grid gap-3 md:grid-cols-2">
         <div className="content-card">
