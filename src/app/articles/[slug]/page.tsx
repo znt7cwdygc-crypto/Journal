@@ -191,13 +191,6 @@ export default async function ArticleDetailsPage({
           : null
       ])
     : [null, null];
-  const statPills = [
-    { label: "Просмотры", value: article.viewCount + 1, className: "bg-zinc-100 text-zinc-700" },
-    { label: "Нравится", value: likes, className: "bg-red-50 text-hot" },
-    { label: "Полезно", value: useful, className: "bg-teal-50 text-accent" },
-    { label: "Обсуждают", value: commentCount, className: "bg-sky-50 text-sky-700" },
-    { label: "Репосты", value: article.repostCount, className: "bg-yellow-50 text-amber-800" }
-  ];
 
   return (
     <article className="bg-white">
@@ -266,13 +259,12 @@ export default async function ArticleDetailsPage({
       </div>
       <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-tight">{article.title}</h1>
       <p className="mt-3 max-w-2xl text-lg leading-7 text-zinc-700">{article.summary}</p>
-      <div className="mt-5 flex flex-wrap gap-2 text-sm">
-        {statPills.map((pill) => (
-          <span key={pill.label} className={`rounded-full px-3 py-1 font-medium ${pill.className}`}>
-            {pill.label} {pill.value}
-          </span>
-        ))}
-        <span className="rounded-full bg-zinc-100 px-3 py-1 font-medium text-zinc-600">Рейтинг {avg}</span>
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-zinc-500">
+        <span>👁 {article.viewCount + 1}</span>
+        <span className="text-hot">❤ {likes}</span>
+        <span className="text-accent">✓ {useful}</span>
+        <span>💬 {commentCount}</span>
+        {article.repostCount > 0 && <span>↗ {article.repostCount}</span>}
       </div>
 
       {(searchParams?.reported || searchParams?.follow || searchParams?.topicFollow) && (
@@ -319,63 +311,64 @@ export default async function ArticleDetailsPage({
         </span>
       </Link>
 
-      <section className="mt-8 border-y border-zinc-100 py-5">
-        {session?.user ? (
+      {session?.user ? (
+        <section className="mt-6 space-y-3">
+          {/* Primary reactions - compact row */}
           <div className="flex flex-wrap gap-2">
+            <form action={rateArticleAction}>
+              <input type="hidden" name="articleId" value={article.id} />
+              <input type="hidden" name="value" value="5" />
+              <button className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition ${myRating === 5 ? "border-hot bg-hot text-white" : "border-zinc-200 text-zinc-700 hover:border-hot hover:text-hot"}`} type="submit">
+                ❤ Нравится{likes > 0 ? ` ${likes}` : ""}
+              </button>
+            </form>
+            <form action={rateArticleAction}>
+              <input type="hidden" name="articleId" value={article.id} />
+              <input type="hidden" name="value" value="4" />
+              <button className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition ${myRating === 4 ? "border-accent bg-accent text-white" : "border-zinc-200 text-zinc-700 hover:border-accent hover:text-accent"}`} type="submit">
+                ✓ Полезно{useful > 0 ? ` ${useful}` : ""}
+              </button>
+            </form>
+            <Link className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:border-sky-400 hover:text-sky-700" href={`${canonicalPath}#comments`}>
+              💬 {commentCount > 0 ? commentCount : "Обсудить"}
+            </Link>
+            <ShareArticleButton url={shareUrl} repostCount={article.repostCount} />
+          </div>
+          {/* Secondary actions - smaller, muted */}
+          <div className="flex flex-wrap items-center gap-3 text-xs">
             <form action={followAuthorAction}>
               <input type="hidden" name="authorId" value={article.createdById} />
               <input type="hidden" name="next" value={canonicalPath} />
-              <button className="rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white" type="submit">
-                {isFollowingAuthor ? "Отписаться от автора" : "Подписаться на автора"}
+              <button className="text-zinc-500 hover:text-ink" type="submit">
+                {isFollowingAuthor ? "Отписаться от автора" : "＋ Подписаться на автора"}
               </button>
             </form>
             {article.topic && (
               <form action={followTopicAction}>
                 <input type="hidden" name="topic" value={article.topic} />
                 <input type="hidden" name="next" value={canonicalPath} />
-                <button className="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-800" type="submit">
-                  {isFollowingTopic ? "Отписаться от рубрики" : "Подписаться на рубрику"}
+                <button className="text-zinc-500 hover:text-ink" type="submit">
+                  {isFollowingTopic ? "Отписаться от рубрики" : "＋ Подписаться на рубрику"}
                 </button>
               </form>
             )}
-            <form action={rateArticleAction}>
-              <input type="hidden" name="articleId" value={article.id} />
-              <input type="hidden" name="value" value="5" />
-              <button className={`rounded-lg px-4 py-2 text-sm font-semibold shadow-sm ${myRating === 5 ? "bg-hot text-white shadow-red-200" : "bg-red-50 text-hot hover:bg-red-100"}`} type="submit">
-                Нравится {likes}
-              </button>
-            </form>
-
-            <form action={rateArticleAction}>
-              <input type="hidden" name="articleId" value={article.id} />
-              <input type="hidden" name="value" value="4" />
-              <button className={`rounded-lg px-4 py-2 text-sm font-semibold shadow-sm ${myRating === 4 ? "bg-accent text-white shadow-teal-100" : "bg-teal-50 text-accent hover:bg-teal-100"}`} type="submit">
-                Полезно {useful}
-              </button>
-            </form>
-
-            <Link className="rounded-lg bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700 hover:bg-sky-100" href={`${canonicalPath}#comments`}>
-              Обсудить {commentCount}
-            </Link>
-
-            <ShareArticleButton url={shareUrl} repostCount={article.repostCount} />
             <ReportButton
               targetType="ARTICLE"
               targetId={article.id}
               next={canonicalPath}
-              buttonLabel="Пожаловаться"
-              buttonClassName="rounded-lg bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-700"
+              buttonLabel="Жалоба"
+              buttonClassName="text-zinc-400 hover:text-red-600 text-xs"
             />
           </div>
-        ) : (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-zinc-600">Войдите, чтобы поставить реакцию, обсудить материал или сделать репост.</p>
-            <Link href="/auth/signin" className="rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white">
-              Войти
-            </Link>
-          </div>
-        )}
-      </section>
+        </section>
+      ) : (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm">
+          <p className="text-zinc-500">Войдите, чтобы поставить реакцию или обсудить.</p>
+          <Link href="/auth/signin" className="rounded-full border border-ink px-3 py-1.5 text-sm font-medium text-ink hover:bg-ink hover:text-white">
+            Войти
+          </Link>
+        </div>
+      )}
 
       <div id="comments" className="mt-6 space-y-3 text-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
