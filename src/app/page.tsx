@@ -101,8 +101,9 @@ export default async function HomePage() {
     }),
     prisma.guide.findMany({
       where: { isPublished: true, showOnHome: true },
-      select: { path: true, title: true, description: true },
-      orderBy: { sortOrder: "asc" }
+      select: { path: true, title: true, description: true, category: true },
+      orderBy: { sortOrder: "asc" },
+      take: 8
     })
   ]);
 
@@ -337,11 +338,9 @@ export default async function HomePage() {
               href={landing.path}
               className="group flex flex-col rounded-lg border border-zinc-100 bg-zinc-50 p-3 transition hover:border-hot hover:bg-white hover:shadow-sm sm:p-4"
             >
-              {landing.description && (
-                <span className="w-fit rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-hot ring-1 ring-zinc-100 group-hover:ring-red-100 sm:px-2.5 sm:py-1 sm:text-[11px]">
-                  Гайд
-                </span>
-              )}
+              <span className="w-fit rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-hot ring-1 ring-zinc-100 group-hover:ring-red-100 sm:px-2.5 sm:py-1 sm:text-[11px]">
+                {landing.category || "Гайд"}
+              </span>
               <h3 className="mt-2 text-sm font-semibold leading-snug sm:mt-3">{landing.title}</h3>
               <p className="mt-1 flex-1 text-xs leading-5 text-zinc-600 line-clamp-3 sm:mt-2">{landing.description}</p>
               <span className="mt-2 text-xs font-semibold text-accent sm:mt-3">Читать →</span>
