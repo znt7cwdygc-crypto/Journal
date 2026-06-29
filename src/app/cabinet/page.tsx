@@ -350,16 +350,6 @@ export default async function CabinetPage({
           </div>
         </div>
 
-        {/* Quick actions — compact pills */}
-        <div className="no-scrollbar flex gap-2 overflow-x-auto p-3">
-          <a className="shrink-0 rounded-full bg-hot px-3 py-1.5 text-xs font-semibold text-white" href="/cabinet#blog">Написать</a>
-          <a className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-700" href="#resume">Резюме</a>
-          <a className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-700" href="#products">Товар</a>
-          {providerMode && <a className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-700" href="#vacancy">Вакансия</a>}
-          {providerMode && <a className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-700" href="#service">Услуга</a>}
-          {canPublishMatchProfile && <a className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-700" href="#match">Связка</a>}
-          <a className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-700" href="#materials">Мое</a>
-        </div>
       </section>
 
       <AdBlock placement="cabinet" />
