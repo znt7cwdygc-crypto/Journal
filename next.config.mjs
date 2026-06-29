@@ -7,7 +7,7 @@ const csp = [
   "form-action 'self'",
   "frame-ancestors 'none'",
   "object-src 'none'",
-  "img-src 'self' data: https:",
+  "img-src 'self' data: blob: https:",
   "style-src 'self' 'unsafe-inline'",
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   `connect-src 'self'${devConnectSrc}`,
@@ -15,7 +15,7 @@ const csp = [
 ].join("; ");
 
 const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host : null;
-const serverActionOrigins = ["localhost:3000", ...(siteOrigin ? [siteOrigin] : [])];
+const serverActionOrigins = ["localhost:3000", "localhost:3001", ...(siteOrigin ? [siteOrigin, `dev.${siteOrigin}`] : [])];
 
 const nextConfig = {
   experimental: {
