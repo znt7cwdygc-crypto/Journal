@@ -283,10 +283,52 @@ export default async function CabinetPage({
             <h1 className="truncate text-lg font-bold">{profileName}</h1>
             <p className="truncate text-xs text-zinc-500">{profileKindLabel} &bull; {accountModeLabel}</p>
           </div>
-          <a href="#profile" className="shrink-0 rounded-lg border border-zinc-200 p-2 text-zinc-400 hover:text-ink">
-            &#9881;&#65039;
-          </a>
         </div>
+
+        {/* Inline profile edit — toggle via details */}
+        <details key={updatedParam === "profile" || updatedParam === "publicProfile" ? "profile-closed" : "profile-open"} className="border-t border-zinc-100">
+          <summary className="flex cursor-pointer list-none items-center justify-center gap-1 px-4 py-2 text-xs font-medium text-zinc-400 hover:text-ink">
+            ⚙ Редактировать профиль
+          </summary>
+          <div className="space-y-3 px-4 pb-4">
+            <form action={updatePublicProfileAction} className="space-y-3">
+              <div className="flex items-center gap-4">
+                {dbUser.image ? (
+                  <img className="h-14 w-14 rounded-full object-cover" src={dbUser.image} alt="" />
+                ) : (
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-hot text-xl font-black text-white">
+                    {(dbUser.name || "U").slice(0, 1).toUpperCase()}
+                  </div>
+                )}
+                <label className="inline-flex cursor-pointer rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50">
+                  Загрузить фото
+                  <input type="file" name="avatarFile" accept="image/*" className="hidden" />
+                </label>
+              </div>
+              <input className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="name" defaultValue={dbUser.name ?? ""} placeholder="Имя или псевдоним" required />
+              <textarea className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="profileBio" defaultValue={dbUser.profileBio ?? ""} placeholder="Пару слов о себе" rows={2} />
+              <button className="w-full rounded-lg bg-hot py-2 text-xs font-semibold text-white" type="submit">Сохранить профиль</button>
+            </form>
+            <form action={updateProfileSettingsAction} className="grid grid-cols-2 gap-2 border-t border-zinc-100 pt-3">
+              <select className="rounded-lg border border-zinc-200 px-2 py-1.5 text-xs" name="accountMode" defaultValue={dbUser.accountMode}>
+                <option value="CONSUMER">Ищу работу</option>
+                <option value="PROVIDER">Предлагаю услуги</option>
+                <option value="BOTH">Ищу и предлагаю</option>
+              </select>
+              <select className="rounded-lg border border-zinc-200 px-2 py-1.5 text-xs" name="profileKind" defaultValue={dbUser.profileKind}>
+                <option value="MODEL">Модель</option>
+                <option value="OPERATOR">Оператор</option>
+                <option value="STUDIO">Студия</option>
+                <option value="AGENCY">Агентство</option>
+                <option value="EXPERT">Эксперт</option>
+                <option value="COACH">Коуч</option>
+                <option value="LAWYER">Юрист</option>
+                <option value="OTHER">Другое</option>
+              </select>
+              <button className="col-span-2 rounded-lg bg-zinc-900 py-1.5 text-xs font-semibold text-white" type="submit">Обновить режим</button>
+            </form>
+          </div>
+        </details>
 
         {/* Stats + Balance in one row */}
         <div className="grid grid-cols-4 gap-px border-t border-zinc-100 bg-zinc-100">
@@ -317,7 +359,6 @@ export default async function CabinetPage({
           {providerMode && <a className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-700" href="#service">Услуга</a>}
           {canPublishMatchProfile && <a className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-700" href="#match">Связка</a>}
           <a className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-700" href="#materials">Мое</a>
-          <a className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-semibold text-zinc-700" href="#profile">Профиль</a>
         </div>
       </section>
 
@@ -422,70 +463,12 @@ export default async function CabinetPage({
         </section>
       )}
 
-      <details id="profile" data-cabinet-panel className="group rounded-lg bg-white shadow-sm">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
-          <div>
-            <h2 className="font-semibold">Профиль</h2>
-            <p className="mt-1 text-xs text-zinc-500">Аватар, имя, описание, тип и режим</p>
-          </div>
-          <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-semibold text-zinc-600 group-open:bg-zinc-900 group-open:text-white">&#9881;</span>
-        </summary>
-        <div className="border-t border-zinc-100 p-4 space-y-4">
-          <form action={updatePublicProfileAction} className="space-y-3">
-            {/* Avatar upload */}
-            <div className="flex items-center gap-4">
-              {dbUser.image ? (
-                <img className="h-16 w-16 rounded-full object-cover" src={dbUser.image} alt="" />
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-hot text-2xl font-black text-white">
-                  {(dbUser.name || "U").slice(0, 1).toUpperCase()}
-                </div>
-              )}
-              <div>
-                <label className="inline-flex cursor-pointer rounded-lg border border-zinc-200 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50">
-                  Загрузить фото
-                  <input type="file" name="avatarFile" accept="image/*" className="hidden" />
-                </label>
-                <p className="mt-1 text-xs text-zinc-400">JPG, PNG или WebP до 2 МБ</p>
-              </div>
-            </div>
-            <input className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="name" defaultValue={dbUser.name ?? ""} placeholder="Имя или псевдоним" required />
-            <textarea className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="profileBio" defaultValue={dbUser.profileBio ?? ""} placeholder="Пару слов о себе" rows={3} />
-            <button className="w-full rounded-lg bg-hot py-2 text-sm font-semibold text-white" type="submit">Сохранить</button>
-          </form>
-
-          <form action={updateProfileSettingsAction} className="space-y-3 border-t border-zinc-100 pt-4">
-            <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">Тип и режим</p>
-            <div className="grid grid-cols-2 gap-2">
-              <select className="rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="accountMode" defaultValue={dbUser.accountMode}>
-                <option value="CONSUMER">Ищу работу</option>
-                <option value="PROVIDER">Предлагаю услуги</option>
-                <option value="BOTH">Ищу и предлагаю</option>
-              </select>
-              <select className="rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="profileKind" defaultValue={dbUser.profileKind}>
-                <option value="MODEL">Модель</option>
-                <option value="OPERATOR">Оператор</option>
-                <option value="STUDIO">Студия</option>
-                <option value="AGENCY">Агентство</option>
-                <option value="EXPERT">Эксперт</option>
-                <option value="COACH">Коуч</option>
-                <option value="LAWYER">Юрист</option>
-                <option value="OTHER">Другое</option>
-              </select>
-            </div>
-            <button className="w-full rounded-lg bg-zinc-900 py-2 text-sm font-semibold text-white" type="submit">Обновить режим</button>
-          </form>
-        </div>
-      </details>
 
       {!providerMode && (
         <section className="rounded-lg border border-sky-200 bg-sky-50 p-4">
           <h2 className="font-medium text-sky-950">Вакансии и услуги скрыты</h2>
-          <p className="mt-1 text-sm leading-5 text-sky-900">Чтобы публиковать вакансии и услуги, переключите режим в блоке профиля.</p>
+          <p className="mt-1 text-sm leading-5 text-sky-900">Чтобы публиковать вакансии и услуги, переключите режим вверху страницы (⚙ Редактировать профиль).</p>
           <div className="mt-3 flex flex-wrap gap-2 text-sm">
-            <a className="rounded-lg bg-sky px-3 py-2 font-medium text-white" href="#profile">
-              Изменить режим
-            </a>
             <a className="rounded-lg border border-sky-200 bg-white px-3 py-2 font-medium text-sky-900" href="/articles">
               Читать ленту
             </a>
