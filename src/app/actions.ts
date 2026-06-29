@@ -1,6 +1,6 @@
 "use server";
 
-import { hash } from "bcryptjs";
+import { compare, hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AccountMode, BalanceTxType, ContentStatus, InviteStatus, ListingType, PaymentStatus, PaymentType, Prisma, ProductCondition, ProductDelivery, ProfileKind, UserRole } from "@prisma/client";
@@ -16,7 +16,7 @@ import { articleSeoPath } from "@/lib/seo-url";
 import { articleTopic } from "@/lib/topics";
 import { isUploadedFile, saveUploadedImage } from "@/lib/uploaded-image";
 import { cleanMultiline, cleanNumber, cleanText, makeSlug, optionalUrl, requireMultiline, requireText } from "@/lib/validation";
-import { sendEmail, verificationEmail, inviteReceivedEmail, inviteAcceptedEmail, inviteDeclinedEmail, contactsExchangedModelEmail, balanceTopUpEmail } from "@/lib/email";
+import { sendEmail, verificationEmail, passwordResetEmail, inviteReceivedEmail, inviteAcceptedEmail, inviteDeclinedEmail, contactsExchangedModelEmail, balanceTopUpEmail } from "@/lib/email";
 
 function ensureAdult(formData: FormData) {
   if (formData.get("adult") !== "on") throw new Error("Нужно подтвердить 18+");
@@ -25,6 +25,35 @@ function ensureAdult(formData: FormData) {
 async function logAudit(userId: string, action: string, targetType: string, targetId: string, details?: string) {
   await prisma.auditLog.create({ data: { userId, action, targetType, targetId, details } });
 }
+
+async function createEmailVerificationToken(email: string) {
+  const token = crypto.randomUUID();
+  await prisma.verificationToken.deleteMany({ where: { identifier: email } });
+  await prisma.verificationToken.create({
+    data: {
+      identifier: email,
+      token,
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000)
+    }
+  });
+  return token;
+}
+
+async function sendVerificationEmail(email: string, name?: string | null) {
+  const token = await createEmailVerificationToken(email);
+  const vEmail = verificationEmail(name || "", token);
+  await sendEmail(email, vEmail.subject, vEmail.html);
+}
+
+async function requireVerifiedEmail(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { emailVerified: true }
+  });
+  if (!user?.emailVerified) redirect("/cabinet?verifyRequired=1");
+}
+
+const passwordResetIdentifier = (email: string) => `password-reset:${email}`;
 
 export async function registerAction(formData: FormData) {
   const email = cleanText(formData.get("email"), 255).toLowerCase();
@@ -51,17 +80,7 @@ export async function registerAction(formData: FormData) {
     }
   });
 
-  // Send verification email
-  const token = crypto.randomUUID();
-  await prisma.verificationToken.create({
-    data: {
-      identifier: email,
-      token,
-      expires: new Date(Date.now() + 24 * 60 * 60 * 1000)
-    }
-  });
-  const vEmail = verificationEmail(name, token);
-  sendEmail(email, vEmail.subject, vEmail.html);
+  await sendVerificationEmail(email, name);
 
   await signIn("credentials", { email, password, redirectTo: "/cabinet" });
 }
@@ -87,6 +106,125 @@ export async function loginAction(formData: FormData) {
 
 export async function logoutAction() {
   await signOut({ redirectTo: "/" });
+}
+
+export async function resendVerificationEmailAction() {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { email: true, name: true, emailVerified: true }
+  });
+  if (!user?.email) redirect("/cabinet?verifyRequired=1");
+  if (!user.emailVerified) {
+    await sendVerificationEmail(user.email, user.name);
+  }
+
+  redirect("/cabinet?verifySent=1");
+}
+
+export async function requestPasswordResetAction(formData: FormData) {
+  const email = cleanText(formData.get("email"), 255).toLowerCase();
+  if (email) {
+    const user = await prisma.user.findUnique({ where: { email }, select: { email: true, name: true, passwordHash: true } });
+    if (user?.email && user.passwordHash) {
+      const token = crypto.randomUUID();
+      const identifier = passwordResetIdentifier(user.email);
+      await prisma.verificationToken.deleteMany({ where: { identifier } });
+      await prisma.verificationToken.create({
+        data: {
+          identifier,
+          token,
+          expires: new Date(Date.now() + 30 * 60 * 1000)
+        }
+      });
+      const emailContent = passwordResetEmail(user.name || "", token);
+      await sendEmail(user.email, emailContent.subject, emailContent.html);
+    }
+  }
+
+  redirect("/auth/forgot-password?sent=1");
+}
+
+export async function resetPasswordAction(formData: FormData) {
+  const token = cleanText(formData.get("token"), 120);
+  const password = String(formData.get("password") ?? "");
+  const passwordConfirm = String(formData.get("passwordConfirm") ?? "");
+
+  if (!token) redirect("/auth/reset-password?error=token");
+  if (password.length < 6 || password !== passwordConfirm) redirect(`/auth/reset-password?token=${encodeURIComponent(token)}&error=password`);
+
+  const record = await prisma.verificationToken.findUnique({ where: { token } });
+  if (!record || !record.identifier.startsWith("password-reset:")) redirect("/auth/reset-password?error=token");
+  if (record.expires < new Date()) {
+    await prisma.verificationToken.delete({ where: { token } }).catch(() => null);
+    redirect("/auth/reset-password?error=expired");
+  }
+
+  const email = record.identifier.replace("password-reset:", "");
+  await prisma.user.update({
+    where: { email },
+    data: { passwordHash: await hash(password, 10) }
+  });
+  await prisma.verificationToken.delete({ where: { token } }).catch(() => null);
+
+  redirect("/auth/signin?passwordReset=1");
+}
+
+export async function changePasswordAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const currentPassword = String(formData.get("currentPassword") ?? "");
+  const password = String(formData.get("password") ?? "");
+  const passwordConfirm = String(formData.get("passwordConfirm") ?? "");
+
+  if (password.length < 6 || password !== passwordConfirm) redirect("/cabinet?passwordError=invalid");
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { passwordHash: true } });
+  if (!user?.passwordHash) redirect("/cabinet?passwordError=invalid");
+
+  const valid = await compare(currentPassword, user.passwordHash);
+  if (!valid) redirect("/cabinet?passwordError=current");
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { passwordHash: await hash(password, 10) }
+  });
+
+  redirect("/cabinet?passwordUpdated=1");
+}
+
+export async function updateEmailAction(formData: FormData) {
+  const session = await auth();
+  if (!session?.user) redirect("/auth/signin");
+
+  const email = cleanText(formData.get("email"), 255).toLowerCase();
+  const currentPassword = String(formData.get("currentPassword") ?? "");
+  if (!email) redirect("/cabinet?emailError=invalid");
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, email: true, name: true, passwordHash: true }
+  });
+  if (!user?.passwordHash) redirect("/cabinet?emailError=invalid");
+
+  const valid = await compare(currentPassword, user.passwordHash);
+  if (!valid) redirect("/cabinet?emailError=current");
+
+  if (user.email === email) redirect("/cabinet?emailUpdated=same");
+
+  const existing = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  if (existing && existing.id !== user.id) redirect("/cabinet?emailError=exists");
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { email, emailVerified: null }
+  });
+  await sendVerificationEmail(email, user.name);
+
+  redirect("/cabinet?emailUpdated=1");
 }
 
 function normalizeAccountMode(value: string): AccountMode {
@@ -454,6 +592,7 @@ export async function updatePublicProfileAction(formData: FormData) {
 export async function addArticleCommentAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
+  await requireVerifiedEmail(session.user.id);
 
   const articleId = String(formData.get("articleId") ?? "");
   const parentId = cleanText(formData.get("parentId"), 120) || null;
@@ -488,6 +627,7 @@ export async function likeCommentAction(formData: FormData) {
 export async function rateArticleAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
+  await requireVerifiedEmail(session.user.id);
 
   const articleId = String(formData.get("articleId") ?? "");
   const value = Number(formData.get("value") ?? 0);
@@ -584,10 +724,11 @@ async function requirePaidUser() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, email: true, name: true, role: true, accountMode: true }
+    select: { id: true, email: true, name: true, role: true, accountMode: true, emailVerified: true }
   });
 
   if (!user) redirect("/auth/signin");
+  if (!user.emailVerified) redirect("/cabinet?verifyRequired=1");
   if (!canProvide(user.accountMode) && user.role !== "ADMIN") throw new Error("Включите режим поставщика услуг");
   return user;
 }
@@ -595,6 +736,7 @@ async function requirePaidUser() {
 export async function submitBlogArticleAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
+  await requireVerifiedEmail(session.user.id);
 
   const blockCheck = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedPermanently: true, blockedUntil: true } });
   if (blockCheck && isUserBlocked(blockCheck)) throw new Error("Ваш аккаунт заблокирован. Публикация контента недоступна.");
@@ -701,6 +843,7 @@ export async function saveBlogDraftAction(formData: FormData) {
 export async function updateBlogArticleAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
+  await requireVerifiedEmail(session.user.id);
 
   const articleId = cleanText(formData.get("draftId"), 120);
   const existing = await prisma.article.findFirst({ where: { id: articleId, createdById: session.user.id } });
@@ -741,6 +884,7 @@ export async function toggleArticleVisibilityAction(formData: FormData) {
   const articleId = cleanText(formData.get("articleId"), 120);
   const article = await prisma.article.findFirst({ where: { id: articleId, createdById: session.user.id } });
   if (!article) throw new Error("Статья не найдена");
+  if (article.status !== ContentStatus.PUBLISHED) await requireVerifiedEmail(session.user.id);
 
   await prisma.article.update({
     where: { id: article.id },
@@ -895,6 +1039,7 @@ export async function toggleListingVisibilityAction(formData: FormData) {
   const listingId = cleanText(formData.get("listingId"), 120);
   const listing = await prisma.listing.findFirst({ where: { id: listingId, createdById: session.user.id } });
   if (!listing) throw new Error("Размещение не найдено");
+  if (listing.status !== ContentStatus.PUBLISHED) await requireVerifiedEmail(session.user.id);
 
   await prisma.listing.update({
     where: { id: listing.id },
@@ -914,6 +1059,7 @@ export async function toggleListingVisibilityAction(formData: FormData) {
 export async function renewListingAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
+  await requireVerifiedEmail(session.user.id);
 
   const listingId = cleanText(formData.get("listingId"), 120);
   const listing = await prisma.listing.findFirst({ where: { id: listingId, createdById: session.user.id } });
@@ -950,6 +1096,7 @@ export async function deleteListingAction(formData: FormData) {
 export async function submitProductAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
+  await requireVerifiedEmail(session.user.id);
 
   const blockCheck = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedPermanently: true, blockedUntil: true } });
   if (blockCheck && isUserBlocked(blockCheck)) throw new Error("Ваш аккаунт заблокирован. Публикация контента недоступна.");
@@ -1054,6 +1201,7 @@ export async function toggleProductVisibilityAction(formData: FormData) {
   const productId = cleanText(formData.get("productId"), 120);
   const product = await prisma.product.findFirst({ where: { id: productId, createdById: session.user.id } });
   if (!product) throw new Error("Товар не найден");
+  if (product.status !== ContentStatus.PUBLISHED) await requireVerifiedEmail(session.user.id);
 
   await prisma.product.update({
     where: { id: product.id },
@@ -1072,6 +1220,7 @@ export async function toggleProductVisibilityAction(formData: FormData) {
 export async function renewProductAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
+  await requireVerifiedEmail(session.user.id);
 
   const productId = cleanText(formData.get("productId"), 120);
   const product = await prisma.product.findFirst({ where: { id: productId, createdById: session.user.id } });
@@ -1241,6 +1390,7 @@ export async function saveMatchProfileAction(formData: FormData) {
 export async function addListingReviewAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
+  await requireVerifiedEmail(session.user.id);
 
   const listingId = cleanText(formData.get("listingId"), 120);
   const parentId = cleanText(formData.get("parentId"), 120) || null;
@@ -1274,6 +1424,7 @@ export async function addListingReviewAction(formData: FormData) {
 export async function updateOwnListingReviewAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
+  await requireVerifiedEmail(session.user.id);
 
   const reviewId = cleanText(formData.get("reviewId"), 120);
   const body = requireMultiline(formData.get("body"), "отзыв", 1600);
@@ -1647,6 +1798,7 @@ function buildModelResumeQuizBio(formData: FormData) {
 export async function createResumeAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
+  await requireVerifiedEmail(session.user.id);
 
   const blockCheck = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedPermanently: true, blockedUntil: true } });
   if (blockCheck && isUserBlocked(blockCheck)) throw new Error("Ваш аккаунт заблокирован. Публикация контента недоступна.");
@@ -1698,6 +1850,7 @@ export async function createResumeAction(formData: FormData) {
 export async function renewResumeAction() {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
+  await requireVerifiedEmail(session.user.id);
 
   const resume = await prisma.resume.findUnique({ where: { userId: session.user.id } });
   if (!resume) throw new Error("Резюме не найдено");
@@ -1716,6 +1869,7 @@ export async function renewResumeAction() {
 export async function submitMatchProfileAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
+  await requireVerifiedEmail(session.user.id);
 
   const blockCheck = await prisma.user.findUnique({ where: { id: session.user.id }, select: { blockedPermanently: true, blockedUntil: true } });
   if (blockCheck && isUserBlocked(blockCheck)) throw new Error("Ваш аккаунт заблокирован. Публикация контента недоступна.");
@@ -1783,6 +1937,7 @@ export async function submitMatchProfileAction(formData: FormData) {
 export async function renewMatchProfileAction() {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
+  await requireVerifiedEmail(session.user.id);
 
   const profile = await prisma.matchProfile.findUnique({ where: { userId: session.user.id } });
   if (!profile) throw new Error("Анкета не найдена");

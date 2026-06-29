@@ -12,7 +12,7 @@ export default async function VerifyEmailPage({ searchParams }: { searchParams: 
 
   const record = await prisma.verificationToken.findUnique({ where: { token } });
 
-  if (!record) {
+  if (!record || record.identifier.startsWith("password-reset:")) {
     return <VerifyResult success={false} message="Ссылка недействительна или уже использована." />;
   }
 
