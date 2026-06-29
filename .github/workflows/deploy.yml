@@ -16,24 +16,31 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           command_timeout: 15m
           script: |
-            # Zero-downtime deploy: build in temp dir, swap instantly
+            # Zero-downtime deploy
             DEPLOY_DIR="/opt/site-next"
             LIVE_DIR="/opt/site"
             OLD_DIR="/opt/site-old"
+            ENV_FILE="/opt/env.production"
 
-            # 1. Clone fresh into temp dir
+            # 0. Ensure env file exists in safe location
+            if [ ! -f "$ENV_FILE" ]; then
+              cp "$LIVE_DIR/.env.local" "$ENV_FILE" 2>/dev/null || true
+            fi
+
+            # 1. Clone fresh
             rm -rf "$DEPLOY_DIR"
             git clone --depth 1 https://github.com/znt7cwdygc-crypto/Journal.git "$DEPLOY_DIR"
-            cp "$LIVE_DIR/.env.local" "$DEPLOY_DIR/.env.local"
+            cp "$ENV_FILE" "$DEPLOY_DIR/.env.local"
 
-            # 2. Build in temp dir (site stays live)
+            # 2. Build (site stays live)
             cd "$DEPLOY_DIR"
             npm install
             npx prisma generate
+            DATABASE_URL="postgresql://journalapp:JrnL-db-2026-secure@localhost:5432/journaldb" npx prisma db push --accept-data-loss 2>&1 | tail -1
             npm run build
             cp -r .next/static /var/www/static/_next/
 
-            # 3. Swap dirs instantly (< 1 second downtime)
+            # 3. Swap instantly
             rm -rf "$OLD_DIR"
             mv "$LIVE_DIR" "$OLD_DIR"
             mv "$DEPLOY_DIR" "$LIVE_DIR"
@@ -44,7 +51,6 @@ jobs:
             NODE_ENV=production PORT=3000 pm2 start node --name site -- node_modules/.bin/next start -p 3000
             pm2 save
 
-            # 5. Cleanup old version
+            # 5. Cleanup
             rm -rf "$OLD_DIR"
-
-            echo "Zero-downtime deploy done: $(date)"
+            echo "Deploy done: $(date)"
