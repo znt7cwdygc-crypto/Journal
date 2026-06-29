@@ -45,12 +45,6 @@ const editorialCollections = [
     href: "/articles?sort=popular",
     label: "Выбор",
     text: "Материалы, которые чаще читают, обсуждают и сохраняют участники сообщества."
-  },
-  {
-    title: "Обсуждаемое",
-    href: "/articles?sort=discussed",
-    label: "Дискуссии",
-    text: "Темы, где уже есть вопросы, мнения и живой опыт других пользователей."
   }
 ];
 
@@ -276,15 +270,15 @@ export default async function HomePage() {
           </div>
           <Link href="/articles" className="text-sm font-medium text-accent">Вся лента</Link>
         </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-4 grid gap-3 grid-cols-2 lg:grid-cols-4">
           {editorialCollections.map((item) => (
-            <Link key={item.title} href={item.href} className="group flex min-h-[150px] flex-col rounded-lg border border-zinc-100 bg-zinc-50 p-4 transition hover:border-hot hover:bg-white hover:shadow-sm">
-              <span className="w-fit rounded-full bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-hot ring-1 ring-zinc-100 group-hover:ring-red-100">
+            <Link key={item.title} href={item.href} className="group flex flex-col rounded-lg border border-zinc-100 bg-zinc-50 p-3 transition hover:border-hot hover:bg-white hover:shadow-sm sm:p-4">
+              <span className="w-fit rounded-full bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-hot ring-1 ring-zinc-100 group-hover:ring-red-100 sm:px-2.5 sm:py-1 sm:text-[11px]">
                 {item.label}
               </span>
-              <h3 className="mt-4 font-semibold leading-snug">{item.title}</h3>
-              <p className="mt-2 flex-1 text-xs leading-5 text-zinc-600">{item.text}</p>
-              <span className="mt-3 text-xs font-semibold text-accent">Открыть подборку</span>
+              <h3 className="mt-2 text-sm font-semibold leading-snug sm:mt-3">{item.title}</h3>
+              <p className="mt-1 flex-1 text-xs leading-5 text-zinc-600 line-clamp-3 sm:mt-2 sm:line-clamp-none">{item.text}</p>
+              <span className="mt-2 text-xs font-semibold text-accent sm:mt-3">Открыть подборку</span>
             </Link>
           ))}
         </div>
