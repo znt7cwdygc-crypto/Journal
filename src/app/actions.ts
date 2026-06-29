@@ -383,13 +383,13 @@ export async function updatePublicProfileAction(formData: FormData) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
 
-  const image = optionalUrl(formData.get("image"));
+  const avatarUrl = await saveUploadedImage(formData.get("avatarFile"), `avatar-${session.user.id}`);
 
   await prisma.user.update({
     where: { id: session.user.id },
     data: {
       name: requireText(formData.get("name"), "имя", 120),
-      image,
+      ...(avatarUrl ? { image: avatarUrl } : {}),
       profileBio: cleanMultiline(formData.get("profileBio"), 1200) || null
     }
   });
