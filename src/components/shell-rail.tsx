@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getAdvertisementForPlacement } from "@/lib/ads";
 import { prisma } from "@/lib/prisma";
-import { serviceTopic } from "@/lib/topics";
+
 
 type TopicItem = {
   label: string;
@@ -35,76 +35,28 @@ function addQuery(items: QueryItem[], item: QueryItem | null) {
   items.push(item);
 }
 
-function structuredValue(text: string, label: string) {
-  const line = text.split("\n").find((item) => item.trim().toLowerCase().startsWith(`${label.toLowerCase()}:`));
-  return line ? line.slice(line.indexOf(":") + 1).trim() : "";
-}
-
-function serviceCategory(title: string, description: string) {
-  return structuredValue(description, "Категория") || serviceTopic(title, description);
-}
 
 async function getRailData() {
-  const now = new Date();
-  const [
-    articleTopics,
-    vacancyCities,
-    serviceCategories,
-    productCategories,
-    resumeCities,
-    matchProfiles,
-    popularArticles
-  ] = await Promise.all([
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const [articleTopics, topSearches, topViewed] = await Promise.all([
     prisma.article.groupBy({
       by: ["topic"],
       where: { status: "PUBLISHED", topic: { not: null } },
       _count: { _all: true }
     }),
-    prisma.listing.groupBy({
-      by: ["city"],
-      where: {
-        type: "VACANCY",
-        status: "PUBLISHED",
-        city: { not: null },
-        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }]
-      },
-      _count: { _all: true }
-    }),
-    prisma.listing.findMany({
-      where: {
-        type: "SERVICE",
-        status: "PUBLISHED",
-        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }]
-      },
-      select: { title: true, description: true, viewCount: true, responseCount: true },
-      orderBy: [{ responseCount: "desc" }, { viewCount: "desc" }],
-      take: 12
-    }),
-    prisma.product.groupBy({
-      by: ["category"],
-      where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
-      _count: { _all: true }
-    }),
-    prisma.resume.groupBy({
-      by: ["city"],
-      where: {
-        isPublic: true,
-        hiddenByInactivity: false,
-        city: { not: null },
-        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }]
-      },
-      _count: { _all: true }
-    }),
-    prisma.matchProfile.groupBy({
-      by: ["lookingFor"],
-      where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
-      _count: { _all: true }
+    prisma.searchQuery.groupBy({
+      by: ["query"],
+      where: { createdAt: { gte: weekAgo } },
+      _count: { query: true },
+      orderBy: { _count: { query: "desc" } },
+      take: 5
     }),
     prisma.article.findMany({
       where: { status: "PUBLISHED" },
-      select: { topic: true, viewCount: true, responseCount: true },
-      orderBy: [{ viewCount: "desc" }, { responseCount: "desc" }],
-      take: 6
+      select: { id: true, title: true, viewCount: true, topic: true },
+      orderBy: { viewCount: "desc" },
+      take: 5
     })
   ]);
 
@@ -119,70 +71,21 @@ async function getRailData() {
 
   const queries: QueryItem[] = [];
 
-  for (const city of vacancyCities.sort((a, b) => b._count._all - a._count._all).slice(0, 3)) {
-    if (!city.city) continue;
-    addQuery(queries, {
-      label: `Вакансии ${city.city}`,
-      href: `/vacancies?city=${encodeURIComponent(city.city)}`,
-      meta: `${city._count._all} объявл.`,
-      score: city._count._all * 20
+  for (const search of topSearches) {
+    queries.push({
+      label: search.query,
+      href: `/search?q=${encodeURIComponent(search.query)}`,
+      meta: `${search._count.query} поисков`,
+      score: search._count.query * 100
     });
   }
 
-  const serviceHits = serviceCategories.reduce<Record<string, { count: number; views: number }>>((acc, item) => {
-    const category = serviceCategory(item.title, item.description);
-    acc[category] = acc[category] || { count: 0, views: 0 };
-    acc[category].count += 1;
-    acc[category].views += item.viewCount + item.responseCount * 3;
-    return acc;
-  }, {});
-
-  for (const [category, stats] of Object.entries(serviceHits)) {
+  for (const article of topViewed) {
     addQuery(queries, {
-      label: category,
-      href: `/services?category=${encodeURIComponent(category)}`,
-      meta: `${stats.count} услуг`,
-      score: stats.views + stats.count * 10
-    });
-  }
-
-  for (const category of productCategories.sort((a, b) => b._count._all - a._count._all).slice(0, 3)) {
-    addQuery(queries, {
-      label: `Товары: ${category.category}`,
-      href: `/products?category=${encodeURIComponent(category.category)}`,
-      meta: `${category._count._all} шт.`,
-      score: category._count._all * 12
-    });
-  }
-
-  for (const city of resumeCities.sort((a, b) => b._count._all - a._count._all).slice(0, 3)) {
-    if (!city.city) continue;
-    addQuery(queries, {
-      label: `Резюме ${city.city}`,
-      href: `/resumes?city=${encodeURIComponent(city.city)}`,
-      meta: `${city._count._all} анкет`,
-      score: city._count._all * 14
-    });
-  }
-
-  for (const item of matchProfiles.sort((a, b) => b._count._all - a._count._all).slice(0, 2)) {
-    const label = item.lookingFor === "OPERATOR" ? "Модели ищут операторов" : item.lookingFor === "MODEL" ? "Операторы ищут моделей" : "Связки модель-оператор";
-    const lookingFor = item.lookingFor === "OPERATOR" ? "OPERATOR" : item.lookingFor === "MODEL" ? "MODEL" : "";
-    addQuery(queries, {
-      label,
-      href: lookingFor ? `/model-operator?lookingFor=${lookingFor}` : "/model-operator",
-      meta: `${item._count._all} анкет`,
-      score: item._count._all * 16
-    });
-  }
-
-  for (const article of popularArticles) {
-    if (!article.topic) continue;
-    addQuery(queries, {
-      label: `Статьи: ${article.topic}`,
-      href: `/articles?topic=${encodeURIComponent(article.topic)}`,
+      label: article.title.length > 40 ? article.title.slice(0, 40) + "…" : article.title,
+      href: `/articles?topic=${encodeURIComponent(article.topic || "")}`,
       meta: `${article.viewCount} просмотров`,
-      score: article.viewCount + article.responseCount * 5
+      score: article.viewCount
     });
   }
 

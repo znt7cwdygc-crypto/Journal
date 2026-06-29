@@ -675,3 +675,13 @@ model UsefulLink {
 
   @@index([isPublished, sortOrder])
 }
+
+model SearchQuery {
+  id        String   @id @default(cuid())
+  query     String
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([query, createdAt])
+  @@index([createdAt])
+}

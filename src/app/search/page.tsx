@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 import { articleSeoPath, listingSeoPath, productSeoPath, resumeSeoPath } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
@@ -18,7 +19,12 @@ function normalizeQuery(value: string | undefined) {
 
 export default async function SearchPage({ searchParams }: { searchParams?: { q?: string } }) {
   const q = normalizeQuery(searchParams?.q);
+  const session = await auth();
   const now = new Date();
+
+  if (q) {
+    prisma.searchQuery.create({ data: { query: q, userId: session?.user?.id } }).catch(() => {});
+  }
 
   const [articles, authors, listings, resumes, products, guides] = q
     ? await Promise.all([
