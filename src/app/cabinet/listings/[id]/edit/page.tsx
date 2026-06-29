@@ -59,7 +59,26 @@ function listingInitialValues(listing: {
     experience: data["Опыт"],
     portfolioUrl: data["Портфолио"],
     deliveryTime: data["Срок"],
-    availability: data["Доступность"]
+    availability: data["Доступность"],
+    companyName: data["Компания"],
+    employerType: data["Работодатель"],
+    district: data["Район"],
+    contactPerson: data["Контактное лицо"],
+    website: data["Сайт"],
+    audience: data["Для кого"],
+    formatService: data["Формат оказания"],
+    duration: data["Срок выполнения"],
+    guarantee: data["Гарантии"],
+    payFormat: data["Формат оплаты"],
+    payMethods: data["Способ оплаты"],
+    prepay: data["Предоплата"],
+    minOrder: data["Мин. объём заказа"],
+    freeConsultation: data["Бесплатная консультация"],
+    discounts: data["Скидки"],
+    providerType: data["Тип исполнителя"],
+    providerExp: data["Опыт"],
+    portfolio: data["Портфолио"],
+    aboutProvider: data["Об исполнителе"]
   };
 }
 

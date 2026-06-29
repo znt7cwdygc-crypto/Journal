@@ -197,18 +197,67 @@ function buildListingDescription(formData: FormData, type: ListingType, baseDesc
 
   if (type === ListingType.VACANCY && template === "vacancy-specialist-v1") {
     const vacancyRole = requireText(formData.get("vacancyRole"), "роль", 120);
-    const forbiddenText = vacancyRole;
-    if (forbiddenModelVacancyPattern.test(forbiddenText)) throw new Error("Вакансии для моделей здесь нельзя размещать. Используйте резюме моделей и другие разделы.");
+    if (forbiddenModelVacancyPattern.test(vacancyRole)) throw new Error("Вакансии для моделей здесь нельзя размещать. Используйте резюме моделей и другие разделы.");
+
+    const schedule = cleanText(formData.get("schedule"), 240);
+    const shiftScheme = cleanText(formData.get("shiftScheme"), 80);
+    const shiftLength = cleanText(formData.get("shiftLength"), 40);
+    const workTime = cleanText(formData.get("workTime"), 200);
+    const weekends = cleanText(formData.get("weekends"), 80);
+    const training = cleanText(formData.get("training"), 120);
+    const provided = cleanText(formData.get("provided"), 300);
+    const bonuses = cleanText(formData.get("bonuses"), 500);
+    const careerGrowth = cleanText(formData.get("careerGrowth"), 120);
+    const penaltySystem = cleanText(formData.get("penaltySystem"), 120);
+    const additionalConditions = cleanMultiline(formData.get("additionalConditions"), 1200);
+    const expReq = cleanText(formData.get("expReq"), 80);
+    const expReqImp = cleanText(formData.get("expReqImportance"), 20);
+    const langReq = cleanText(formData.get("langReq"), 200);
+    const langReqImp = cleanText(formData.get("langReqImportance"), 20);
+    const genderReq = cleanText(formData.get("genderReq"), 40);
+    const ageReq = cleanText(formData.get("ageReq"), 40);
+    const eduReq = cleanText(formData.get("eduReq"), 40);
+    const keySkills = cleanMultiline(formData.get("keySkills"), 1000);
+    const contactPerson = cleanText(formData.get("contactPerson"), 120);
+    const website = cleanText(formData.get("website"), 300);
+    const companyName = cleanText(formData.get("companyName"), 120);
+    const employerType = cleanText(formData.get("employerType"), 80);
+    const district = cleanText(formData.get("district"), 200);
+
+    const impLabel = (v: string) => v === "must" ? "(обязательно)" : v === "nice" ? "(желательно)" : "";
+
+    const scheduleStr = schedule || [shiftScheme, shiftLength, workTime, weekends].filter(Boolean).join("; ");
+    const requirementsStr = [
+      expReq ? `Опыт: ${expReq} ${impLabel(expReqImp)}` : null,
+      langReq ? `Языки: ${langReq} ${impLabel(langReqImp)}` : null,
+      genderReq && genderReq !== "Не важно" ? `Пол: ${genderReq}` : null,
+      ageReq && ageReq !== "Не важно" ? `Возраст: ${ageReq}` : null,
+      eduReq && eduReq !== "Не важно" ? `Образование: ${eduReq}` : null,
+      keySkills ? `Навыки: ${keySkills}` : null
+    ].filter(Boolean).join("\n");
+    const conditionsStr = [
+      training ? `Обучение: ${training}` : null,
+      provided ? `Предоставляется: ${provided}` : null,
+      bonuses ? `Бонусы: ${bonuses}` : null,
+      careerGrowth ? `Карьерный рост: ${careerGrowth}` : null,
+      penaltySystem ? `Штрафы: ${penaltySystem}` : null,
+      additionalConditions
+    ].filter(Boolean).join("\n");
 
     return [
       structuredLine("Роль", vacancyRole),
+      structuredLine("Работодатель", employerType),
+      structuredLine("Компания", companyName),
       structuredLine("Оплата", price),
       structuredLine("Комментарий к оплате", priceComment),
-      structuredLine("График", requireText(formData.get("schedule"), "график", 240)),
+      structuredLine("График", scheduleStr),
       structuredLine("Занятость", cleanText(formData.get("workload"), 120)),
-      structuredLine("Требования", requireMultiline(formData.get("requirements"), "требования", 2000)),
-      structuredLine("Условия", listValues(formData, "benefits").join(", ")),
+      structuredLine("Район", district),
+      structuredLine("Требования", requirementsStr),
+      structuredLine("Условия", conditionsStr),
       structuredLine("Дополнительные условия", cleanText(formData.get("benefitsOther"), 240)),
+      structuredLine("Контактное лицо", contactPerson),
+      structuredLine("Сайт", website),
       structuredLine("Кто не подойдет", stopConditions),
       structuredLine("Коротко", baseDescription)
     ].filter(Boolean).join("\n\n");
@@ -224,20 +273,15 @@ function buildListingDescription(formData: FormData, type: ListingType, baseDesc
     const payFormat = cleanText(formData.get("payFormat"), 120);
     const payMethods = cleanText(formData.get("payMethods"), 300);
     const prepay = cleanText(formData.get("prepay"), 120);
-    const prepayImp = cleanText(formData.get("prepayImportance"), 20);
     const minOrder = cleanText(formData.get("minOrder"), 200);
-    const minOrderImp = cleanText(formData.get("minOrderImportance"), 20);
-    const access = cleanText(formData.get("access"), 300);
-    const accessImp = cleanText(formData.get("accessImportance"), 20);
-    const nda = cleanText(formData.get("nda"), 120);
-    const ndaImp = cleanText(formData.get("ndaImportance"), 20);
+    const freeConsultation = cleanText(formData.get("freeConsultation"), 120);
+    const discounts = cleanText(formData.get("discounts"), 300);
     const providerType = cleanText(formData.get("providerType"), 120);
     const providerExp = cleanText(formData.get("providerExp"), 120);
     const portfolio = cleanText(formData.get("portfolio"), 300);
-    const quickWishes = cleanText(formData.get("quickWishes"), 500);
-    const wishesText = cleanMultiline(formData.get("wishesText"), 1000);
-
-    const impLabel = (v: string) => v === "must" ? "(обязательно)" : v === "nice" ? "(желательно)" : v === "none" ? "(не важно)" : "";
+    const aboutProvider = cleanMultiline(formData.get("aboutProvider"), 1200);
+    const contactPerson = cleanText(formData.get("contactPerson"), 120);
+    const website = cleanText(formData.get("website"), 300);
 
     return [
       structuredLine("Для кого", audience),
@@ -249,15 +293,16 @@ function buildListingDescription(formData: FormData, type: ListingType, baseDesc
       structuredLine("Цена", price),
       structuredLine("Формат оплаты", payFormat),
       structuredLine("Способ оплаты", payMethods),
-      structuredLine("Предоплата", prepay ? `${prepay} ${impLabel(prepayImp)}` : ""),
-      structuredLine("Мин. объём заказа", minOrder ? `${minOrder} ${impLabel(minOrderImp)}` : ""),
-      structuredLine("Нужны доступы/данные", access ? `${access} ${impLabel(accessImp)}` : ""),
-      structuredLine("Конфиденциальность", nda ? `${nda} ${impLabel(ndaImp)}` : ""),
+      structuredLine("Предоплата", prepay),
+      structuredLine("Мин. объём заказа", minOrder),
+      structuredLine("Бесплатная консультация", freeConsultation),
+      structuredLine("Скидки", discounts),
       structuredLine("Тип исполнителя", providerType),
       structuredLine("Опыт", providerExp),
       structuredLine("Портфолио", portfolio),
-      structuredLine("Бонусы", quickWishes),
-      structuredLine("Дополнительно", wishesText),
+      structuredLine("Об исполнителе", aboutProvider),
+      structuredLine("Контактное лицо", contactPerson),
+      structuredLine("Сайт", website),
       structuredLine("Ограничения", stopConditions),
       structuredLine("Коротко", baseDescription)
     ].filter(Boolean).join("\n\n");
@@ -1451,101 +1496,151 @@ function buildSpecialistResumeQuizBio(formData: FormData) {
   if (formData.get("resumeConfirm") !== "on") throw new Error("Нужно подтвердить актуальность требований");
 
   const position = cleanList(formData, "specPosition", 12);
+  const positionOther = cleanText(formData.get("specPositionOther"), 120);
   const exp = cleanList(formData, "specExperience", 2);
   const searchStatus = cleanList(formData, "specSearchStatus", 2);
+  const workFormat = cleanList(formData, "specWorkFormat", 4);
+  const city = cleanText(formData.get("specCity"), 120);
+  const relocation = cleanList(formData, "specRelocation", 2);
   const employment = cleanList(formData, "specEmployment", 4);
-  const schedule = cleanList(formData, "specSchedule", 4);
-  const income = cleanList(formData, "specIncome", 3);
-  const skills = cleanList(formData, "specSkills", 12);
-  const education = cleanList(formData, "specEducation", 2);
+  const duties = cleanMultiline(formData.get("specDuties"), 2000);
+  const shiftSchemes = cleanList(formData, "specShiftSchemes", 8);
+  const shiftLength = cleanList(formData, "specShiftLength", 2);
+  const shiftTime = cleanList(formData, "specShiftTime", 6);
+  const weekends = cleanList(formData, "specWeekends", 2);
+  const payFormat = cleanList(formData, "specPayFormat", 4);
+  const salary = cleanText(formData.get("specSalary"), 120);
+  const payFrequency = cleanList(formData, "specPayFrequency", 4);
+  const payMethod = cleanList(formData, "specPayMethod", 6);
+  const training = cleanList(formData, "specTraining", 2);
+  const importantConditions = cleanList(formData, "specImportantConditions", 10);
+  const careerGrowth = cleanList(formData, "specCareerGrowth", 2);
+  const penalties = cleanList(formData, "specPenalties", 2);
+  const additionalWishes = cleanMultiline(formData.get("specAdditionalWishes"), 1200);
   const langs = cleanList(formData, "specLanguages", 8);
-  const quickWishes = cleanList(formData, "quickWishes", 8);
-  const wishesText = cleanMultiline(formData.get("wishesText"), 1200);
+  const keySkills = cleanMultiline(formData.get("specKeySkills"), 1000);
+  const programs = cleanList(formData, "specPrograms", 12);
+  const portfolio = cleanText(formData.get("specPortfolio"), 300);
+  const aboutMe = cleanMultiline(formData.get("specAboutMe"), 1200);
+  const socialLinks = cleanText(formData.get("specSocialLinks"), 300);
+  const contactPerson = cleanText(formData.get("specContactPerson"), 120);
+  const contactComm = cleanText(formData.get("specContactComm"), 180);
+  const resumeLink = cleanText(formData.get("specResumeLink"), 300);
+
+  const positionFinal = positionOther ? [...position.filter(p => p !== "Другое"), positionOther] : position;
 
   return [
-    "О СЕБЕ",
-    listLine("Должность", position),
+    "О СПЕЦИАЛИСТЕ",
+    listLine("Должность", positionFinal),
     listLine("Опыт", exp),
     listLine("Статус поиска", searchStatus),
+    "",
+    "О СЕБЕ",
+    listLine("Формат работы", workFormat),
+    `Город: ${city || "не указано"}`,
+    listLine("Готовность к релокации", relocation),
     listLine("Занятость", employment),
-    listLine("Желаемый график", schedule),
-    listLine("Ожидаемый доход", income),
-    listLine("Навыки", skills),
-    listLine("Образование", education),
+    `Готовые обязанности: ${duties || "не указано"}`,
+    "",
+    "ГРАФИК",
+    listLine("Схемы смен", shiftSchemes),
+    listLine("Длительность смены", shiftLength),
+    listLine("Приоритетные смены", shiftTime),
+    listLine("Выходные", weekends),
+    "",
+    "ЗАРПЛАТА",
+    listLine("Формат оплаты", payFormat),
+    `Ожидаемая зарплата: ${salary || "не указано"}`,
+    listLine("Периодичность", payFrequency),
+    listLine("Способ выплаты", payMethod),
+    "",
+    "УСЛОВИЯ",
+    listLine("Обучение", training),
+    listLine("Что важно", importantConditions),
+    listLine("Карьерный рост", careerGrowth),
+    listLine("Штрафы", penalties),
+    `Доп. пожелания: ${additionalWishes || "не указано"}`,
+    "",
+    "НАВЫКИ",
     listLine("Языки", langs),
+    `Ключевые навыки: ${keySkills || "не указано"}`,
+    listLine("Программы и сервисы", programs),
+    `Портфолио: ${portfolio || "не указано"}`,
     "",
-    "ФИНАНСОВЫЕ ТРЕБОВАНИЯ",
-    textLineWithImportance(formData, "Минимальная зарплата", formData.get("specSalaryValue"), "specSalary"),
-    listLineWithImportance(formData, "Формат оплаты", cleanList(formData, "specPayFormat", 4), "specPayFormat"),
-    listLineWithImportance(formData, "Периодичность выплат", cleanList(formData, "specPayFrequency", 4), "specPayFrequency"),
-    listLineWithImportance(formData, "Испытательный срок", cleanList(formData, "specProbation", 4), "specProbation"),
-    "",
-    "УСЛОВИЯ РАБОТЫ",
-    listLineWithImportance(formData, "Формат работы", cleanList(formData, "specWorkFormat", 4), "specWorkFormat"),
-    listLineWithImportance(formData, "Оборудование", cleanList(formData, "specEquipment", 4), "specEquipment"),
-    textLineWithImportance(formData, "Локация", cleanText(formData.get("specLocationValue"), 120), "specLocation"),
-    listLineWithImportance(formData, "Доп. условия", cleanList(formData, "specBenefits", 8), "specBenefits"),
-    "",
-    "КОМАНДА",
-    listLineWithImportance(formData, "Пол руководителя", cleanList(formData, "specManagerGender", 4), "specManagerGender"),
-    listLineWithImportance(formData, "Состав команды", cleanList(formData, "specTeamGender", 4), "specTeamGender"),
-    listLineWithImportance(formData, "Размер команды", cleanList(formData, "specTeamSize", 4), "specTeamSize"),
-    "",
-    "ДОП. ПОЖЕЛАНИЯ",
-    listLine("Быстрый выбор", quickWishes),
-    `Своими словами: ${wishesText || "не указано"}`
+    "КОНТАКТЫ",
+    `О себе: ${aboutMe || "не указано"}`,
+    `Соцсети: ${socialLinks || "не указано"}`,
+    `Контактное лицо: ${contactPerson || "не указано"}`,
+    `Контакт для связи: ${contactComm || "не указано"}`,
+    `Резюме: ${resumeLink || "не указано"}`
   ].join("\n").slice(0, 6000);
 }
 
 function buildModelResumeQuizBio(formData: FormData) {
   if (formData.get("resumeConfirm") !== "on") throw new Error("Нужно подтвердить актуальность требований");
 
-  const categories = cleanList(formData, "categories", 12);
+  const gender = cleanList(formData, "gender", 2);
+  const age = cleanText(formData.get("age"), 10);
+  const workFormat = cleanList(formData, "workFormatModel", 2);
+  const citizenship = cleanList(formData, "citizenship", 2);
+  const categories = cleanList(formData, "categories", 16);
   const experience = cleanList(formData, "modelExperience", 2);
   const status = cleanList(formData, "modelSearchStatus", 2);
-  const workFormat = cleanList(formData, "workFormatModel", 2);
   const sites = cleanList(formData, "sites", 12);
-  const languages = cleanList(formData, "languages", 8);
-  const quickWishes = cleanList(formData, "quickWishes", 8);
+  const appearance = cleanList(formData, "appearance", 2);
+  const incomePerShift = cleanList(formData, "incomePerShift", 3);
+  const payoutFrequency = cleanList(formData, "payoutFrequency", 4);
+  const payMethod = cleanList(formData, "payMethod", 6);
+  const penalties = cleanList(formData, "penalties", 3);
+  const equipment = cleanList(formData, "equipment", 12);
+  const shiftTime = cleanList(formData, "shiftTime", 6);
+  const amenities = cleanList(formData, "amenities", 8);
+  const teamComfort = cleanList(formData, "teamComfort", 4);
+  const adminGender = cleanList(formData, "adminGender", 4);
+  const rooms = cleanMultiline(formData.get("rooms"), 600);
   const wishesText = cleanMultiline(formData.get("wishesText"), 1200);
   const location = cleanText(formData.get("city"), 120);
 
   return [
-    "О СЕБЕ",
-    listLine("Категории", categories),
+    "О МОДЕЛИ",
+    listLine("Пол", gender),
+    `Возраст: ${age || "не указано"}`,
+    listLine("Формат работы", workFormat),
+    `Город: ${location || "не указано"}`,
+    listLine("Гражданство", citizenship),
+    "",
+    "О РАБОТЕ",
+    listLine("Форматы работы", categories),
     listLine("Опыт", experience),
     listLine("Статус поиска", status),
-    listLine("Формат работы", workFormat),
+    "",
+    "НАВЫКИ",
+    listLine("Площадки", sites),
+    listLine("Внешность", appearance),
+    "",
+    "НАГРУЗКА",
     textLine("Смен в неделю", formData.get("shiftsPerWeek")),
     textLine("Длительность смены", formData.get("shiftLength")),
-    listLine("Средний доход за смену", cleanList(formData, "incomePerShift", 3)),
-    listLine("Сайты", sites),
-    listLine("Языки", languages),
+    listLine("Средний доход за смену", incomePerShift),
     "",
-    "ФИНАНСЫ",
+    "ДЕНЬГИ",
     textLineWithImportance(formData, "Минимальный процент", formData.get("minimumPercent"), "minimumPercent"),
-    listLineWithImportance(formData, "Формат расчета", cleanList(formData, "payFormat", 4), "payFormat"),
-    listLineWithImportance(formData, "Частота выплат", cleanList(formData, "payoutFrequency", 4), "payoutFrequency"),
-    listLineWithImportance(formData, "Способ выплаты", cleanList(formData, "payMethod", 6), "payMethod"),
-    listLineWithImportance(formData, "Бонусная система", cleanList(formData, "bonus", 2), "bonus"),
-    listLineWithImportance(formData, "Штрафы и удержания", cleanList(formData, "penalty", 3), "penalty"),
+    listLine("Периодичность выплат", payoutFrequency),
+    listLine("Способ выплаты", payMethod),
+    listLine("Штрафы и удержания", penalties),
     "",
-    "ТРЕБОВАНИЯ К СТУДИИ",
-    listLineWithImportance(formData, "Комната", cleanList(formData, "roomRequirements", 4), "room"),
-    listLineWithImportance(formData, "Оборудование", cleanList(formData, "equipmentRequirements", 8), "equipmentRequirements"),
-    listLineWithImportance(formData, "График студии", cleanList(formData, "studioSchedule", 4), "studioSchedule"),
-    listLineWithImportance(formData, "Безопасность", cleanList(formData, "security", 6), "security"),
-    textLineWithImportance(formData, "Локация", location, "location"),
-    listLineWithImportance(formData, "Удобства", cleanList(formData, "amenities", 8), "amenities"),
+    "УСЛОВИЯ",
+    `Комнаты: ${rooms || "не указано"}`,
+    listLine("Оборудование", equipment),
+    listLine("Приоритетные смены", shiftTime),
+    listLine("Удобства", amenities),
     "",
     "КОМАНДА",
-    listLineWithImportance(formData, "Состав моделей", cleanList(formData, "modelsTeam", 4), "modelsTeam"),
-    listLineWithImportance(formData, "Пол администраторов/коучей", cleanList(formData, "adminsGender", 4), "adminsGender"),
-    listLineWithImportance(formData, "Пол управляющего", cleanList(formData, "managerGender", 4), "managerGender"),
+    listLine("Комфортная среда", teamComfort),
+    listLine("Пол админов/коучей", adminGender),
     "",
-    "ДОП. ПОЖЕЛАНИЯ",
-    listLine("Быстрый выбор", quickWishes),
-    `Своими словами: ${wishesText || "не указано"}`
+    "ПОЖЕЛАНИЯ",
+    `${wishesText || "не указано"}`
   ].join("\n").slice(0, 6000);
 }
 
@@ -1560,9 +1655,9 @@ export async function createResumeAction(formData: FormData) {
   const roleGoal = requireText(formData.get("roleGoal"), "желаемая роль", 120);
   const resumeTemplate = cleanText(formData.get("resumeTemplate"), 80);
   const bio =
-    resumeTemplate === "model-quiz-v2"
+    resumeTemplate === "model-quiz-v3" || resumeTemplate === "model-quiz-v2"
       ? buildModelResumeQuizBio(formData)
-      : resumeTemplate === "specialist-quiz-v1"
+      : resumeTemplate === "specialist-quiz-v2" || resumeTemplate === "specialist-quiz-v1"
       ? buildSpecialistResumeQuizBio(formData)
       : resumeTemplate === "model-v1"
       ? buildModelResumeBio(formData)
