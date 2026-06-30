@@ -100,31 +100,35 @@ export function ProductDirectoryCard({
         <p className="mt-2 line-clamp-2 text-xs leading-5 text-zinc-500">{product.description}</p>
       )}
 
-      {/* Actions + author */}
-      <div className="mt-3 flex items-center gap-2">
+      {/* Actions */}
+      <div className="mt-3 grid grid-cols-2 gap-2">
         <ContactReveal contact={product.contact} signedIn={isSignedIn} compact />
-        <form action={saveProductAction} className="flex-1">
+        <form action={saveProductAction}>
           <input type="hidden" name="productId" value={product.id} />
           <input type="hidden" name="next" value={currentPath} />
-          <button className="h-9 w-full rounded-lg border border-zinc-200 px-2 text-[11px] font-semibold text-zinc-600 hover:bg-zinc-50" type="submit">
+          <button className="h-9 w-full rounded-lg border border-zinc-200 text-xs font-semibold text-zinc-600 hover:bg-zinc-50" type="submit">
             {isSaved ? "Убрать" : "В избранное"}
           </button>
         </form>
-        <Link href={`/profiles/${product.createdBy.id}`} className="flex shrink-0 items-center gap-1.5 text-[11px] text-zinc-500 hover:text-hot">
+      </div>
+
+      {/* Author + report */}
+      <div className="mt-2 flex items-center gap-2 border-t border-zinc-100 pt-2">
+        <Link href={`/profiles/${product.createdBy.id}`} className="flex min-w-0 flex-1 items-center gap-1.5 hover:text-hot">
           {product.createdBy.image ? (
-            <img className="h-7 w-7 rounded-full object-cover" src={product.createdBy.image} alt={authorName(product.createdBy)} />
+            <img className="h-6 w-6 shrink-0 rounded-full object-cover" src={product.createdBy.image} alt={authorName(product.createdBy)} />
           ) : (
-            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-hot text-[10px] font-black text-white">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hot text-[9px] font-black text-white">
               {authorName(product.createdBy).slice(0, 1).toUpperCase()}
             </span>
           )}
-          <span className="max-w-[80px] truncate font-medium text-zinc-700">{authorName(product.createdBy)}</span>
+          <span className="truncate text-xs font-medium text-zinc-600">{authorName(product.createdBy)}</span>
         </Link>
         <ReportButton
           targetType="PRODUCT"
           targetId={product.id}
           next={currentPath}
-          buttonClassName="h-9 rounded-lg border border-zinc-100 px-2 text-[11px] font-semibold text-zinc-400 hover:text-red-500 hover:border-red-200"
+          buttonClassName="shrink-0 text-[11px] text-zinc-400 hover:text-red-500"
         />
       </div>
     </article>
