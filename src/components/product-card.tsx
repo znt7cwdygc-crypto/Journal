@@ -67,29 +67,30 @@ export function ProductDirectoryCard({
   const imageSrc = product.imageUrl || null;
 
   return (
-    <article className="directory-card bg-white p-3 shadow-sm transition hover:shadow-md">
-      {/* Top badges */}
-      <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-        <span className="rounded-full bg-mint px-2 py-0.5 font-semibold text-ink">Товар</span>
-        <span className="rounded-full bg-zinc-100 px-2 py-0.5 font-semibold text-zinc-600">{product.category}</span>
-        <span className="ml-auto text-zinc-400">{product.createdAt.toLocaleDateString("ru-RU")}</span>
-      </div>
+    <article className="directory-card bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5">
 
-      {/* Main row: image + content */}
-      <Link href={productPath} className="mt-2 flex gap-3">
+      {/* Image + title block */}
+      <Link href={productPath} className="flex gap-4">
         {imageSrc ? (
-          <img className="h-20 w-20 shrink-0 rounded-lg object-cover" src={imageSrc} alt={product.title} />
+          <img className="h-24 w-24 shrink-0 rounded-lg object-cover" src={imageSrc} alt={product.title} />
         ) : (
-          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-2xl text-zinc-300">
+          <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-3xl text-zinc-300">
             📦
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{product.title}</h3>
-          <p className="mt-1 inline-flex rounded bg-zinc-900 px-2 py-0.5 text-sm font-bold text-white">{formatPrice(product.priceRub)} ₽</p>
-          <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-zinc-500">
+          {/* Title + price on same line */}
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="text-base font-semibold leading-snug text-ink">{product.title}</h3>
+            <span className="shrink-0 rounded-md bg-zinc-900 px-2.5 py-1 text-sm font-bold text-white">
+              {formatPrice(product.priceRub)} ₽
+            </span>
+          </div>
+          {/* Meta */}
+          <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500">
             {product.city && <span>{product.city}</span>}
             <span>{conditionLabels[product.condition] || product.condition}</span>
+            <span>{deliveryLabels[product.delivery] || product.delivery}</span>
             <span className="text-zinc-400">👁 {product.viewCount + 1}</span>
           </div>
         </div>
@@ -97,33 +98,40 @@ export function ProductDirectoryCard({
 
       {/* Description */}
       {product.description && (
-        <p className="mt-2 line-clamp-2 text-xs leading-5 text-zinc-500">{product.description}</p>
+        <p className="mt-3 line-clamp-2 text-sm leading-5 text-zinc-600">{product.description}</p>
       )}
 
-      {/* Actions */}
+      {/* Badges */}
+      <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
+        <span className="rounded-full bg-mint px-2.5 py-1 font-semibold text-ink">Товар</span>
+        <span className="rounded-full bg-zinc-100 px-2.5 py-1 font-semibold text-zinc-600">{product.category}</span>
+      </div>
+
+      {/* Actions: 2 equal buttons */}
       <div className="mt-3 grid grid-cols-2 gap-2">
         <ContactReveal contact={product.contact} signedIn={isSignedIn} compact />
         <form action={saveProductAction}>
           <input type="hidden" name="productId" value={product.id} />
           <input type="hidden" name="next" value={currentPath} />
-          <button className="h-9 w-full rounded-lg border border-zinc-200 text-xs font-semibold text-zinc-600 hover:bg-zinc-50" type="submit">
+          <button className="h-10 w-full rounded-lg border border-zinc-200 text-xs font-semibold text-zinc-700 hover:bg-zinc-50" type="submit">
             {isSaved ? "Убрать" : "В избранное"}
           </button>
         </form>
       </div>
 
-      {/* Author + report */}
-      <div className="mt-2 flex items-center gap-2 border-t border-zinc-100 pt-2">
-        <Link href={`/profiles/${product.createdBy.id}`} className="flex min-w-0 flex-1 items-center gap-1.5 hover:text-hot">
+      {/* Footer: author + date + report */}
+      <div className="mt-3 flex items-center gap-2 border-t border-zinc-100 pt-3">
+        <Link href={`/profiles/${product.createdBy.id}`} className="flex min-w-0 flex-1 items-center gap-2 hover:text-hot">
           {product.createdBy.image ? (
-            <img className="h-6 w-6 shrink-0 rounded-full object-cover" src={product.createdBy.image} alt={authorName(product.createdBy)} />
+            <img className="h-7 w-7 shrink-0 rounded-full object-cover" src={product.createdBy.image} alt={authorName(product.createdBy)} />
           ) : (
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-hot text-[9px] font-black text-white">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-hot text-[10px] font-black text-white">
               {authorName(product.createdBy).slice(0, 1).toUpperCase()}
             </span>
           )}
-          <span className="truncate text-xs font-medium text-zinc-600">{authorName(product.createdBy)}</span>
+          <span className="truncate text-xs font-medium text-zinc-700">{authorName(product.createdBy)}</span>
         </Link>
+        <span className="shrink-0 text-[11px] text-zinc-400">{product.createdAt.toLocaleDateString("ru-RU")}</span>
         <ReportButton
           targetType="PRODUCT"
           targetId={product.id}
