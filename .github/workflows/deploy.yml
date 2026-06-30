@@ -37,8 +37,9 @@ jobs:
             cd "$DEPLOY_DIR"
             npm install
             npx prisma generate
-            export $(grep -E '^DATABASE_URL=' .env.local | xargs -d '\n')
-            npx prisma db push --accept-data-loss 2>&1 | tail -1
+            DB_VAL=$(grep -E '^DATABASE_URL=' .env.local | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
+            DATABASE_URL="$DB_VAL" npx prisma db push --accept-data-loss 2>&1 | tail -1
+            unset DB_VAL
             npm run build
             cp -r .next/static /var/www/static/_next/
 
@@ -76,8 +77,9 @@ jobs:
             cp /opt/env.production .env.local
             npm install
             npx prisma generate
-            export $(grep -E '^DATABASE_URL=' .env.local | xargs -d '\n')
-            npx prisma db push --accept-data-loss 2>&1 | tail -1
+            DB_VAL=$(grep -E '^DATABASE_URL=' .env.local | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
+            DATABASE_URL="$DB_VAL" npx prisma db push --accept-data-loss 2>&1 | tail -1
+            unset DB_VAL
             npm run build
             pm2 delete site-dev 2>/dev/null || true
             NODE_ENV=production PORT=3001 pm2 start node --name site-dev -- node_modules/.bin/next start -p 3001
