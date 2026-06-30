@@ -64,62 +64,69 @@ export function ProductDirectoryCard({
   const isSaved = Boolean(product.savedBy?.length);
   const productPath = productSeoPath(product);
 
+  const imageSrc = product.images?.[0] || product.imageUrl || null;
+
   return (
-    <article className="directory-card bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5">
-      <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="rounded-full bg-mint px-2.5 py-1 font-semibold text-ink">Товар</span>
-        <span className="rounded-full bg-zinc-100 px-2.5 py-1 font-semibold text-zinc-700">{product.category}</span>
-        <span className="text-zinc-500">{product.createdAt.toLocaleDateString("ru-RU")}</span>
+    <article className="directory-card bg-white p-3 shadow-sm transition hover:shadow-md">
+      {/* Top badges */}
+      <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+        <span className="rounded-full bg-mint px-2 py-0.5 font-semibold text-ink">Товар</span>
+        <span className="rounded-full bg-zinc-100 px-2 py-0.5 font-semibold text-zinc-600">{product.category}</span>
+        <span className="ml-auto text-zinc-400">{product.createdAt.toLocaleDateString("ru-RU")}</span>
       </div>
 
-      <Link href={productPath} className="mt-3 flex gap-3">
-        {(product.images?.[0] || product.imageUrl) && (
-          <img className="h-24 w-24 shrink-0 rounded-lg object-cover sm:h-28 sm:w-28" src={product.images?.[0] || product.imageUrl!} alt={product.title} />
+      {/* Main row: image + content */}
+      <Link href={productPath} className="mt-2 flex gap-3">
+        {imageSrc ? (
+          <img className="h-20 w-20 shrink-0 rounded-lg object-cover" src={imageSrc} alt={product.title} />
+        ) : (
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-2xl text-zinc-300">
+            📦
+          </div>
         )}
         <div className="min-w-0 flex-1">
-          <h3 className="text-lg font-semibold leading-tight text-ink">{product.title}</h3>
-          <p className="mt-1.5 inline-flex rounded-md bg-zinc-900 px-2.5 py-1 text-sm font-bold text-white">{formatPrice(product.priceRub)} ₽</p>
-          <p className="mt-1.5 line-clamp-2 text-sm leading-5 text-zinc-600">{product.description}</p>
+          <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-ink">{product.title}</h3>
+          <p className="mt-1 inline-flex rounded bg-zinc-900 px-2 py-0.5 text-sm font-bold text-white">{formatPrice(product.priceRub)} ₽</p>
+          <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-zinc-500">
+            {product.city && <span>{product.city}</span>}
+            <span>{conditionLabels[product.condition] || product.condition}</span>
+            <span className="text-zinc-400">👁 {product.viewCount + 1}</span>
+          </div>
         </div>
       </Link>
 
-      <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500">
-        <span>{product.city || "Город не указан"}</span>
-        <span>{deliveryLabels[product.delivery] || product.delivery}</span>
-        <span>{conditionLabels[product.condition] || product.condition}</span>
-        <span>Просмотры: {product.viewCount + 1}</span>
-      </div>
+      {/* Description */}
+      {product.description && (
+        <p className="mt-2 line-clamp-2 text-xs leading-5 text-zinc-500">{product.description}</p>
+      )}
 
-      <div className="directory-actions mt-4 grid grid-cols-3 gap-2">
+      {/* Actions + author */}
+      <div className="mt-3 flex items-center gap-2">
         <ContactReveal contact={product.contact} signedIn={isSignedIn} compact />
-        <form action={saveProductAction}>
+        <form action={saveProductAction} className="flex-1">
           <input type="hidden" name="productId" value={product.id} />
           <input type="hidden" name="next" value={currentPath} />
-          <button className="btn btn-muted h-10 w-full whitespace-nowrap px-1 text-[11px]" type="submit">
+          <button className="h-9 w-full rounded-lg border border-zinc-200 px-2 text-[11px] font-semibold text-zinc-600 hover:bg-zinc-50" type="submit">
             {isSaved ? "Убрать" : "В избранное"}
           </button>
         </form>
+        <Link href={`/profiles/${product.createdBy.id}`} className="flex shrink-0 items-center gap-1.5 text-[11px] text-zinc-500 hover:text-hot">
+          {product.createdBy.image ? (
+            <img className="h-7 w-7 rounded-full object-cover" src={product.createdBy.image} alt={authorName(product.createdBy)} />
+          ) : (
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-hot text-[10px] font-black text-white">
+              {authorName(product.createdBy).slice(0, 1).toUpperCase()}
+            </span>
+          )}
+          <span className="max-w-[80px] truncate font-medium text-zinc-700">{authorName(product.createdBy)}</span>
+        </Link>
         <ReportButton
           targetType="PRODUCT"
           targetId={product.id}
           next={currentPath}
-          buttonClassName="btn btn-danger h-10 w-full whitespace-nowrap px-1 text-[11px]"
+          buttonClassName="h-9 rounded-lg border border-zinc-100 px-2 text-[11px] font-semibold text-zinc-400 hover:text-red-500 hover:border-red-200"
         />
       </div>
-
-      <Link href={`/profiles/${product.createdBy.id}`} className="mt-4 flex min-w-0 items-center gap-2 border-t border-zinc-100 pt-3 text-xs text-zinc-600 hover:text-hot">
-        {product.createdBy.image ? (
-          <img className="h-8 w-8 shrink-0 rounded object-cover" src={product.createdBy.image} alt={authorName(product.createdBy)} />
-        ) : (
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-hot font-black text-white">
-            {authorName(product.createdBy).slice(0, 1).toUpperCase()}
-          </span>
-        )}
-        <span className="min-w-0">
-          <span className="block truncate font-medium text-zinc-800">{authorName(product.createdBy)}</span>
-          {product.createdBy.profileBio && <span className="block truncate text-zinc-500">{product.createdBy.profileBio}</span>}
-        </span>
-      </Link>
     </article>
   );
 }

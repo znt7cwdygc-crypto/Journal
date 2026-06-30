@@ -167,9 +167,11 @@ export default async function ProductsPage({ searchParams }: { searchParams?: { 
       {Array.from(grouped.entries()).map(([category, items]) => (
         <section key={category} className="space-y-2">
           <h2 className="text-sm font-semibold uppercase tracking-[0.08em] text-zinc-500">{category}</h2>
-          {items.map((product) => (
-            <ProductDirectoryCard key={product.id} product={{ ...product, imageUrl: null }} currentPath={currentPath} isSignedIn={Boolean(session?.user)} />
-          ))}
+          <div className="grid gap-2 md:grid-cols-2">
+            {items.map((product) => (
+              <ProductDirectoryCard key={product.id} product={{ ...product, imageUrl: null }} currentPath={currentPath} isSignedIn={Boolean(session?.user)} />
+            ))}
+          </div>
         </section>
       ))}
     </div>
