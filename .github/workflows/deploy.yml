@@ -38,9 +38,6 @@ jobs:
             npm install
             npx prisma generate
             DATABASE_URL="postgresql://journalapp:JrnL-db-2026-secure@localhost:5432/journaldb" npx prisma db push --accept-data-loss 2>&1 | tail -1
-            # One-time content seed (guard внутри скриптов: повторно не перезапишет правки на сайте)
-            DATABASE_URL="postgresql://journalapp:JrnL-db-2026-secure@localhost:5432/journaldb" npx tsx prisma/seed-guides-v2.ts || true
-            DATABASE_URL="postgresql://journalapp:JrnL-db-2026-secure@localhost:5432/journaldb" npx tsx prisma/seed-stories-v2.ts || true
             npm run build
             cp -r .next/static /var/www/static/_next/
 
