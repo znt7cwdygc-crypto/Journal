@@ -23,7 +23,7 @@ type ProductCardItem = {
   description: string;
   contact: string;
   imageUrl: string | null;
-  images?: string[];
+
   viewCount: number;
   responseCount: number;
   createdAt: Date;
@@ -64,7 +64,7 @@ export function ProductDirectoryCard({
   const isSaved = Boolean(product.savedBy?.length);
   const productPath = productSeoPath(product);
 
-  const imageSrc = product.images?.[0] || product.imageUrl || null;
+  const imageSrc = product.imageUrl || null;
 
   return (
     <article className="directory-card bg-white p-3 shadow-sm transition hover:shadow-md">

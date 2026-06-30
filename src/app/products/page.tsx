@@ -62,7 +62,6 @@ export default async function ProductsPage({ searchParams }: { searchParams?: { 
       description: true,
       contact: true,
       imageUrl: true,
-      images: true,
       viewCount: true,
       responseCount: true,
       createdAt: true,
