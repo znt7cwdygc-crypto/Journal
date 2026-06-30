@@ -75,28 +75,26 @@ export function ProductDirectoryCard({
         <span className="text-zinc-500">{product.createdAt.toLocaleDateString("ru-RU")}</span>
       </div>
 
-      {/* On mobile: image above content. On desktop: image left, content right */}
-      <Link href={productPath} className="mt-3 flex flex-col gap-3 sm:flex-row sm:gap-4">
-        {imageSrc ? (
+      {/* Image — proportional, no cropping */}
+      {imageSrc && (
+        <Link href={productPath} className="mt-3 block">
           <img
-            className="h-48 w-full rounded-lg object-cover sm:h-28 sm:w-28 sm:shrink-0"
+            className="aspect-[4/3] w-full rounded-lg object-cover"
             src={imageSrc}
             alt={product.title}
           />
-        ) : (
-          <div className="flex h-48 w-full items-center justify-center rounded-lg bg-zinc-100 text-4xl text-zinc-300 sm:h-28 sm:w-28 sm:shrink-0">
-            📦
-          </div>
+        </Link>
+      )}
+
+      {/* Title + price */}
+      <Link href={productPath} className="block">
+        <h3 className="mt-3 text-xl font-semibold leading-tight text-ink">{product.title}</h3>
+        {product.priceRub > 0 && (
+          <p className="mt-3 inline-flex rounded-lg bg-zinc-900 px-3 py-2 text-base font-bold text-white">
+            {formatPrice(product.priceRub)} ₽
+          </p>
         )}
-        <div className="min-w-0 flex-1">
-          <h3 className="text-xl font-semibold leading-tight text-ink">{product.title}</h3>
-          {product.priceRub > 0 && (
-            <p className="mt-2 inline-flex rounded-lg bg-zinc-900 px-3 py-1.5 text-base font-bold text-white">
-              {formatPrice(product.priceRub)} ₽
-            </p>
-          )}
-          <p className="mt-2 line-clamp-3 text-sm leading-6 text-zinc-700">{product.description}</p>
-        </div>
+        <p className="mt-3 line-clamp-3 text-sm leading-6 text-zinc-700">{product.description}</p>
       </Link>
 
       {/* Meta */}
@@ -107,16 +105,22 @@ export function ProductDirectoryCard({
         <span>Просмотры: {product.viewCount + 1}</span>
       </div>
 
-      {/* Actions */}
-      <div className="directory-actions mt-4 grid grid-cols-2 gap-2">
+      {/* Actions — 3 cols like service/vacancy cards */}
+      <div className="directory-actions mt-4 grid grid-cols-3 gap-2">
         <ContactReveal contact={product.contact} signedIn={isSignedIn} compact />
         <form action={saveProductAction}>
           <input type="hidden" name="productId" value={product.id} />
           <input type="hidden" name="next" value={currentPath} />
-          <button className="btn btn-muted h-10 w-full text-[11px]" type="submit">
+          <button className="btn btn-muted h-10 w-full whitespace-nowrap px-1 text-[11px]" type="submit">
             {isSaved ? "Убрать" : "В избранное"}
           </button>
         </form>
+        <ReportButton
+          targetType="PRODUCT"
+          targetId={product.id}
+          next={currentPath}
+          buttonClassName="btn btn-danger h-10 w-full whitespace-nowrap px-1 text-[11px]"
+        />
       </div>
 
       {/* Author footer */}
