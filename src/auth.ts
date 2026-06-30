@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { isRateLimited, recordFailedAttempt, clearAttempts } from "@/lib/rate-limit";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -20,11 +21,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const password = String(credentials?.password ?? "");
         if (!email || !password) return null;
 
+        // Rate-limit по email: не более 5 попыток за 15 минут
+        if (isRateLimited(`login:${email}`)) return null;
+
         const user = await prisma.user.findUnique({ where: { email } });
-        if (!user?.passwordHash) return null;
+        if (!user?.passwordHash) {
+          recordFailedAttempt(`login:${email}`);
+          return null;
+        }
 
         const valid = await compare(password, user.passwordHash);
-        if (!valid) return null;
+        if (!valid) {
+          recordFailedAttempt(`login:${email}`);
+          return null;
+        }
+
+        clearAttempts(`login:${email}`);
 
         return {
           id: user.id,
