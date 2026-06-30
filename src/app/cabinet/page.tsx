@@ -402,9 +402,17 @@ export default async function CabinetPage({
             <p className="text-base font-bold">{myProducts.length}</p>
             <p className="text-[10px] text-zinc-500">товаров</p>
           </div>
-          <div className="bg-white p-3 text-center">
+          <div className="col-span-1 bg-white p-3 text-center">
             <p className="text-base font-bold text-emerald-700">${((studioBalance?.availableUsd ?? 0) / 100).toFixed(0)}</p>
             <p className="text-[10px] text-zinc-500">баланс</p>
+            <a
+              href="https://t.me/pravda_o_tebe"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1 inline-block rounded-full bg-sky-100 px-2 py-0.5 text-[9px] font-semibold text-sky-700 hover:bg-sky-200"
+            >
+              Пополнить
+            </a>
           </div>
         </div>
 
