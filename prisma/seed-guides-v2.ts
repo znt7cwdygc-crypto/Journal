@@ -578,7 +578,15 @@ const guides = [
 ];
 
 async function main() {
-  // Заменяем старый набор гайдов
+  // Guard «выполнить один раз»: если v2-гайды уже есть — не трогаем
+  // (чтобы повторные деплои не затирали правки, сделанные на сайте).
+  const already = await prisma.guide.findUnique({ where: { slug: "vebcam-model-chto-eto-za-rabota" } });
+  if (already) {
+    console.log("v2 guides already present — skip");
+    return;
+  }
+
+  // Первый запуск: заменяем старый набор гайдов
   const deleted = await prisma.guide.deleteMany({ where: { kind: "guide" } });
   console.log(`Deleted ${deleted.count} old guides`);
 

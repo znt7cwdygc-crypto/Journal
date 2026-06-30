@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const ADMIN_ID = "cmqglcej00000tupxwuj98o2g";
+// id админа определяется динамически (в разных БД он разный)
 
 // Брендовая SVG-обложка как data-URI (CSP разрешает data:)
 function cover(opts: { tag: string; lines: string[]; from: string; to: string; ink?: string }) {
@@ -227,15 +227,19 @@ const stories = [
 ];
 
 async function main() {
+  const admin =
+    (await prisma.user.findFirst({ where: { email: "admin@webcamexpert.local" } })) ??
+    (await prisma.user.findFirst({ where: { role: "ADMIN" } }));
+  if (!admin) throw new Error("Admin user not found");
+  const ADMIN_ID = admin.id;
+
   let created = 0;
   for (const s of stories) {
     const existing = await prisma.article.findUnique({ where: { slug: s.slug } });
     const body = `${s.body}\n\nЧитайте также подробный гайд по теме: ${s.related}`;
     if (existing) {
-      await prisma.article.update({
-        where: { slug: s.slug },
-        data: { title: s.title, summary: s.summary, body, coverImage: s.cover, topic: s.topic, status: "PUBLISHED" },
-      });
+      // не трогаем уже существующую статью (правки на сайте сохраняются)
+      continue;
     } else {
       await prisma.article.create({
         data: {
