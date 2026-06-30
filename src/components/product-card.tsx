@@ -75,26 +75,24 @@ export function ProductDirectoryCard({
         <span className="text-zinc-500">{product.createdAt.toLocaleDateString("ru-RU")}</span>
       </div>
 
-      {/* Image — proportional, no cropping */}
-      {imageSrc && (
-        <Link href={productPath} className="mt-3 block">
+      {/* Title row: text left, image right */}
+      <Link href={productPath} className="mt-3 flex items-start gap-4">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-xl font-semibold leading-tight text-ink">{product.title}</h3>
+          {product.priceRub > 0 && (
+            <p className="mt-3 inline-flex rounded-lg bg-zinc-900 px-3 py-2 text-base font-bold text-white">
+              {formatPrice(product.priceRub)} ₽
+            </p>
+          )}
+          <p className="mt-3 line-clamp-3 text-sm leading-6 text-zinc-700">{product.description}</p>
+        </div>
+        {imageSrc && (
           <img
-            className="aspect-[4/3] w-full rounded-lg object-cover"
+            className="h-24 w-24 shrink-0 rounded-lg object-cover sm:h-28 sm:w-28"
             src={imageSrc}
             alt={product.title}
           />
-        </Link>
-      )}
-
-      {/* Title + price */}
-      <Link href={productPath} className="block">
-        <h3 className="mt-3 text-xl font-semibold leading-tight text-ink">{product.title}</h3>
-        {product.priceRub > 0 && (
-          <p className="mt-3 inline-flex rounded-lg bg-zinc-900 px-3 py-2 text-base font-bold text-white">
-            {formatPrice(product.priceRub)} ₽
-          </p>
         )}
-        <p className="mt-3 line-clamp-3 text-sm leading-6 text-zinc-700">{product.description}</p>
       </Link>
 
       {/* Meta */}
@@ -105,7 +103,7 @@ export function ProductDirectoryCard({
         <span>Просмотры: {product.viewCount + 1}</span>
       </div>
 
-      {/* Actions — 3 cols like service/vacancy cards */}
+      {/* Actions */}
       <div className="directory-actions mt-4 grid grid-cols-3 gap-2">
         <ContactReveal contact={product.contact} signedIn={isSignedIn} compact />
         <form action={saveProductAction}>
