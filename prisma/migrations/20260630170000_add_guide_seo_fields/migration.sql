@@ -1,0 +1,5 @@
+-- Add SEO content fields to Guide
+ALTER TABLE "Guide" ADD COLUMN IF NOT EXISTS "category" TEXT;
+ALTER TABLE "Guide" ADD COLUMN IF NOT EXISTS "quickAnswer" TEXT;
+ALTER TABLE "Guide" ADD COLUMN IF NOT EXISTS "checklist" TEXT;
+ALTER TABLE "Guide" ADD COLUMN IF NOT EXISTS "mistakes" TEXT;
