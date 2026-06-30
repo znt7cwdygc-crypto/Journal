@@ -32,6 +32,7 @@ jobs:
             rm -rf "$DEPLOY_DIR"
             git clone --depth 1 https://github.com/znt7cwdygc-crypto/Journal.git "$DEPLOY_DIR"
             cp "$ENV_FILE" "$DEPLOY_DIR/.env.local"
+            chmod 600 "$DEPLOY_DIR/.env.local"
 
             # 2. Build (site stays live)
             cd "$DEPLOY_DIR"
@@ -75,6 +76,7 @@ jobs:
             git checkout dev
             git reset --hard origin/dev
             cp /opt/env.production .env.local
+            chmod 600 .env.local
             npm install
             npx prisma generate
             DB_VAL=$(grep -E '^DATABASE_URL=' .env.local | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
