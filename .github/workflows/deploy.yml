@@ -37,7 +37,8 @@ jobs:
             cd "$DEPLOY_DIR"
             npm install
             npx prisma generate
-            DATABASE_URL="postgresql://journalapp:JrnL-db-2026-secure@localhost:5432/journaldb" npx prisma db push --accept-data-loss 2>&1 | tail -1
+            export $(grep -E '^DATABASE_URL=' .env.local | xargs -d '\n')
+            npx prisma db push --accept-data-loss 2>&1 | tail -1
             npm run build
             cp -r .next/static /var/www/static/_next/
 
@@ -75,7 +76,8 @@ jobs:
             cp /opt/env.production .env.local
             npm install
             npx prisma generate
-            DATABASE_URL="postgresql://journalapp:JrnL-db-2026-secure@localhost:5432/journaldb" npx prisma db push --accept-data-loss 2>&1 | tail -1
+            export $(grep -E '^DATABASE_URL=' .env.local | xargs -d '\n')
+            npx prisma db push --accept-data-loss 2>&1 | tail -1
             npm run build
             pm2 delete site-dev 2>/dev/null || true
             NODE_ENV=production PORT=3001 pm2 start node --name site-dev -- node_modules/.bin/next start -p 3001
