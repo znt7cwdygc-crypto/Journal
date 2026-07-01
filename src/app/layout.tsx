@@ -22,6 +22,9 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
   alternates: {},
+  verification: {
+    yandex: "baa8aa531ed4c162"
+  },
   openGraph: {
     type: "website",
     locale: "ru_RU",
