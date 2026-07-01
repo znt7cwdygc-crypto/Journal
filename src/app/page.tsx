@@ -332,7 +332,7 @@ export default async function HomePage() {
             Все гайды
           </Link>
         </div>
-        <div className="mt-4 grid gap-3 grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid gap-3 grid-cols-2 lg:grid-cols-3">
           {seoEntryPoints.map((landing) => (
             <Link
               key={landing.path}
