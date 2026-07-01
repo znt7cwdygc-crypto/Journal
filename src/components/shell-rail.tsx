@@ -29,8 +29,15 @@ const fallbackTopics: TopicItem[] = [
   { label: "Работа", href: "/articles?topic=Работа" }
 ];
 
+const blockedQueries = new Set(["test", "тест", "секс", "sex", "порно", "porn"]);
+
+function isBlockedQuery(label: string) {
+  return blockedQueries.has(label.trim().toLowerCase());
+}
+
 function addQuery(items: QueryItem[], item: QueryItem | null) {
   if (!item) return;
+  if (isBlockedQuery(item.label)) return;
   if (items.some((existing) => existing.href === item.href || existing.label === item.label)) return;
   items.push(item);
 }
@@ -72,7 +79,7 @@ async function getRailData() {
   const queries: QueryItem[] = [];
 
   for (const search of topSearches) {
-    queries.push({
+    addQuery(queries, {
       label: search.query,
       href: `/search?q=${encodeURIComponent(search.query)}`,
       meta: `${search._count.query} поисков`,
@@ -91,7 +98,7 @@ async function getRailData() {
 
   return {
     topics: topics.length ? topics : fallbackTopics,
-    queries: [...queries].sort((a, b) => b.score - a.score).slice(0, 6)
+    queries: [...queries].sort((a, b) => b.score - a.score).slice(0, 4)
   };
 }
 
