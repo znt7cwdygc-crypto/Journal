@@ -9,8 +9,9 @@ const csp = [
   "object-src 'none'",
   "img-src 'self' data: blob: https:",
   "style-src 'self' 'unsafe-inline'",
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
-  `connect-src 'self'${devConnectSrc}`,
+  `script-src 'self' 'unsafe-inline' https://www.googletagmanager.com${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
+  `connect-src 'self' https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com${devConnectSrc}`,
+  "frame-src https://www.googletagmanager.com",
   "font-src 'self' data:"
 ].join("; ");
 
