@@ -352,7 +352,7 @@ export default async function ListingDetailsPage({
         {listing.type === "SERVICE" && visibleRatings.length > 0 && <span>Рейтинг: {averageRating.toFixed(1)} из 5</span>}
       </div>
       <div className="mt-5 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
-        <ContactReveal contact={listing.contact} signedIn={Boolean(session?.user)} compact />
+        <ContactReveal contact={listing.contact} signedIn={Boolean(session?.user)} compact targetType="LISTING" targetId={listing.id} />
         <form action={saveListingAction}><input type="hidden" name="listingId" value={listing.id} /><input type="hidden" name="next" value={listingPath} /><button className="h-10 w-full rounded-lg bg-zinc-100 px-1 text-[11px] font-semibold text-zinc-800" type="submit">{isSaved ? "Убрать" : "В избранное"}</button></form>
         <ReportButton
           targetType="LISTING"

@@ -105,7 +105,7 @@ export function ProductDirectoryCard({
 
       {/* Actions */}
       <div className="directory-actions mt-4 grid grid-cols-3 gap-2">
-        <ContactReveal contact={product.contact} signedIn={isSignedIn} compact />
+        <ContactReveal contact={product.contact} signedIn={isSignedIn} compact targetType="PRODUCT" targetId={product.id} />
         <form action={saveProductAction}>
           <input type="hidden" name="productId" value={product.id} />
           <input type="hidden" name="next" value={currentPath} />

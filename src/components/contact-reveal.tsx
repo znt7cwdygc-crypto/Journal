@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { recordContactClickAction } from "@/app/actions";
+
+type ContactTargetType = "PRODUCT" | "LISTING" | "RESUME" | "MATCH_PROFILE";
 
 function parseTelegram(contact: string) {
   const trimmed = contact.trim();
@@ -49,11 +52,15 @@ function ContactPopup({ contact, compact }: { contact: string; compact: boolean 
 export function ContactReveal({
   contact,
   signedIn,
-  compact = false
+  compact = false,
+  targetType,
+  targetId
 }: {
   contact: string;
   signedIn: boolean;
   compact?: boolean;
+  targetType?: ContactTargetType;
+  targetId?: string;
 }) {
   const [visible, setVisible] = useState(false);
   const buttonClass = compact ? "btn btn-primary h-10 w-full px-2 text-xs" : "btn btn-primary w-full sm:w-auto";
@@ -69,9 +76,19 @@ export function ContactReveal({
     );
   }
 
+  function handleClick() {
+    setVisible((current) => {
+      const next = !current;
+      if (next && targetType && targetId) {
+        recordContactClickAction(targetType, targetId).catch(() => null);
+      }
+      return next;
+    });
+  }
+
   return (
     <div className={compact ? "relative min-w-0" : "rounded-lg bg-zinc-50 p-3 text-sm text-zinc-700"}>
-      <button className={buttonClass} type="button" onClick={() => setVisible((current) => !current)}>
+      <button className={buttonClass} type="button" onClick={handleClick}>
         {compact ? "Контакт" : "Посмотреть контакт"}
       </button>
       {visible && <ContactPopup contact={contact} compact={compact} />}

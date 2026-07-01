@@ -178,7 +178,7 @@ export default async function MatchProfileDetailsPage({
       )}
 
       <div className="directory-actions mt-5 grid grid-cols-3 gap-2">
-        <ContactReveal contact={profile.contact} signedIn={Boolean(session?.user)} compact />
+        <ContactReveal contact={profile.contact} signedIn={Boolean(session?.user)} compact targetType="MATCH_PROFILE" targetId={profile.id} />
         <form action={saveMatchProfileAction}>
           <input type="hidden" name="matchProfileId" value={profile.id} />
           <input type="hidden" name="next" value={profilePath} />

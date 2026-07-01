@@ -641,6 +641,30 @@ export async function likeCommentAction(formData: FormData) {
   await revalidateArticle(comment.articleId);
 }
 
+type ContactClickTargetType = "PRODUCT" | "LISTING" | "RESUME" | "MATCH_PROFILE";
+
+export async function recordContactClickAction(targetType: ContactClickTargetType, targetId: string) {
+  const session = await auth();
+  if (!session?.user || !targetId) return;
+
+  const increment = { responseCount: { increment: 1 } };
+
+  switch (targetType) {
+    case "PRODUCT":
+      await prisma.product.updateMany({ where: { id: targetId }, data: increment }).catch(() => null);
+      break;
+    case "LISTING":
+      await prisma.listing.updateMany({ where: { id: targetId }, data: increment }).catch(() => null);
+      break;
+    case "RESUME":
+      await prisma.resume.updateMany({ where: { id: targetId }, data: increment }).catch(() => null);
+      break;
+    case "MATCH_PROFILE":
+      await prisma.matchProfile.updateMany({ where: { id: targetId }, data: increment }).catch(() => null);
+      break;
+  }
+}
+
 export async function rateArticleAction(formData: FormData) {
   const sessionUser = await requireActiveSessionUser();
   await requireVerifiedEmail(sessionUser.id);

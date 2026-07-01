@@ -178,7 +178,7 @@ export default async function ProductDetailsPage({
       )}
 
       <div className="mt-5 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
-        <ContactReveal contact={product.contact} signedIn={Boolean(session?.user)} compact />
+        <ContactReveal contact={product.contact} signedIn={Boolean(session?.user)} compact targetType="PRODUCT" targetId={product.id} />
         <form action={saveProductAction}>
           <input type="hidden" name="productId" value={product.id} />
           <input type="hidden" name="next" value={productPath} />

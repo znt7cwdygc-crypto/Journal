@@ -207,7 +207,7 @@ export function ListingDirectoryCard({
       )}
 
       <DirectoryActionRow columns={compactListing ? 3 : undefined}>
-        {compactListing && <ContactReveal contact={listing.contact} signedIn={isSignedIn} compact />}
+        {compactListing && <ContactReveal contact={listing.contact} signedIn={isSignedIn} compact targetType="LISTING" targetId={listing.id} />}
         <form action={saveListingAction}>
           <HiddenListingInputs listingId={listing.id} />
           <input type="hidden" name="next" value={currentPath} />

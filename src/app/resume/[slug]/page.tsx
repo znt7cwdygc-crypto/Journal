@@ -209,7 +209,7 @@ export default async function ResumeDetailsPage({
         </div>
 
         {isOwner ? (
-          <ContactReveal contact={contactValue(resume)} signedIn={Boolean(session?.user)} compact />
+          <ContactReveal contact={contactValue(resume)} signedIn={Boolean(session?.user)} compact targetType="RESUME" targetId={resume.id} />
         ) : existingInvite?.status === "ACCEPTED" ? (
           <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm">
             <p className="font-semibold text-sky-800">Контакт раскрыт</p>
