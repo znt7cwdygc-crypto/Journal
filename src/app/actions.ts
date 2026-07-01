@@ -603,12 +603,19 @@ export async function updatePublicProfileAction(formData: FormData) {
 
 export async function addArticleCommentAction(formData: FormData) {
   const sessionUser = await requireActiveSessionUser();
-  await requireVerifiedEmail(sessionUser.id);
 
   const articleId = String(formData.get("articleId") ?? "");
   const parentId = cleanText(formData.get("parentId"), 120) || null;
   const body = cleanText(formData.get("body"), 1200);
   if (!articleId || body.length < 2) throw new Error("Комментарий слишком короткий");
+
+  const article = await prisma.article.findUnique({ where: { id: articleId }, select: { id: true, title: true } });
+  if (!article) throw new Error("Материал не найден");
+
+  const user = await prisma.user.findUnique({ where: { id: sessionUser.id }, select: { emailVerified: true } });
+  if (!user?.emailVerified) {
+    redirect(`${articleSeoPath(article)}?commentError=verifyRequired#comments`);
+  }
 
   await prisma.articleComment.create({
     data: { articleId, parentId, userId: sessionUser.id, body }

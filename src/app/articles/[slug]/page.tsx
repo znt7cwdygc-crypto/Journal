@@ -147,7 +147,7 @@ export default async function ArticleDetailsPage({
   searchParams
 }: {
   params: { slug: string };
-  searchParams?: { comments?: string; follow?: string; topicFollow?: string; reported?: string };
+  searchParams?: { comments?: string; follow?: string; topicFollow?: string; reported?: string; commentError?: string };
 }) {
   const session = await auth();
   const article = await findPublishedArticle(params.slug, searchParams?.comments === "popular" ? "popular" : "new");
@@ -378,6 +378,12 @@ export default async function ArticleDetailsPage({
             <Link className={`rounded px-3 py-1 ${searchParams?.comments === "popular" ? "bg-ink text-white" : "bg-zinc-100"}`} href={`${canonicalPath}?comments=popular#comments`}>Популярные</Link>
           </div>
         </div>
+        {searchParams?.commentError === "verifyRequired" && (
+          <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-amber-900">
+            Чтобы оставлять комментарии, подтвердите email. Отправить письмо ещё раз можно в{" "}
+            <Link className="font-semibold underline" href="/cabinet">личном кабинете</Link>.
+          </p>
+        )}
         {session?.user && (
           <form key={`new-comment-${commentCount}`} action={addArticleCommentAction} className="flex flex-col gap-2 border border-zinc-200 bg-zinc-50 p-3 md:flex-row">
             <input type="hidden" name="articleId" value={article.id} />
