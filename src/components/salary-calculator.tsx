@@ -10,12 +10,13 @@ type BodyFeature = "small" | "medium" | "large";
 type TypingSpeed = "slow" | "medium" | "fast";
 type Explicitness = "closed" | "moderate" | "open" | "explicit";
 
-// Диапазон валового дохода за одну смену (USD), до вычета процента студии.
-// Основано на реалистичных цифрах из гайда: новичок $500-1500/мес при 5 сменах в неделю.
-const perSessionRange: Record<Experience, [number, number]> = {
-  novice: [30, 90],
-  mid: [80, 220],
-  pro: [200, 600]
+// Диапазон валового дохода за час онлайна (USD), до вычета процента студии.
+// Калибровка: средняя модель на студии (50%), 4 смены по 6ч/нед, умеренная откровенность —
+// зарабатывает около $300 чистыми в неделю ⇒ ~$25/час валовых при модификаторе ≈ 1.
+const perHourRange: Record<Experience, [number, number]> = {
+  novice: [9, 18],
+  mid: [18, 32],
+  pro: [45, 90]
 };
 
 const experienceLabels: Record<Experience, string> = {
@@ -57,6 +58,7 @@ export function SalaryCalculator() {
   const [experience, setExperience] = useState<Experience>("novice");
   const [format, setFormat] = useState<Format>("studio");
   const [shiftsPerWeek, setShiftsPerWeek] = useState(5);
+  const [hoursPerShift, setHoursPerShift] = useState(6);
   const [studioPercent, setStudioPercent] = useState(50);
 
   const [gender, setGender] = useState<Gender>("female");
@@ -69,7 +71,7 @@ export function SalaryCalculator() {
   const [explicitness, setExplicitness] = useState<Explicitness>("moderate");
 
   const result = useMemo(() => {
-    const [min, max] = perSessionRange[experience];
+    const [min, max] = perHourRange[experience];
     const weeksPerMonth = 4.3;
 
     // Модификаторы спроса — умеренный диапазон (±25%), не абсолютные утверждения,
@@ -83,8 +85,9 @@ export function SalaryCalculator() {
     modifier *= typingSpeed === "fast" ? 1.06 : typingSpeed === "slow" ? 0.95 : 1;
     modifier *= explicitness === "explicit" ? 1.2 : explicitness === "open" ? 1.08 : explicitness === "moderate" ? 1 : 0.8;
 
-    const grossMin = min * shiftsPerWeek * weeksPerMonth * modifier;
-    const grossMax = max * shiftsPerWeek * weeksPerMonth * modifier;
+    const hoursPerMonth = hoursPerShift * shiftsPerWeek * weeksPerMonth;
+    const grossMin = min * hoursPerMonth * modifier;
+    const grossMax = max * hoursPerMonth * modifier;
 
     if (format === "studio") {
       const keep = 1 - studioPercent / 100;
@@ -92,7 +95,7 @@ export function SalaryCalculator() {
     }
 
     return { grossMin, grossMax, netMin: grossMin, netMax: grossMax, modifier };
-  }, [experience, format, shiftsPerWeek, studioPercent, gender, ageGroup, bodyFeature, babyface, artistry, positivity, typingSpeed, explicitness]);
+  }, [experience, format, shiftsPerWeek, hoursPerShift, studioPercent, gender, ageGroup, bodyFeature, babyface, artistry, positivity, typingSpeed, explicitness]);
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5">
@@ -139,6 +142,21 @@ export function SalaryCalculator() {
             step={1}
             value={shiftsPerWeek}
             onChange={(e) => setShiftsPerWeek(Number(e.target.value))}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-zinc-500">
+            Часов онлайна за смену: {hoursPerShift}
+          </label>
+          <input
+            className="mt-2 w-full"
+            type="range"
+            min={2}
+            max={10}
+            step={1}
+            value={hoursPerShift}
+            onChange={(e) => setHoursPerShift(Number(e.target.value))}
           />
         </div>
 
