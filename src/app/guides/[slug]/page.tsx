@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { parseGuide } from "@/lib/guide-helpers";
 import { prisma } from "@/lib/prisma";
 import { siteUrl } from "@/lib/seo";
+import { SalaryCalculator } from "@/components/salary-calculator";
 
 export const revalidate = 60;
 
@@ -122,6 +123,9 @@ export default async function GuidePage({ params }: { params: { slug: string } }
           <p className="text-sm leading-relaxed text-teal-900">{guide.quickAnswer}</p>
         </section>
       )}
+
+      {/* Interactive salary calculator — dedicated calculator guide */}
+      {raw.slug === "kalkulyator-zarabotka-vebcam-modeli-2026" && <SalaryCalculator />}
 
       {/* Sections */}
       {guide.sections.map((section, i) => (
