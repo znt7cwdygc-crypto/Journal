@@ -67,7 +67,6 @@ export function SalaryCalculator() {
   const [positivity, setPositivity] = useState(3);
   const [typingSpeed, setTypingSpeed] = useState<TypingSpeed>("medium");
   const [explicitness, setExplicitness] = useState<Explicitness>("moderate");
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const result = useMemo(() => {
     const [min, max] = perSessionRange[experience];
@@ -159,122 +158,110 @@ export function SalaryCalculator() {
             />
           </div>
         )}
-      </div>
 
-      <button
-        type="button"
-        className="mt-4 text-sm font-medium text-hot hover:underline"
-        onClick={() => setShowAdvanced((v) => !v)}
-      >
-        {showAdvanced ? "Скрыть дополнительные параметры" : "Показать дополнительные параметры"}
-      </button>
-
-      {showAdvanced && (
-        <div className="mt-3 grid gap-4 rounded-lg bg-zinc-50 p-3 sm:grid-cols-2">
-          <div>
-            <label className="block text-xs font-semibold text-zinc-500">Пол / формат</label>
-            <select
-              className="mt-1 w-full rounded-lg border border-zinc-300 p-2 text-sm"
-              value={gender}
-              onChange={(e) => setGender(e.target.value as Gender)}
-            >
-              <option value="female">Девушка</option>
-              <option value="trans">Трансгендер</option>
-              <option value="male">Мужчина</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-zinc-500">Возраст</label>
-            <select
-              className="mt-1 w-full rounded-lg border border-zinc-300 p-2 text-sm"
-              value={ageGroup}
-              onChange={(e) => setAgeGroup(e.target.value as AgeGroup)}
-            >
-              {(Object.keys(ageLabels) as AgeGroup[]).map((key) => (
-                <option key={key} value={key}>{ageLabels[key]}</option>
-              ))}
-            </select>
-          </div>
-
-          {gender !== "male" && (
-            <div>
-              <label className="block text-xs font-semibold text-zinc-500">Размер груди</label>
-              <select
-                className="mt-1 w-full rounded-lg border border-zinc-300 p-2 text-sm"
-                value={bodyFeature}
-                onChange={(e) => setBodyFeature(e.target.value as BodyFeature)}
-              >
-                {(Object.keys(bodyFeatureLabels) as BodyFeature[]).map((key) => (
-                  <option key={key} value={key}>{bodyFeatureLabels[key]}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          <div className="flex items-end gap-2 pb-1">
-            <input
-              id="babyface"
-              type="checkbox"
-              checked={babyface}
-              onChange={(e) => setBabyface(e.target.checked)}
-            />
-            <label htmlFor="babyface" className="text-sm text-zinc-700">Бейбифейс (моложавая внешность)</label>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-zinc-500">Артистичность: {artistry}/5</label>
-            <input
-              className="mt-2 w-full"
-              type="range"
-              min={1}
-              max={5}
-              step={1}
-              value={artistry}
-              onChange={(e) => setArtistry(Number(e.target.value))}
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-zinc-500">Позитивность / энергичность: {positivity}/5</label>
-            <input
-              className="mt-2 w-full"
-              type="range"
-              min={1}
-              max={5}
-              step={1}
-              value={positivity}
-              onChange={(e) => setPositivity(Number(e.target.value))}
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-zinc-500">Скорость печати в чате</label>
-            <select
-              className="mt-1 w-full rounded-lg border border-zinc-300 p-2 text-sm"
-              value={typingSpeed}
-              onChange={(e) => setTypingSpeed(e.target.value as TypingSpeed)}
-            >
-              {(Object.keys(typingLabels) as TypingSpeed[]).map((key) => (
-                <option key={key} value={key}>{typingLabels[key]}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="sm:col-span-2">
-            <label className="block text-xs font-semibold text-zinc-500">Готовность к откровенному контенту</label>
-            <select
-              className="mt-1 w-full rounded-lg border border-zinc-300 p-2 text-sm"
-              value={explicitness}
-              onChange={(e) => setExplicitness(e.target.value as Explicitness)}
-            >
-              {(Object.keys(explicitnessLabels) as Explicitness[]).map((key) => (
-                <option key={key} value={key}>{explicitnessLabels[key]}</option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <label className="block text-xs font-semibold text-zinc-500">Пол / формат</label>
+          <select
+            className="mt-1 w-full rounded-lg border border-zinc-300 p-2 text-sm"
+            value={gender}
+            onChange={(e) => setGender(e.target.value as Gender)}
+          >
+            <option value="female">Девушка</option>
+            <option value="trans">Трансгендер</option>
+            <option value="male">Мужчина</option>
+          </select>
         </div>
-      )}
+
+        <div>
+          <label className="block text-xs font-semibold text-zinc-500">Возраст</label>
+          <select
+            className="mt-1 w-full rounded-lg border border-zinc-300 p-2 text-sm"
+            value={ageGroup}
+            onChange={(e) => setAgeGroup(e.target.value as AgeGroup)}
+          >
+            {(Object.keys(ageLabels) as AgeGroup[]).map((key) => (
+              <option key={key} value={key}>{ageLabels[key]}</option>
+            ))}
+          </select>
+        </div>
+
+        {gender !== "male" && (
+          <div>
+            <label className="block text-xs font-semibold text-zinc-500">Размер груди</label>
+            <select
+              className="mt-1 w-full rounded-lg border border-zinc-300 p-2 text-sm"
+              value={bodyFeature}
+              onChange={(e) => setBodyFeature(e.target.value as BodyFeature)}
+            >
+              {(Object.keys(bodyFeatureLabels) as BodyFeature[]).map((key) => (
+                <option key={key} value={key}>{bodyFeatureLabels[key]}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <div className="flex items-end gap-2 pb-1">
+          <input
+            id="babyface"
+            type="checkbox"
+            checked={babyface}
+            onChange={(e) => setBabyface(e.target.checked)}
+          />
+          <label htmlFor="babyface" className="text-sm text-zinc-700">Бейбифейс (моложавая внешность)</label>
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-zinc-500">Артистичность: {artistry}/5</label>
+          <input
+            className="mt-2 w-full"
+            type="range"
+            min={1}
+            max={5}
+            step={1}
+            value={artistry}
+            onChange={(e) => setArtistry(Number(e.target.value))}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-zinc-500">Позитивность / энергичность: {positivity}/5</label>
+          <input
+            className="mt-2 w-full"
+            type="range"
+            min={1}
+            max={5}
+            step={1}
+            value={positivity}
+            onChange={(e) => setPositivity(Number(e.target.value))}
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-semibold text-zinc-500">Скорость печати в чате</label>
+          <select
+            className="mt-1 w-full rounded-lg border border-zinc-300 p-2 text-sm"
+            value={typingSpeed}
+            onChange={(e) => setTypingSpeed(e.target.value as TypingSpeed)}
+          >
+            {(Object.keys(typingLabels) as TypingSpeed[]).map((key) => (
+              <option key={key} value={key}>{typingLabels[key]}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className="block text-xs font-semibold text-zinc-500">Готовность к откровенному контенту</label>
+          <select
+            className="mt-1 w-full rounded-lg border border-zinc-300 p-2 text-sm"
+            value={explicitness}
+            onChange={(e) => setExplicitness(e.target.value as Explicitness)}
+          >
+            {(Object.keys(explicitnessLabels) as Explicitness[]).map((key) => (
+              <option key={key} value={key}>{explicitnessLabels[key]}</option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       <div className="mt-5 rounded-lg bg-zinc-50 p-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Оценочный доход в месяц</p>
