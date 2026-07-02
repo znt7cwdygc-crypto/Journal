@@ -74,7 +74,9 @@ export function seoShortId(id: string) {
 }
 
 export function slugifyTranslit(value: string, fallback = "webcam") {
-  const raw = value
+  // "вебкам" транслитерируется целиком в "webcam", а не побуквенно (иначе получится "vebkam").
+  const withWebcamWord = value.replace(/вебкам/gi, "webcam");
+  const raw = withWebcamWord
     .toLowerCase()
     .split("")
     .map((char) => translitMap[char] ?? char)
@@ -97,7 +99,7 @@ function citySlug(city?: string | null, employmentType?: string | null) {
 }
 
 function includesWebcamKeyword(slug: string) {
-  return /\b(vebkam|webcam)\b/.test(slug);
+  return /\bwebcam\b/.test(slug);
 }
 
 function withWebcamKeyword(slug: string, keyword: string) {
@@ -105,7 +107,7 @@ function withWebcamKeyword(slug: string, keyword: string) {
 }
 
 export function articleSeoPath(article: ArticlePathInput) {
-  return `/articles/${seoShortId(article.id)}-${slugifyTranslit(article.title, "statya-vebcam")}`;
+  return `/articles/${seoShortId(article.id)}-${slugifyTranslit(article.title, "statya-webcam")}`;
 }
 
 export function listingSeoPath(listing: ListingPathInput) {
@@ -114,25 +116,25 @@ export function listingSeoPath(listing: ListingPathInput) {
   const base = slugifyTranslit(listing.title, listing.type === "SERVICE" ? "usluga" : "vakansiya");
 
   if (listing.type === "SERVICE") {
-    return `/uslugi/${withWebcamKeyword(base, "dlya-vebcam")}-${city}-${shortId}`;
+    return `/uslugi/${withWebcamKeyword(base, "dlya-webcam")}-${city}-${shortId}`;
   }
 
-  return `/rabota/${withWebcamKeyword(base, "vebcam-studii")}-${city}-${shortId}`;
+  return `/rabota/${withWebcamKeyword(base, "webcam-studii")}-${city}-${shortId}`;
 }
 
 export function productSeoPath(product: ProductPathInput) {
   const title = slugifyTranslit(product.title, "tovar");
   const category = product.category ? slugifyTranslit(product.category, "") : "";
   const city = citySlug(product.city);
-  const parts = [title, category, "dlya-vebcam-modeli", city, seoShortId(product.id)].filter(Boolean);
+  const parts = [title, category, "dlya-webcam-modeli", city, seoShortId(product.id)].filter(Boolean);
   return `/tovar/${parts.join("-")}`;
 }
 
 export function resumeSeoPath(resume: ResumePathInput) {
-  const role = slugifyTranslit(resume.roleGoal || resume.title, "vebcam-model");
+  const role = slugifyTranslit(resume.roleGoal || resume.title, "webcam-model");
   const title = slugifyTranslit(resume.title, "resume");
   const city = citySlug(resume.city);
-  return `/resume/${withWebcamKeyword(`${role}-${title}`, "vebcam-model")}-${city}-${seoShortId(resume.id)}`;
+  return `/resume/${withWebcamKeyword(`${role}-${title}`, "webcam-model")}-${city}-${seoShortId(resume.id)}`;
 }
 
 export function matchProfileSeoPath(profile: MatchProfilePathInput) {

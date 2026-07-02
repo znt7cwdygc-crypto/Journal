@@ -18,11 +18,44 @@ const csp = [
 const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).host : null;
 const serverActionOrigins = ["localhost:3000", "localhost:3001", ...(siteOrigin ? [siteOrigin, `dev.${siteOrigin}`] : [])];
 
+const guideSlugRedirects = [
+  "vebcam-model-chto-eto-za-rabota",
+  "kak-stat-vebcam-modelyu-s-nulya",
+  "vebcam-rabota-udalenno-na-domu",
+  "vebcam-model-zakonno-ili-net",
+  "kak-vybrat-vebcam-studiyu",
+  "kakoy-procent-u-vebcam-modeli-v-studii",
+  "dogovor-s-vebcam-studiey-chto-proverit",
+  "operator-vebcam-chto-delaet",
+  "administrator-vebcam-studii-obyazannosti-zarplata",
+  "nastroyka-obs-dlya-vebcam",
+  "kalkulyator-zarabotka-vebcam-modeli-2026",
+  "skolko-zarabatyvaet-vebcam-model-v-rossii-i-sng"
+].map((old) => ({
+  source: `/guides/${old}`,
+  destination: `/guides/${old.replace(/vebcam/g, "webcam")}`,
+  permanent: true
+}));
+
+const articleSlugRedirects = [
+  "9ve2g8pf-ya-stala-vebkam-modelyu-chto-okazalos-ne-tak-kak-ya-ozhidala",
+  "1dsjskt2-kak-ya-nachinala-vebkam-doma-bez-opyta",
+  "7bxbi4yw-odin-den-iz-zhizni-operatora-vebkam",
+  "nlia3urr-vebkam-rabota-otzyvy-plyusy-minusy-i-realnye-riski"
+].map((old) => ({
+  source: `/articles/${old}`,
+  destination: `/articles/${old.replace(/vebkam/g, "webcam")}`,
+  permanent: true
+}));
+
 const nextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: serverActionOrigins
     }
+  },
+  async redirects() {
+    return [...guideSlugRedirects, ...articleSlugRedirects];
   },
   async headers() {
     return [

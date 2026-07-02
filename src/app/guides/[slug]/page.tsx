@@ -125,7 +125,7 @@ export default async function GuidePage({ params }: { params: { slug: string } }
       )}
 
       {/* Interactive salary calculator — dedicated calculator guide */}
-      {raw.slug === "kalkulyator-zarabotka-vebcam-modeli-2026" && <SalaryCalculator />}
+      {raw.slug === "kalkulyator-zarabotka-webcam-modeli-2026" && <SalaryCalculator />}
 
       {/* Sections */}
       {guide.sections.map((section, i) => (
