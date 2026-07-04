@@ -67,7 +67,7 @@ const faq = [
 ];
 
 const ctaLabel = "Зарегистрироваться на Fansly";
-const ctaHref = "https://fansly.com";
+const ctaHref = "https://fansly.com/application/form?r=sp1cyme";
 const related = [
   "/guides/onlyfans-v-rossii-registraciya-oplata-vyvod",
   "/services",
