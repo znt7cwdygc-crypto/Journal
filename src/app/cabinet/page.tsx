@@ -28,6 +28,7 @@ import { AdBlock } from "@/components/ad-block";
 import { AvatarUpload } from "@/components/avatar-upload";
 import { ArticleEditorForm } from "@/components/article-editor-form";
 import { CabinetPanelRouter } from "@/components/cabinet-panel-router";
+import { PasswordInput } from "@/components/password-input";
 import { InviteCard } from "@/components/invite-card";
 import { ListingQuizDisclosure } from "@/components/listing-quiz-disclosure";
 import { MatchProfileForm } from "@/components/match-profile-form";
@@ -331,6 +332,12 @@ export default async function CabinetPage({
               <AvatarUpload currentImage={dbUser.image} fallbackLetter={(dbUser.name || "U").slice(0, 1).toUpperCase()} />
               <input className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="name" defaultValue={dbUser.name ?? ""} placeholder="Имя или псевдоним" required />
               <textarea className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="profileBio" defaultValue={dbUser.profileBio ?? ""} placeholder="Пару слов о себе" rows={2} />
+              {dbUser.profileKind !== "MODEL" && (
+                <div>
+                  <input className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="externalLink" type="url" defaultValue={dbUser.externalLink ?? ""} placeholder="Ссылка на Telegram, канал или сайт" />
+                  <p className="mt-1 text-[11px] text-zinc-400">Кнопка перехода будет видна в вашем публичном профиле. Сейчас бесплатно.</p>
+                </div>
+              )}
               <button className="w-full rounded-lg bg-hot py-2 text-xs font-semibold text-white" type="submit">Сохранить профиль</button>
             </form>
             <form action={updateProfileSettingsAction} className="grid grid-cols-2 gap-2 border-t border-zinc-100 pt-3">
@@ -370,7 +377,7 @@ export default async function CabinetPage({
               {emailUpdated === "same" && <p className="rounded bg-zinc-50 px-3 py-2 text-xs text-zinc-600">Этот email уже указан в профиле.</p>}
               {emailError && <p className="rounded bg-red-50 px-3 py-2 text-xs text-red-700">{emailError === "exists" ? "Этот email уже занят." : emailError === "current" ? "Текущий пароль указан неверно." : "Не удалось изменить email."}</p>}
               <input className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="email" type="email" defaultValue={dbUser.email ?? ""} placeholder="Новый email" required />
-              <input className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="currentPassword" type="password" placeholder="Текущий пароль" required />
+              <PasswordInput className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="currentPassword" placeholder="Текущий пароль" required />
               <button className="w-full rounded-lg bg-zinc-900 py-2 text-xs font-semibold text-white" type="submit">Изменить email</button>
             </form>
             <form action={changePasswordAction} className="space-y-3 rounded-lg border border-zinc-100 p-3">
@@ -380,9 +387,9 @@ export default async function CabinetPage({
               </div>
               {passwordUpdated && <p className="rounded bg-emerald-50 px-3 py-2 text-xs text-emerald-800">Пароль обновлен.</p>}
               {passwordError && <p className="rounded bg-red-50 px-3 py-2 text-xs text-red-700">{passwordError === "current" ? "Текущий пароль указан неверно." : "Пароли не совпадают или слишком короткие."}</p>}
-              <input className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="currentPassword" type="password" placeholder="Текущий пароль" required />
-              <input className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="password" type="password" placeholder="Новый пароль" minLength={6} required />
-              <input className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="passwordConfirm" type="password" placeholder="Повторите новый пароль" minLength={6} required />
+              <PasswordInput className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="currentPassword" placeholder="Текущий пароль" required />
+              <PasswordInput className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="password" placeholder="Новый пароль" minLength={6} required />
+              <PasswordInput className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm" name="passwordConfirm" placeholder="Повторите новый пароль" minLength={6} required />
               <button className="w-full rounded-lg bg-hot py-2 text-xs font-semibold text-white" type="submit">Изменить пароль</button>
             </form>
           </div>

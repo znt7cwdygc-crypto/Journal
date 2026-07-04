@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { loginAction } from "@/app/actions";
+import { PasswordInput } from "@/components/password-input";
 
 export const metadata: Metadata = {
   title: "Вход",
@@ -26,7 +27,7 @@ export default function SignInPage({ searchParams }: { searchParams?: { error?: 
       )}
       <form action={loginAction} className="mt-4 space-y-3">
         <input className="w-full rounded border p-2" name="email" type="email" placeholder="Email" required />
-        <input className="w-full rounded border p-2" name="password" type="password" placeholder="Пароль" required />
+        <PasswordInput className="w-full rounded border p-2" name="password" placeholder="Пароль" required />
         <button className="w-full rounded bg-ink p-2 text-white" type="submit">Войти</button>
       </form>
       <div className="mt-4 flex items-center justify-between gap-3 text-sm">

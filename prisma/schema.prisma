@@ -131,6 +131,8 @@ model User {
   accountMode      AccountMode @default(CONSUMER)
   profileKind      ProfileKind @default(MODEL)
   tgHandle         String?
+  externalLink       String?
+  externalLinkActive Boolean     @default(true)
   isAdultConfirmed Boolean     @default(false)
   lastActiveAt       DateTime    @default(now())
   blockedUntil       DateTime?

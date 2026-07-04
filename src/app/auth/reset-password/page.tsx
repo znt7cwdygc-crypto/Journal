@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { resetPasswordAction } from "@/app/actions";
 import { prisma } from "@/lib/prisma";
+import { PasswordInput } from "@/components/password-input";
 
 export const metadata: Metadata = {
   title: "Новый пароль",
@@ -38,8 +39,8 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
       ) : (
         <form action={resetPasswordAction} className="mt-4 space-y-3">
           <input type="hidden" name="token" value={token} />
-          <input className="w-full rounded border p-2" name="password" type="password" placeholder="Новый пароль" minLength={6} required />
-          <input className="w-full rounded border p-2" name="passwordConfirm" type="password" placeholder="Повторите пароль" minLength={6} required />
+          <PasswordInput className="w-full rounded border p-2" name="password" placeholder="Новый пароль" minLength={6} required />
+          <PasswordInput className="w-full rounded border p-2" name="passwordConfirm" placeholder="Повторите пароль" minLength={6} required />
           <button className="w-full rounded bg-ink p-2 text-white" type="submit">Сохранить пароль</button>
         </form>
       )}

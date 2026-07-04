@@ -585,12 +585,16 @@ export async function updatePublicProfileAction(formData: FormData) {
     console.error("Avatar upload failed:", err instanceof Error ? err.message : err);
   }
 
+  const currentUser = await prisma.user.findUnique({ where: { id: sessionUser.id }, select: { profileKind: true } });
+  const canHaveExternalLink = currentUser?.profileKind && currentUser.profileKind !== "MODEL";
+
   await prisma.user.update({
     where: { id: sessionUser.id },
     data: {
       name: requireText(formData.get("name"), "имя", 120),
       ...(avatarUrl ? { image: avatarUrl } : {}),
-      profileBio: cleanMultiline(formData.get("profileBio"), 1200) || null
+      profileBio: cleanMultiline(formData.get("profileBio"), 1200) || null,
+      ...(canHaveExternalLink ? { externalLink: optionalUrl(formData.get("externalLink")) } : {})
     }
   });
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { registerAction } from "@/app/actions";
+import { PasswordInput } from "@/components/password-input";
 
 export const metadata: Metadata = {
   title: "Регистрация",
@@ -13,7 +14,7 @@ export default function SignUpPage() {
       <form action={registerAction} className="mt-4 space-y-3">
         <input className="w-full rounded border p-2" name="name" placeholder="Имя" required />
         <input className="w-full rounded border p-2" name="email" type="email" placeholder="Email" required />
-        <input className="w-full rounded border p-2" name="password" type="password" placeholder="Пароль (минимум 6)" required />
+        <PasswordInput className="w-full rounded border p-2" name="password" placeholder="Пароль (минимум 6)" required />
         <select className="w-full rounded border p-2" name="accountMode" defaultValue="CONSUMER">
           <option value="CONSUMER">Ищу услуги / работу</option>
           <option value="PROVIDER">Предлагаю услуги / вакансии</option>
