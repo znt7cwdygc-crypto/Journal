@@ -30,7 +30,7 @@ const css = `
 .badge-format{background:#f4f4f5;border-radius:999px;color:#3f3f46;font-weight:600;padding:.25rem .625rem}
 .badge-status{background:#d9f99d;border-radius:.25rem;color:#18181b;font-weight:700;letter-spacing:.05em;padding:.25rem .625rem;text-transform:uppercase}
 .media-frame,.media-placeholder{aspect-ratio:16/9;border-radius:.5rem;width:100%}
-.media-frame{object-fit:cover}
+.media-frame{background:#09090b;object-fit:contain}
 .media-placeholder{align-items:center;background:#f4f4f5;display:flex;justify-content:center;padding:0 1.25rem;text-align:center}
 .form-label{color:#3f3f46;display:block;font-size:.875rem;font-weight:500}
 .form-field,.form-textarea{background:#fff;border:1px solid #e4e4e7;border-radius:.5rem;color:#18181b;font-size:1rem;margin-top:.25rem;outline:none;padding:.5rem .75rem;width:100%}
