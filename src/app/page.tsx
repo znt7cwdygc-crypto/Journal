@@ -303,7 +303,7 @@ export default async function HomePage() {
             return (
               <Link key={article.id} href={articleSeoPath(article)} className="grid gap-3 py-4 first:pt-0 last:pb-0 sm:grid-cols-[150px_minmax(0,1fr)]">
                 {coverImage ? (
-                  <SafeImage className="aspect-[16/10] w-full rounded-lg object-cover" src={coverImage} alt={article.title} fallback={null} />
+                  <SafeImage className="aspect-[16/10] w-full rounded-lg bg-zinc-950 object-contain" src={coverImage} alt={article.title} fallback={null} />
                 ) : (
                   <div className="hidden sm:block" />
                 )}

@@ -213,7 +213,8 @@ a {
 }
 
 .media-frame {
-  object-fit: cover;
+  background: #09090b;
+  object-fit: contain;
 }
 
 .media-placeholder {

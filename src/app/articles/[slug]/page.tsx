@@ -238,7 +238,7 @@ export default async function ArticleDetailsPage({
       />
       {coverImage && (
         <SafeImage
-          className="mb-6 aspect-[16/7] w-full object-cover"
+          className="mb-6 aspect-[16/7] w-full bg-zinc-950 object-contain"
           src={coverImage}
           alt={article.title}
           fallback={null}
