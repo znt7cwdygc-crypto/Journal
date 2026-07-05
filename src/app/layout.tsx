@@ -17,7 +17,11 @@ export const metadata: Metadata = {
   description: siteDescription,
   applicationName: siteName,
   icons: {
-    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" }
+    ],
+    shortcut: [{ url: "/favicon.ico" }],
     apple: [{ url: "/favicon.svg" }],
   },
   manifest: "/manifest.json",
