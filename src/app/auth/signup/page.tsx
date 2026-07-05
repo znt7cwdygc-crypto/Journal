@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { registerAction } from "@/app/actions";
 import { PasswordInput } from "@/components/password-input";
+import { roleOptions } from "@/lib/roles";
 
 export const metadata: Metadata = {
   title: "Регистрация",
@@ -15,21 +16,14 @@ export default function SignUpPage() {
         <input className="w-full rounded border p-2" name="name" placeholder="Имя" required />
         <input className="w-full rounded border p-2" name="email" type="email" placeholder="Email" required />
         <PasswordInput className="w-full rounded border p-2" name="password" placeholder="Пароль (минимум 6)" required />
-        <select className="w-full rounded border p-2" name="accountMode" defaultValue="CONSUMER">
-          <option value="CONSUMER">Ищу услуги / работу</option>
-          <option value="PROVIDER">Предлагаю услуги / вакансии</option>
-          <option value="BOTH">Ищу и предлагаю</option>
-        </select>
-        <select className="w-full rounded border p-2" name="profileKind" defaultValue="MODEL">
-          <option value="MODEL">Модель</option>
-          <option value="OPERATOR">Оператор</option>
-          <option value="STUDIO">Студия</option>
-          <option value="AGENCY">Агентство</option>
-          <option value="EXPERT">Эксперт</option>
-          <option value="COACH">Коуч</option>
-          <option value="LAWYER">Юрист</option>
-          <option value="OTHER">Другое</option>
-        </select>
+        <div>
+          <label className="mb-1 block text-sm font-medium text-zinc-600">Кто вы?</label>
+          <select className="w-full rounded border p-2" name="profileKind" defaultValue="MODEL">
+            {roleOptions.map((r) => (
+              <option key={r.value} value={r.value}>{r.label}</option>
+            ))}
+          </select>
+        </div>
         <label className="flex items-center gap-2 text-sm">
           <input name="adult" type="checkbox" required />
           Подтверждаю, что мне 18+

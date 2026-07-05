@@ -3,7 +3,7 @@
 import { compare, hash } from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { AccountMode, BalanceTxType, ContentStatus, InviteStatus, ListingType, PaymentStatus, PaymentType, Prisma, ProductCondition, ProductDelivery, ProfileKind, UserRole } from "@prisma/client";
+import { BalanceTxType, ContentStatus, InviteStatus, ListingType, PaymentStatus, PaymentType, Prisma, ProductCondition, ProductDelivery, ProfileKind, UserRole } from "@prisma/client";
 import { auth, signIn, signOut } from "@/auth";
 import { getExpertLicenseEnd, getResumeUnlockEnd } from "@/lib/licenses";
 import { adRevalidatePaths, isHttpUrl, normalizeAdPlacement } from "@/lib/ads";
@@ -11,6 +11,7 @@ import { normalizeArticleBody, stripArticleHtml } from "@/lib/article-html";
 import { prisma } from "@/lib/prisma";
 import { listingExpiresAt, matchProfileExpiresAt, productExpiresAt, resumeExpiresAt } from "@/lib/publication-periods";
 import { isUserBlocked, requireRole } from "@/lib/access";
+import { accountModeFromKind } from "@/lib/roles";
 import { safeInternalPath } from "@/lib/safe-redirect";
 import { articleSeoPath } from "@/lib/seo-url";
 import { articleTopic } from "@/lib/topics";
@@ -73,8 +74,8 @@ export async function registerAction(formData: FormData) {
   const email = cleanText(formData.get("email"), 255).toLowerCase();
   const name = cleanText(formData.get("name"), 120);
   const password = String(formData.get("password") ?? "");
-  const accountMode = normalizeAccountMode(String(formData.get("accountMode") ?? "CONSUMER"));
   const profileKind = normalizeProfileKind(String(formData.get("profileKind") ?? "MODEL"));
+  const accountMode = accountModeFromKind(profileKind);
 
   ensureAdult(formData);
   if (!email || !password || password.length < 6) throw new Error("Некорректные данные регистрации");
@@ -239,10 +240,6 @@ export async function updateEmailAction(formData: FormData) {
   await sendVerificationEmail(email, user.name);
 
   redirect("/cabinet?emailUpdated=1");
-}
-
-function normalizeAccountMode(value: string): AccountMode {
-  return ["CONSUMER", "PROVIDER", "BOTH"].includes(value) ? (value as AccountMode) : "CONSUMER";
 }
 
 function normalizeProfileKind(value: string): ProfileKind {
@@ -563,11 +560,13 @@ function buildMatchProfileBio(formData: FormData) {
 export async function updateProfileSettingsAction(formData: FormData) {
   const sessionUser = await requireActiveSessionUser();
 
+  const profileKind = normalizeProfileKind(String(formData.get("profileKind") ?? "MODEL"));
+
   await prisma.user.update({
     where: { id: sessionUser.id },
     data: {
-      accountMode: normalizeAccountMode(String(formData.get("accountMode") ?? "CONSUMER")),
-      profileKind: normalizeProfileKind(String(formData.get("profileKind") ?? "MODEL"))
+      profileKind,
+      accountMode: accountModeFromKind(profileKind)
     }
   });
 

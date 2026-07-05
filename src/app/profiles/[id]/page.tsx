@@ -12,12 +12,6 @@ import { articleSeoPath, listingSeoPath, productSeoPath, resumeSeoPath } from "@
 
 export const dynamic = "force-dynamic";
 
-const modeLabels = {
-  CONSUMER: "Ищу услуги / работу",
-  PROVIDER: "Предлагаю услуги / вакансии",
-  BOTH: "Ищу и предлагаю"
-} as const;
-
 const profileLabels = {
   MODEL: "Модель",
   OPERATOR: "Оператор",
@@ -150,7 +144,7 @@ export default async function ProfilePage({
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold">{user.name || "Пользователь"}</h1>
             <p className="mt-1 text-sm text-zinc-600">
-              {user.role === "ADMIN" ? "Администратор" : "Пользователь"} • {modeLabels[user.accountMode]} • {profileLabels[user.profileKind]} • {city}
+              {user.role === "ADMIN" ? "Администратор" : "Пользователь"} • {profileLabels[user.profileKind]} • {city}
             </p>
             {user.profileBio && <p className="mt-3 max-w-2xl whitespace-pre-wrap text-sm leading-6 text-zinc-700">{user.profileBio}</p>}
             {user.profileKind !== "MODEL" && user.externalLink && user.externalLinkActive && (

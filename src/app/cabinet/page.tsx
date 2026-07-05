@@ -29,6 +29,7 @@ import { AvatarUpload } from "@/components/avatar-upload";
 import { ArticleEditorForm } from "@/components/article-editor-form";
 import { CabinetPanelRouter } from "@/components/cabinet-panel-router";
 import { PasswordInput } from "@/components/password-input";
+import { isProviderKind, roleLabel, roleOptions, roleSelectValue } from "@/lib/roles";
 import { InviteCard } from "@/components/invite-card";
 import { ListingQuizDisclosure } from "@/components/listing-quiz-disclosure";
 import { MatchProfileForm } from "@/components/match-profile-form";
@@ -63,17 +64,6 @@ const updatedMessages: Record<string, string> = {
   resumeRenewed: "Резюме продлено на 7 дней.",
   product: "Товар обновлен.",
   productRenewed: "Товар продлен на 30 дней."
-};
-
-const profileKindLabels: Record<string, string> = {
-  MODEL: "Модель",
-  OPERATOR: "Оператор",
-  STUDIO: "Студия",
-  AGENCY: "Агентство",
-  EXPERT: "Эксперт",
-  COACH: "Коуч",
-  LAWYER: "Юрист",
-  OTHER: "Другое"
 };
 
 const articleStatusLabels: Record<string, string> = {
@@ -248,7 +238,7 @@ export default async function CabinetPage({
     ? myArticles.find((article) => article.id === editArticleId) ?? null
     : null;
   const isEditingArticle = Boolean(selectedArticle);
-  const providerMode = dbUser.accountMode === "PROVIDER" || dbUser.accountMode === "BOTH" || dbUser.role === "ADMIN";
+  const providerMode = isProviderKind(dbUser.profileKind) || dbUser.role === "ADMIN";
   const createdMessage = createdParam ? createdMessages[createdParam] : null;
   const updatedMessage = updatedParam ? updatedMessages[updatedParam] : null;
   const productJustCreated = createdParam === "product";
@@ -271,13 +261,7 @@ export default async function CabinetPage({
   const passwordUpdated = searchValue(searchParams?.passwordUpdated) === "1";
   const passwordError = searchValue(searchParams?.passwordError);
   const profileName = dbUser.name || dbUser.email || "Профиль";
-  const accountModeLabel =
-    dbUser.accountMode === "PROVIDER"
-      ? "Предлагаю услуги"
-      : dbUser.accountMode === "BOTH"
-        ? "Ищу и предлагаю"
-        : "Ищу услуги / работу";
-  const profileKindLabel = profileKindLabels[String(dbUser.profileKind || "MODEL")] || "Профиль";
+  const profileKindLabel = roleLabel(dbUser.profileKind);
   const canPublishMatchProfile = dbUser.profileKind === "MODEL" || dbUser.profileKind === "OPERATOR";
   const emailVerified = Boolean(dbUser.emailVerified);
 
@@ -318,7 +302,7 @@ export default async function CabinetPage({
           </div>
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-lg font-bold">{profileName}</h1>
-            <p className="truncate text-xs text-zinc-500">{profileKindLabel} &bull; {accountModeLabel}</p>
+            <p className="truncate text-xs text-zinc-500">{profileKindLabel}</p>
           </div>
         </div>
 
@@ -340,23 +324,14 @@ export default async function CabinetPage({
               )}
               <button className="w-full rounded-lg bg-hot py-2 text-xs font-semibold text-white" type="submit">Сохранить профиль</button>
             </form>
-            <form action={updateProfileSettingsAction} className="grid grid-cols-2 gap-2 border-t border-zinc-100 pt-3">
-              <select className="rounded-lg border border-zinc-200 px-2 py-1.5 text-xs" name="accountMode" defaultValue={dbUser.accountMode}>
-                <option value="CONSUMER">Ищу работу</option>
-                <option value="PROVIDER">Предлагаю услуги</option>
-                <option value="BOTH">Ищу и предлагаю</option>
+            <form action={updateProfileSettingsAction} className="space-y-2 border-t border-zinc-100 pt-3">
+              <label className="block text-[11px] font-medium text-zinc-500">Кто вы?</label>
+              <select className="w-full rounded-lg border border-zinc-200 px-2 py-1.5 text-xs" name="profileKind" defaultValue={roleSelectValue(dbUser.profileKind)}>
+                {roleOptions.map((r) => (
+                  <option key={r.value} value={r.value}>{r.label}</option>
+                ))}
               </select>
-              <select className="rounded-lg border border-zinc-200 px-2 py-1.5 text-xs" name="profileKind" defaultValue={dbUser.profileKind}>
-                <option value="MODEL">Модель</option>
-                <option value="OPERATOR">Оператор</option>
-                <option value="STUDIO">Студия</option>
-                <option value="AGENCY">Агентство</option>
-                <option value="EXPERT">Эксперт</option>
-                <option value="COACH">Коуч</option>
-                <option value="LAWYER">Юрист</option>
-                <option value="OTHER">Другое</option>
-              </select>
-              <button className="col-span-2 rounded-lg bg-zinc-900 py-1.5 text-xs font-semibold text-white" type="submit">Обновить режим</button>
+              <button className="w-full rounded-lg bg-zinc-900 py-1.5 text-xs font-semibold text-white" type="submit">Сохранить</button>
             </form>
           </div>
         </details>

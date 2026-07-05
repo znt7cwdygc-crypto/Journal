@@ -5,6 +5,7 @@ import { Prisma, ProfileKind } from "@prisma/client";
 import { AdBlock } from "@/components/ad-block";
 import { SafeImage } from "@/components/safe-image";
 import { safeImageUrl } from "@/lib/media";
+import { roleLabel } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { siteUrl } from "@/lib/seo";
 
@@ -153,7 +154,7 @@ export default async function AuthorsPage({ searchParams }: { searchParams?: { k
           const listings = author._count.listings;
           const hasResume = Boolean(author.resume);
           const useful = author.articles.reduce((sum, article) => sum + article.ratings.filter((rating) => rating.value >= 4).length, 0);
-          const roleLabel = author.role === "ADMIN" ? "Администратор" : author.accountMode === "PROVIDER" ? "Поставщик" : author.accountMode === "BOTH" ? "Ищет и предлагает" : "Участник";
+          const authorRoleLabel = author.role === "ADMIN" ? "Администратор" : roleLabel(author.profileKind);
           const verified = author.role === "ADMIN" || useful >= 5 || author._count.authorFollowers >= 3;
           const activeAuthor = articles >= 3;
           const authorImage = safeImageUrl(author.image);
@@ -181,7 +182,7 @@ export default async function AuthorsPage({ searchParams }: { searchParams?: { k
                   )}
                   <div className="min-w-0 flex-1">
                     <h2 className="max-w-full truncate text-lg font-semibold">{author.name || author.email || "Автор"}</h2>
-                    <p className="mt-1 max-w-full truncate text-sm text-zinc-600">{roleLabel} • {author.profileKind}</p>
+                    <p className="mt-1 max-w-full truncate text-sm text-zinc-600">{authorRoleLabel}</p>
                     <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
                       {verified && <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-700">проверенный</span>}
                       {activeAuthor && <span className="rounded bg-sky-50 px-1.5 py-0.5 text-sky-700">активный автор</span>}
