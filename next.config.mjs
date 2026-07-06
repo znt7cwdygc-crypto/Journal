@@ -37,6 +37,31 @@ const guideSlugRedirects = [
   permanent: true
 }));
 
+// Гайды первых двух поколений (до текущей v2-структуры) были удалены при пересидах
+// без редиректов. Эти URL успели попасть в индекс Яндекса/Google — отдают 404.
+// Ведём на ближайший по теме актуальный гайд.
+const legacyGuideRedirects = [
+  ["rabota-webcam-bez-opyta", "kak-stat-webcam-modelyu-s-nulya"],
+  ["kak-stat-webcam-modelyu", "kak-stat-webcam-modelyu-s-nulya"],
+  ["kak-nachat-vebcam-bez-opyta", "kak-stat-webcam-modelyu-s-nulya"],
+  ["skolko-zarabatyvaet-webcam-model", "skolko-zarabatyvaet-webcam-model-v-rossii-i-sng"],
+  ["skolko-zarabatyvaet-vebcam-model", "skolko-zarabatyvaet-webcam-model-v-rossii-i-sng"],
+  ["bezopasnost-webcam-modeli", "webcam-model-zakonno-ili-net"],
+  ["bezopasnost-vebcam-modeli", "webcam-model-zakonno-ili-net"],
+  ["kak-studii-nayti-administratora", "administrator-webcam-studii-obyazannosti-zarplata"],
+  ["kak-nayti-operatora-dlya-vebcam", "operator-webcam-chto-delaet"],
+  ["oborudovanie-dlya-vebcam-strima", "nastroyka-obs-dlya-webcam"]
+].map(([old, next]) => ({
+  source: `/guides/${old}`,
+  destination: `/guides/${next}`,
+  permanent: true
+}));
+
+// Не гайд, а анкета резюме — редирект в другой раздел на живую страницу.
+const legacyCrossSectionRedirects = [
+  { source: "/guides/kak-sostavit-rezyume-modeli", destination: "/resumes/models", permanent: true }
+];
+
 const articleSlugRedirects = [
   "9ve2g8pf-ya-stala-vebkam-modelyu-chto-okazalos-ne-tak-kak-ya-ozhidala",
   "1dsjskt2-kak-ya-nachinala-vebkam-doma-bez-opyta",
@@ -55,7 +80,7 @@ const nextConfig = {
     }
   },
   async redirects() {
-    return [...guideSlugRedirects, ...articleSlugRedirects];
+    return [...guideSlugRedirects, ...legacyGuideRedirects, ...legacyCrossSectionRedirects, ...articleSlugRedirects];
   },
   async headers() {
     return [
