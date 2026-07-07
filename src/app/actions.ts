@@ -294,6 +294,7 @@ function normalizeArticleFormat(value: FormDataEntryValue | null) {
 }
 
 const articleTopics = ["Истории", "Деньги", "Безопасность", "Работа", "Студии", "Разборы", "Инструменты", "Вопросы"];
+const articleBodyMaxLength = 80000;
 
 function normalizeTopic(value: FormDataEntryValue | null, title: string, body: string) {
   const topic = cleanText(value, 80);
@@ -312,13 +313,15 @@ function requireArticleBody(value: FormDataEntryValue | null) {
   const body = normalizeArticleBody(value);
   const text = stripArticleHtml(body);
   if (text.length < 2) throw new Error("Заполните текст статьи");
-  if (body.length > 12000) throw new Error("текст слишком длинный");
+  if (body.length > articleBodyMaxLength) {
+    throw new Error("Текст статьи слишком длинный. Сократите материал или разбейте его на две части.");
+  }
   return body;
 }
 
 function cleanArticleDraftBody(value: FormDataEntryValue | null) {
   const body = normalizeArticleBody(value, "Начните писать текст статьи.");
-  return body.length > 12000 ? body.slice(0, 12000) : body;
+  return body.length > articleBodyMaxLength ? body.slice(0, articleBodyMaxLength) : body;
 }
 
 function withStatusParam(path: string, key: string, value: string) {
@@ -326,6 +329,29 @@ function withStatusParam(path: string, key: string, value: string) {
   const pathname = hashIndex >= 0 ? path.slice(0, hashIndex) : path;
   const hash = hashIndex >= 0 ? path.slice(hashIndex) : "";
   return `${pathname}${pathname.includes("?") ? "&" : "?"}${key}=${encodeURIComponent(value)}${hash}`;
+}
+
+function articleFormErrorMessage(error: unknown) {
+  if (!(error instanceof Error)) return null;
+  const message = error.message.trim();
+  if (!message) return null;
+
+  if (
+    message.startsWith("Заполните поле:") ||
+    message === "Выберите рубрику статьи" ||
+    message === "Заполните текст статьи" ||
+    message.includes("Текст статьи слишком длинный")
+  ) {
+    return message;
+  }
+
+  return null;
+}
+
+function redirectArticleFormError(path: string, error: unknown): never {
+  const message = articleFormErrorMessage(error);
+  if (!message) throw error;
+  redirect(withStatusParam(path, "articleError", message));
 }
 
 const forbiddenModelVacancyPattern = /(модел|model|streamer|стример|performer|перформер)/i;
@@ -775,13 +801,26 @@ export async function submitBlogArticleAction(formData: FormData) {
   const sessionUser = await requireActiveSessionUser();
   await requireVerifiedEmail(sessionUser.id);
 
-  const title = requireText(formData.get("title"), "заголовок", 140);
-  const summary = requireText(formData.get("summary"), "краткое описание", 260);
-  const body = requireArticleBody(formData.get("body"));
-  const format = normalizeArticleFormat(formData.get("format"));
-  const topic = requireArticleTopic(formData.get("topic"));
-  const coverImage = await resolveCoverImage(formData);
   const articleId = cleanText(formData.get("draftId"), 120);
+  const errorPath = articleId ? `/cabinet?editArticle=${encodeURIComponent(articleId)}#blog` : "/cabinet#blog";
+
+  let title: string;
+  let summary: string;
+  let body: string;
+  let format: string;
+  let topic: string;
+  let coverImage: string | null;
+
+  try {
+    title = requireText(formData.get("title"), "заголовок", 140);
+    summary = requireText(formData.get("summary"), "краткое описание", 260);
+    body = requireArticleBody(formData.get("body"));
+    format = normalizeArticleFormat(formData.get("format"));
+    topic = requireArticleTopic(formData.get("topic"));
+    coverImage = await resolveCoverImage(formData);
+  } catch (error) {
+    redirectArticleFormError(errorPath, error);
+  }
 
   const slug = makeSlug(title);
 
@@ -881,12 +920,23 @@ export async function updateBlogArticleAction(formData: FormData) {
   const existing = await prisma.article.findFirst({ where: { id: articleId, createdById: sessionUser.id } });
   if (!existing) throw new Error("Статья не найдена");
 
-  const title = requireText(formData.get("title"), "заголовок", 140);
-  const summary = requireText(formData.get("summary"), "краткое описание", 260);
-  const body = requireArticleBody(formData.get("body"));
-  const format = normalizeArticleFormat(formData.get("format"));
-  const topic = requireArticleTopic(formData.get("topic"));
-  const coverImage = await resolveCoverImage(formData);
+  let title: string;
+  let summary: string;
+  let body: string;
+  let format: string;
+  let topic: string;
+  let coverImage: string | null;
+
+  try {
+    title = requireText(formData.get("title"), "заголовок", 140);
+    summary = requireText(formData.get("summary"), "краткое описание", 260);
+    body = requireArticleBody(formData.get("body"));
+    format = normalizeArticleFormat(formData.get("format"));
+    topic = requireArticleTopic(formData.get("topic"));
+    coverImage = await resolveCoverImage(formData);
+  } catch (error) {
+    redirectArticleFormError(`/cabinet/articles/${encodeURIComponent(articleId)}/edit`, error);
+  }
 
   const article = await prisma.article.update({
     where: { id: existing.id },
