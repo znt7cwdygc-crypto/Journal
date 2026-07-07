@@ -1,6 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { extname, join } from "node:path";
+import sharp from "sharp";
+
+// Максимальная ширина стороны — сайт нигде не показывает изображения крупнее.
+const MAX_DIMENSION = 2000;
+const WEBP_QUALITY = 80;
 
 const allowedTypes = new Map([
   ["image/jpeg", ".jpg"],
@@ -62,9 +67,23 @@ export async function saveUploadedImage(value: unknown, seoContext?: string) {
 
   await mkdir(UPLOAD_DIR, { recursive: true });
 
-  const filename = seoFilename(seoContext, extension === ".jpeg" ? ".jpg" : extension);
   const bytes = Buffer.from(await value.arrayBuffer());
-  await writeFile(join(UPLOAD_DIR, filename), bytes);
+
+  // Анимированный GIF пережимать нельзя (потеряет анимацию) — сохраняем как есть.
+  // Остальные форматы: сжимаем и переводим в WebP, чтобы вес файла упал в разы.
+  if (extension === ".gif") {
+    const filename = seoFilename(seoContext, extension);
+    await writeFile(join(UPLOAD_DIR, filename), bytes);
+    return `/uploads/${filename}`;
+  }
+
+  const filename = seoFilename(seoContext, ".webp");
+  const compressed = await sharp(bytes)
+    .rotate() // учитывает EXIF-ориентацию перед ресайзом
+    .resize({ width: MAX_DIMENSION, height: MAX_DIMENSION, fit: "inside", withoutEnlargement: true })
+    .webp({ quality: WEBP_QUALITY })
+    .toBuffer();
+  await writeFile(join(UPLOAD_DIR, filename), compressed);
 
   return `/uploads/${filename}`;
 }
