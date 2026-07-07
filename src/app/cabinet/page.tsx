@@ -96,6 +96,7 @@ export default async function CabinetPage({
     updated?: string | string[];
     editArticle?: string | string[];
     articleId?: string | string[];
+    articleError?: string | string[];
     listingId?: string | string[];
     matchProfileId?: string | string[];
     resumeId?: string | string[];
@@ -228,6 +229,7 @@ export default async function CabinetPage({
   const createdParam = searchValue(searchParams?.created);
   const updatedParam = searchValue(searchParams?.updated);
   const articleResultId = searchValue(searchParams?.articleId) || "";
+  const articleError = (searchValue(searchParams?.articleError) || "").slice(0, 320);
   const listingResultId = searchValue(searchParams?.listingId) || "";
   const matchProfileResultId = searchValue(searchParams?.matchProfileId) || "";
   const resumeResultId = searchValue(searchParams?.resumeId) || "";
@@ -524,7 +526,14 @@ export default async function CabinetPage({
         </section>
       )}
 
-      <details key={articleJustCreated ? "blog-closed" : "blog"} id="blog" data-cabinet-panel className="group rounded-lg bg-white shadow-sm" open={isEditingArticle && !articleJustCreated}>
+      {articleError && (
+        <section id="article-error" className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <p className="font-semibold">Статья не опубликована.</p>
+          <p className="mt-1 leading-5">{articleError}</p>
+        </section>
+      )}
+
+      <details key={articleJustCreated ? "blog-closed" : articleError ? "blog-error" : "blog"} id="blog" data-cabinet-panel className="group rounded-lg bg-white shadow-sm" open={(Boolean(articleError) || isEditingArticle) && !articleJustCreated}>
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4">
           <div className="min-w-0">
             <h2 className="font-semibold">Статья</h2>

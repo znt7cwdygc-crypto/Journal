@@ -19,12 +19,23 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false }
 };
 
-export default async function EditArticlePage({ params }: { params: { id: string } }) {
+function searchValue(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function EditArticlePage({
+  params,
+  searchParams
+}: {
+  params: { id: string };
+  searchParams?: { articleError?: string | string[] };
+}) {
   const user = await requireUser();
   const article = await prisma.article.findFirst({ where: { id: params.id, createdById: user.id } });
   if (!article) notFound();
 
   const isPublished = article.status === "PUBLISHED";
+  const articleError = (searchValue(searchParams?.articleError) || "").slice(0, 320);
 
   return (
     <div className="page-stack">
@@ -63,6 +74,12 @@ export default async function EditArticlePage({ params }: { params: { id: string
       </section>
 
       <section className="section-card">
+        {articleError && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            <p className="font-semibold">Статья не сохранена.</p>
+            <p className="mt-1 leading-5">{articleError}</p>
+          </div>
+        )}
         <ArticleEditorForm
           action={updateBlogArticleAction}
           draftAction={saveBlogDraftAction}
