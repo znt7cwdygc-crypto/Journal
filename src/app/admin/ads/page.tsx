@@ -4,6 +4,8 @@ import { adMonthlyPriceUsd, adPlacementLabel, adPlacements } from "@/lib/ads";
 import { requireRole } from "@/lib/access";
 import { prisma } from "@/lib/prisma";
 import { Badge, Card, CardTitle, statusColor } from "@/components/admin/ui";
+import { AdImageInput } from "@/components/ad-image-input";
+import { CharCounterInput } from "@/components/char-counter-input";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +35,7 @@ export default async function AdsPage() {
 
       <Card>
         <CardTitle>Создать баннер</CardTitle>
-        <form action={createAdvertisementAction} className="grid gap-3 md:grid-cols-2">
+        <form action={createAdvertisementAction} className="grid gap-3 md:grid-cols-2" encType="multipart/form-data">
           <div>
             <label className={labelCls}>Раздел</label>
             <select className={inputCls} name="placement" required>
@@ -44,15 +46,14 @@ export default async function AdsPage() {
           </div>
           <div>
             <label className={labelCls}>Название</label>
-            <input className={inputCls} name="title" maxLength={120} required placeholder="Например: Настройка OBS под ключ" />
+            <CharCounterInput className={inputCls} name="title" maxLength={120} required placeholder="Например: Настройка OBS под ключ" />
           </div>
           <div className="md:col-span-2">
             <label className={labelCls}>Короткое описание</label>
-            <input className={inputCls} name="description" maxLength={220} placeholder="1 строка под баннером" />
+            <CharCounterInput className={inputCls} name="description" maxLength={220} placeholder="1 строка под баннером" />
           </div>
-          <div>
-            <label className={labelCls}>Картинка/GIF URL</label>
-            <input className={inputCls} name="imageUrl" type="url" required placeholder="https://..." />
+          <div className="md:col-span-2">
+            <AdImageInput />
           </div>
           <div>
             <label className={labelCls}>Ссылка перехода</label>
@@ -94,7 +95,7 @@ export default async function AdsPage() {
 
               <details className="mt-3">
                 <summary className="cursor-pointer select-none text-xs font-semibold text-zinc-500">Редактировать размещение</summary>
-                <form action={updateAdvertisementAction} className="mt-2 grid gap-2 rounded-lg bg-zinc-50 p-3 md:grid-cols-2">
+                <form action={updateAdvertisementAction} className="mt-2 grid gap-2 rounded-lg bg-zinc-50 p-3 md:grid-cols-2" encType="multipart/form-data">
                   <input type="hidden" name="adId" value={ad.id} />
                   <div>
                     <label className={labelCls}>Место рекламы</label>
@@ -106,15 +107,14 @@ export default async function AdsPage() {
                   </div>
                   <div>
                     <label className={labelCls}>Название</label>
-                    <input className={inputCls} name="title" defaultValue={ad.title} maxLength={120} required />
+                    <CharCounterInput className={inputCls} name="title" defaultValue={ad.title} maxLength={120} required />
                   </div>
                   <div className="md:col-span-2">
                     <label className={labelCls}>Описание</label>
-                    <input className={inputCls} name="description" defaultValue={ad.description || ""} maxLength={220} />
+                    <CharCounterInput className={inputCls} name="description" defaultValue={ad.description || ""} maxLength={220} />
                   </div>
                   <div className="md:col-span-2">
-                    <label className={labelCls}>Картинка/GIF именно для этого места</label>
-                    <input className={inputCls} name="imageUrl" defaultValue={ad.imageUrl} required />
+                    <AdImageInput defaultUrl={ad.imageUrl} />
                   </div>
                   <div className="md:col-span-2">
                     <label className={labelCls}>Ссылка именно для этого места</label>

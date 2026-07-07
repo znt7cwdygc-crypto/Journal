@@ -2384,9 +2384,11 @@ export async function createAdvertisementAction(formData: FormData) {
   if (!session?.user || session.user.role !== "ADMIN") throw new Error("Недостаточно прав");
 
   const title = requireText(formData.get("title"), "название рекламы", 120);
-  const imageUrl = requireText(formData.get("imageUrl"), "ссылку на картинку", 500);
+  const uploadedImage = await saveUploadedImage(formData.get("imageFile"), `ad-${title}`);
+  const imageUrl = uploadedImage || cleanText(formData.get("imageUrl"), 500);
   const targetUrl = requireText(formData.get("targetUrl"), "ссылку перехода", 500);
-  if (!isHttpUrl(imageUrl)) throw new Error("Картинка должна быть http/https ссылкой");
+  if (!imageUrl) throw new Error("Загрузите картинку или укажите ссылку на неё");
+  if (!uploadedImage && !isHttpUrl(imageUrl)) throw new Error("Картинка должна быть http/https ссылкой");
   if (!isHttpUrl(targetUrl)) throw new Error("Ссылка перехода должна быть http/https ссылкой");
 
   const placement = normalizeAdPlacement(cleanText(formData.get("placement"), 80));
@@ -2413,9 +2415,10 @@ export async function updateAdvertisementAction(formData: FormData) {
 
   const adId = cleanText(formData.get("adId"), 120);
   const title = requireText(formData.get("title"), "название рекламы", 120);
-  const imageUrl = requireText(formData.get("imageUrl"), "ссылку на картинку", 2000);
+  const uploadedImage = await saveUploadedImage(formData.get("imageFile"), `ad-${title}`);
+  const imageUrl = uploadedImage || requireText(formData.get("imageUrl"), "ссылку на картинку", 2000);
   const targetUrl = requireText(formData.get("targetUrl"), "ссылку перехода", 500);
-  if (!isHttpUrl(imageUrl) && !imageUrl.startsWith("data:image/")) throw new Error("Картинка должна быть http/https ссылкой или data:image");
+  if (!uploadedImage && !isHttpUrl(imageUrl) && !imageUrl.startsWith("data:image/")) throw new Error("Картинка должна быть http/https ссылкой или data:image");
   if (!isHttpUrl(targetUrl)) throw new Error("Ссылка перехода должна быть http/https ссылкой");
 
   const placement = normalizeAdPlacement(cleanText(formData.get("placement"), 80));
