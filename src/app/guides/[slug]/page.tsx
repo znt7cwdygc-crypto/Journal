@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Fragment } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { parseGuide } from "@/lib/guide-helpers";
@@ -129,10 +130,22 @@ export default async function GuidePage({ params }: { params: { slug: string } }
 
       {/* Sections */}
       {guide.sections.map((section, i) => (
-        <section key={i} className="space-y-2">
-          <h2 className="text-lg font-semibold text-zinc-900">{section.title}</h2>
-          <div className="body-copy whitespace-pre-line">{section.body}</div>
-        </section>
+        <Fragment key={i}>
+          <section className="space-y-2">
+            <h2 className="text-lg font-semibold text-zinc-900">{section.title}</h2>
+            <div className="body-copy whitespace-pre-line">{section.body}</div>
+          </section>
+          {raw.slug === "fansly-v-rossii-registraciya-oplata-start" &&
+            section.title === "Регистрация и верификация" &&
+            guide.ctaLabel &&
+            guide.ctaHref && (
+              <div className="pt-2">
+                <Link href={guide.ctaHref} className="btn btn-primary inline-block">
+                  {guide.ctaLabel}
+                </Link>
+              </div>
+            )}
+        </Fragment>
       ))}
 
       {/* Checklist */}
@@ -197,7 +210,7 @@ export default async function GuidePage({ params }: { params: { slug: string } }
       )}
 
       {/* CTA */}
-      {guide.ctaLabel && guide.ctaHref && (
+      {raw.slug !== "fansly-v-rossii-registraciya-oplata-start" && guide.ctaLabel && guide.ctaHref && (
         <div className="pt-2">
           <Link href={guide.ctaHref} className="btn btn-primary inline-block">
             {guide.ctaLabel}
