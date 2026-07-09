@@ -162,6 +162,14 @@ export default async function GuidePage({ params }: { params: { slug: string } }
                 </Link>
               </div>
             )}
+          {raw.slug === "chto-delat-esli-sliv-kontenta-s-webcam-sayta" &&
+            section.title === "Кто может удалить слитый контент" && (
+              <div className="pt-2">
+                <Link href="/services" className="btn btn-primary inline-block">
+                  Каталог услуг по удалению слива
+                </Link>
+              </div>
+            )}
         </Fragment>
       ))}
 
@@ -229,6 +237,7 @@ export default async function GuidePage({ params }: { params: { slug: string } }
       {/* CTA */}
       {raw.slug !== "fansly-v-rossii-registraciya-oplata-start" &&
         raw.slug !== "administrator-webcam-studii-obyazannosti-zarplata" &&
+        raw.slug !== "chto-delat-esli-sliv-kontenta-s-webcam-sayta" &&
         guide.ctaLabel &&
         guide.ctaHref && (
         <div className="pt-2">
