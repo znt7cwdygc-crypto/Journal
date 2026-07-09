@@ -60,7 +60,9 @@ export default async function GuidePage({ params }: { params: { slug: string } }
         "description": guide.description,
         "datePublished": raw.createdAt.toISOString(),
         "dateModified": raw.updatedAt.toISOString(),
-        "author": { "@type": "Organization", "name": "MyCamDesk" },
+        "author": guide.authorName
+          ? { "@type": "Person", "name": guide.authorName, ...(guide.authorTitle ? { "jobTitle": guide.authorTitle } : {}) }
+          : { "@type": "Organization", "name": "MyCamDesk" },
         "publisher": {
           "@type": "Organization",
           "name": "MyCamDesk",
@@ -110,6 +112,7 @@ export default async function GuidePage({ params }: { params: { slug: string } }
         </div>
         <h1 className="page-title">{guide.h1}</h1>
         <p className="text-sm text-zinc-500">
+          {guide.authorName && <>Автор: {guide.authorName}{guide.authorTitle ? ` (${guide.authorTitle})` : ""} · </>}
           Обновлено: {updatedAt.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}
         </p>
       </header>

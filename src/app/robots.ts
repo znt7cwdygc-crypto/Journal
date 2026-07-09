@@ -12,7 +12,17 @@ export default function robots(): MetadataRoute.Robots {
         disallow: privatePaths
       },
       {
-        userAgent: ["GPTBot", "ChatGPT-User", "OAI-SearchBot", "ClaudeBot", "anthropic-ai", "PerplexityBot", "CCBot"],
+        userAgent: ["GPTBot", "ChatGPT-User", "OAI-SearchBot", "ClaudeBot", "anthropic-ai", "PerplexityBot"],
+        allow: "/",
+        disallow: privatePaths
+      },
+      {
+        userAgent: "Google-Extended",
+        allow: "/",
+        disallow: privatePaths
+      },
+      {
+        userAgent: "CCBot",
         allow: "/",
         disallow: privatePaths
       }

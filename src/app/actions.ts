@@ -2720,6 +2720,8 @@ function guideDataFromForm(fd: FormData) {
     ctaHref: cleanText(fd.get("ctaHref"), 500) || null,
     related: (cleanText(fd.get("related"), 2000) || "").split(",").map((r) => r.trim()).filter(Boolean),
     category: cleanText(fd.get("category"), 200) || null,
+    authorName: cleanText(fd.get("authorName"), 200) || null,
+    authorTitle: cleanText(fd.get("authorTitle"), 300) || null,
     quickAnswer: cleanMultiline(fd.get("quickAnswer"), 2000) || null,
     checklist: cleanMultiline(fd.get("checklist"), 5000) || null,
     mistakes: cleanMultiline(fd.get("mistakes"), 5000) || null,

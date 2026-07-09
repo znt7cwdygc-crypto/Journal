@@ -650,6 +650,8 @@ model Guide {
   intro       String
   category    String?  // "Новичкам", "Деньги", "Безопасность", etc.
   audience    String?  // "Для моделей без опыта"
+  authorName  String?  // named expert author for schema.org Person (falls back to Organization if empty)
+  authorTitle String?  // e.g. "Оператор с 4 годами опыта в вебкам-индустрии"
   quickAnswer String?  // short answer for featured snippet
   keywords    String[] // array of strings
   sections    String   // JSON string: [{title, body}]

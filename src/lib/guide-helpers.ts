@@ -3,6 +3,8 @@ import type { GuidePageData } from "@/components/seo-landing-page";
 
 export type ParsedGuide = GuidePageData & {
   category: string | null;
+  authorName: string | null;
+  authorTitle: string | null;
   quickAnswer: string | null;
   checklist: string[];
   mistakes: string[];
@@ -36,6 +38,8 @@ export function parseGuide(guide: Guide): ParsedGuide {
     ctaHref: guide.ctaHref,
     related: guide.related,
     category: guide.category ?? null,
+    authorName: guide.authorName ?? null,
+    authorTitle: guide.authorTitle ?? null,
     quickAnswer: guide.quickAnswer ?? null,
     checklist: safeJsonArray(guide.checklist),
     mistakes: safeJsonArray(guide.mistakes),
