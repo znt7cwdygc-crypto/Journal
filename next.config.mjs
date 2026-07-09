@@ -59,8 +59,23 @@ const legacyGuideRedirects = [
 
 // Не гайд, а анкета резюме — редирект в другой раздел на живую страницу.
 const legacyCrossSectionRedirects = [
-  { source: "/guides/kak-sostavit-rezyume-modeli", destination: "/resumes/models", permanent: true }
+  { source: "/guides/kak-sostavit-rezyume-modeli", destination: "/resumes", permanent: true }
 ];
+
+// Пустые SEO-хабы /services, /vacancies, /resumes с фильтром по slug — контент дублировал
+// то, что теперь полноценно покрыто гайдами, а под фильтром реальных объявлений/резюме
+// пока нет. Ведём на живой раздел или ближайший по теме гайд, а не оставляем тонкий дубль.
+const thinHubRedirects = [
+  { source: "/services/obs", destination: "/guides/nastroyka-obs-dlya-webcam" },
+  { source: "/services/legal", destination: "/services" },
+  { source: "/services/security", destination: "/guides/chto-delat-esli-sliv-kontenta-s-webcam-sayta" },
+  { source: "/services/coaching", destination: "/services" },
+  { source: "/vacancies/webcam-model", destination: "/vacancies" },
+  { source: "/vacancies/operator", destination: "/vacancies" },
+  { source: "/vacancies/remote", destination: "/vacancies" },
+  { source: "/resumes/models", destination: "/resumes" },
+  { source: "/resumes/operators", destination: "/resumes" }
+].map((r) => ({ ...r, permanent: true }));
 
 const articleSlugRedirects = [
   "9ve2g8pf-ya-stala-vebkam-modelyu-chto-okazalos-ne-tak-kak-ya-ozhidala",
@@ -80,7 +95,7 @@ const nextConfig = {
     }
   },
   async redirects() {
-    return [...guideSlugRedirects, ...legacyGuideRedirects, ...legacyCrossSectionRedirects, ...articleSlugRedirects];
+    return [...guideSlugRedirects, ...legacyGuideRedirects, ...legacyCrossSectionRedirects, ...thinHubRedirects, ...articleSlugRedirects];
   },
   async headers() {
     return [
