@@ -11,6 +11,7 @@ import { auth } from "@/auth";
 import { ContactReveal } from "@/components/contact-reveal";
 import { ImportanceBio } from "@/components/importance-bio";
 import { ReportButton } from "@/components/report-button";
+import { addressRegionForCity } from "@/lib/city-region";
 import { prisma } from "@/lib/prisma";
 import { siteName, siteUrl, truncateSeo } from "@/lib/seo";
 import { idFromSeoParam, listingSeoPath, pathTail } from "@/lib/seo-url";
@@ -263,6 +264,7 @@ export default async function ListingDetailsPage({
                 address: {
                   "@type": "PostalAddress",
                   addressLocality: listing.city || "Россия",
+                  addressRegion: addressRegionForCity(listing.city),
                   addressCountry: "RU"
                 }
               }
