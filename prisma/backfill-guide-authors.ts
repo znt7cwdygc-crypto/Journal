@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const authorName = "Марина Совина";
+const authorName = "Ксения Ясенева";
 const authorTitle = "Эксперт вебкам-индустрии — 12 лет опыта: модель, оператор, управляющая сетью студий";
 
 async function main() {

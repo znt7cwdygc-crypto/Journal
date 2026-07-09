@@ -112,7 +112,7 @@ export function GuideForm({ action, guide }: { action: (fd: FormData) => Promise
             <Field
               label="Автор (имя)"
               name="authorName"
-              defaultValue={guide?.authorName ?? "Марина Совина"}
+              defaultValue={guide?.authorName ?? "Ксения Ясенева"}
               placeholder="Оставьте пустым — будет MyCamDesk"
             />
             <Field
