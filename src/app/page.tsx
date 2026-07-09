@@ -212,9 +212,6 @@ export default async function HomePage() {
       </section>
 
       <AdBlock placement="home" />
-      <div className="xl:hidden">
-        <AdBlock placement="sidebar" />
-      </div>
 
       <section className="grid gap-3 md:grid-cols-2">
         <div className="content-card">
@@ -319,6 +316,10 @@ export default async function HomePage() {
           {feedArticles.length === 0 && <p className="text-sm text-zinc-500">Пока нет дополнительных статей.</p>}
         </div>
       </section>
+
+      <div className="xl:hidden">
+        <AdBlock placement="sidebar" />
+      </div>
 
       <section className="content-card">
         <div className="flex flex-wrap items-center justify-between gap-3">
