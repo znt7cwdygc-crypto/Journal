@@ -145,6 +145,20 @@ export default async function GuidePage({ params }: { params: { slug: string } }
                 </Link>
               </div>
             )}
+          {raw.slug === "administrator-webcam-studii-obyazannosti-zarplata" &&
+            section.title === "Кандидатам: как описать своё резюме" && (
+              <div className="flex flex-wrap gap-3 pt-1">
+                <Link href="/vacancies" className="btn btn-primary inline-block">
+                  Посмотреть вакансии студий
+                </Link>
+                <Link
+                  href="/cabinet#resume"
+                  className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900 hover:border-hot hover:text-hot"
+                >
+                  Разместить своё резюме
+                </Link>
+              </div>
+            )}
         </Fragment>
       ))}
 
@@ -210,7 +224,10 @@ export default async function GuidePage({ params }: { params: { slug: string } }
       )}
 
       {/* CTA */}
-      {raw.slug !== "fansly-v-rossii-registraciya-oplata-start" && guide.ctaLabel && guide.ctaHref && (
+      {raw.slug !== "fansly-v-rossii-registraciya-oplata-start" &&
+        raw.slug !== "administrator-webcam-studii-obyazannosti-zarplata" &&
+        guide.ctaLabel &&
+        guide.ctaHref && (
         <div className="pt-2">
           <Link href={guide.ctaHref} className="btn btn-primary inline-block">
             {guide.ctaLabel}
