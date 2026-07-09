@@ -3,7 +3,7 @@ platform: "dtf.ru"
 section: "Обо всём"
 title: "Chaturbate, Stripchat, BongaCams, OnlyFans, Fansly — где деньги и где ловушки"
 description: "Сравнение контент-платформ с точки зрения бизнеса: комиссии, аудитория, выплаты, подводные камни"
-links_to_site: ["https://journal-bice-seven.vercel.app/platform-comparison", "https://journal-bice-seven.vercel.app/earnings-guide"]
+links_to_site: ["https://mycamdesk.com/guides", "https://mycamdesk.com/guides/skolko-zarabatyvaet-webcam-model-v-rossii-i-sng"]
 ---
 
 # Chaturbate, Stripchat, BongaCams, OnlyFans, Fansly — где деньги и где ловушки
@@ -116,7 +116,7 @@ links_to_site: ["https://journal-bice-seven.vercel.app/platform-comparison", "ht
 | Выплаты | 2 нед. | 2 нед. | 1 нед. | 3-5 дней | 1 нед. |
 | Лучше для | Старта | Старта/VR | Европы | Масштаба | Бэкапа |
 
-Подробное сравнение платформ с актуальными условиями, гео-ограничениями и советами по выбору — [здесь](https://journal-bice-seven.vercel.app/platform-comparison).
+Подробное сравнение платформ с актуальными условиями, гео-ограничениями и советами по выбору — [здесь](https://mycamdesk.com/guides).
 
 ## Где ловушки
 
@@ -136,6 +136,6 @@ links_to_site: ["https://journal-bice-seven.vercel.app/platform-comparison", "ht
 
 - **Хотите минимизировать риски:** OnlyFans как основная + Fansly как резерв. Один контент — две площадки.
 
-Больше стратегий по заработку — в [гайде по доходам на контент-платформах](https://journal-bice-seven.vercel.app/earnings-guide).
+Больше стратегий по заработку — в [гайде по доходам на контент-платформах](https://mycamdesk.com/guides/skolko-zarabatyvaet-webcam-model-v-rossii-i-sng).
 
 Если у вас есть опыт с какой-то из этих платформ — делитесь в комментариях. Особенно интересны реальные цифры и подводные камни, которые я мог упустить.

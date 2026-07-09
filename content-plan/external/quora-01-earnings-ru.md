@@ -3,7 +3,7 @@ platform: "quora.com"
 section: "Ответ на вопрос: Сколько зарабатывают вебкам модели?"
 title: "[Формат ответа]"
 description: "Подробный ответ с реальными цифрами по уровням опыта"
-links_to_site: ["https://journal-bice-seven.vercel.app/earnings-guide", "https://journal-bice-seven.vercel.app/start-guide"]
+links_to_site: ["https://mycamdesk.com/guides/skolko-zarabatyvaet-webcam-model-v-rossii-i-sng", "https://mycamdesk.com/guides/kak-stat-webcam-modelyu-s-nulya"]
 ---
 
 Работаю в вебкам-индустрии на стороне операционного управления. Не модель — менеджер. За два с лишним года видел статистику по нескольким десяткам людей. Расскажу, как обстоят дела с заработками на самом деле.
@@ -42,4 +42,4 @@ $2 000-5 000 в месяц. Некоторые — больше. Но это у�
 
 **Итого:** реалистичный доход при системной работе — $1 000-3 000 в месяц через полгода-год. Это не «лёгкие деньги», а полноценная работа с конкуренцией, эмоциональной нагрузкой и необходимостью постоянно развиваться.
 
-Более детальный разбор заработков по каждой платформе — в [этом гайде](https://journal-bice-seven.vercel.app/earnings-guide). А если думаете о старте — [пошаговая инструкция для начинающих](https://journal-bice-seven.vercel.app/start-guide).
+Более детальный разбор заработков по каждой платформе — в [этом гайде](https://mycamdesk.com/guides/skolko-zarabatyvaet-webcam-model-v-rossii-i-sng). А если думаете о старте — [пошаговая инструкция для начинающих](https://mycamdesk.com/guides/kak-stat-webcam-modelyu-s-nulya).

@@ -3,7 +3,7 @@ platform: "pikabu.ru"
 section: "Наука и техника"
 title: "7 мифов о вебкам-индустрии, которые я развеял, поработав изнутри"
 description: "Работаю в индустрии 2+ года не моделью. Рассказываю, что правда, а что нет"
-links_to_site: ["https://journal-bice-seven.vercel.app/articles", "https://journal-bice-seven.vercel.app/earnings-guide"]
+links_to_site: ["https://mycamdesk.com/articles", "https://mycamdesk.com/guides/skolko-zarabatyvaet-webcam-model-v-rossii-i-sng"]
 ---
 
 # 7 мифов о вебкам-индустрии, которые я развеял, поработав изнутри
@@ -22,7 +22,7 @@ links_to_site: ["https://journal-bice-seven.vercel.app/articles", "https://journ
 
 И это при условии, что человек работает 4-6 часов в день, 5 дней в неделю. Не подработка по вечерам, а полноценная занятость.
 
-Детальный разбор заработков — с цифрами по разным платформам — [тут](https://journal-bice-seven.vercel.app/earnings-guide).
+Детальный разбор заработков — с цифрами по разным платформам — [тут](https://mycamdesk.com/guides/skolko-zarabatyvaet-webcam-model-v-rossii-i-sng).
 
 ## Миф 2: «Это только для женщин»
 
@@ -109,6 +109,6 @@ links_to_site: ["https://journal-bice-seven.vercel.app/articles", "https://journ
 
 ## Вместо вывода
 
-Индустрия — не рай и не ад. Это работа. Со своей спецификой, проблемами и возможностями. Если вам интересно разобраться глубже — на [этом ресурсе](https://journal-bice-seven.vercel.app/articles) собрана куча материалов: от гайдов по платформам до юридических вопросов. Без лишнего пафоса, по делу.
+Индустрия — не рай и не ад. Это работа. Со своей спецификой, проблемами и возможностями. Если вам интересно разобраться глубже — на [этом ресурсе](https://mycamdesk.com/articles) собрана куча материалов: от гайдов по платформам до юридических вопросов. Без лишнего пафоса, по делу.
 
 А если у вас есть свои мифы, которые я пропустил — пишите в комментариях, разберу.

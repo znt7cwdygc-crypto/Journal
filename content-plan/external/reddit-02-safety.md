@@ -3,7 +3,7 @@ platform: "reddit"
 section: "r/onlyfansadvice or r/CreatorsAdvice"
 title: "Digital safety checklist every content creator should follow — lessons from 50+ creators I've worked with"
 description: "Practical safety checklist compiled from real experiences: separate accounts, DMCA, content monitoring"
-links_to_site: ["https://journal-bice-seven.vercel.app/safety-checklist", "https://journal-bice-seven.vercel.app/safety"]
+links_to_site: ["https://mycamdesk.com/guides/chto-delat-esli-sliv-kontenta-s-webcam-sayta", "https://mycamdesk.com/safety"]
 ---
 
 # Digital safety checklist every content creator should follow — lessons from 50+ creators I've worked with
@@ -79,8 +79,8 @@ For automated scanning: BrandItScan, DMCA.com, or Rulta. They cost $100-300/mont
 
 ## Useful resources
 
-I've compiled a more detailed version of this checklist with links to specific tools and step-by-step instructions: [Full safety checklist](https://journal-bice-seven.vercel.app/safety-checklist)
+I've compiled a more detailed version of this checklist with links to specific tools and step-by-step instructions: [Full safety checklist](https://mycamdesk.com/guides/chto-delat-esli-sliv-kontenta-s-webcam-sayta)
 
-And a broader safety section covering various scenarios: [Safety resources](https://journal-bice-seven.vercel.app/safety)
+And a broader safety section covering various scenarios: [Safety resources](https://mycamdesk.com/safety)
 
 Stay safe out there. The few hours you spend setting this up now can save you from months of stress later.

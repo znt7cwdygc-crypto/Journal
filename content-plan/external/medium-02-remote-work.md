@@ -3,7 +3,7 @@ platform: "medium.com"
 section: "Tags: Remote Work, Career Change"
 title: "I Left My Office Job to Work in the Webcam Industry — Not as a Model"
 description: "Career change story from office drone to webcam operator: the why, the how, and the honest truth"
-links_to_site: ["https://journal-bice-seven.vercel.app/operator-guide", "https://journal-bice-seven.vercel.app/vacancies"]
+links_to_site: ["https://mycamdesk.com/guides/operator-webcam-chto-delaet", "https://mycamdesk.com/vacancies"]
 ---
 
 # I Left My Office Job to Work in the Webcam Industry — Not as a Model
@@ -85,7 +85,7 @@ Then this could be worth exploring.
 
 Start as an operator. Learn the ropes for 3-6 months. If you're good, you'll get more responsibility quickly — this industry has a shortage of reliable, skilled people.
 
-For a detailed look at the operator role — what's expected, how to get started, what to watch out for — I recommend [this guide](https://journal-bice-seven.vercel.app/operator-guide). And for current openings: [vacancies](https://journal-bice-seven.vercel.app/vacancies).
+For a detailed look at the operator role — what's expected, how to get started, what to watch out for — I recommend [this guide](https://mycamdesk.com/guides/operator-webcam-chto-delaet). And for current openings: [vacancies](https://mycamdesk.com/vacancies).
 
 ## Would I do it again?
 

@@ -3,7 +3,7 @@ platform: "reddit"
 section: "r/camming or r/CreatorsAdvice"
 title: "I've been a webcam studio operator for 2 years — here's what I learned about the business side"
 description: "AMA-style post from the operator perspective: what we do, typical day, earnings, and what nobody tells you"
-links_to_site: ["https://journal-bice-seven.vercel.app/operator-guide", "https://journal-bice-seven.vercel.app/vacancies"]
+links_to_site: ["https://mycamdesk.com/guides/operator-webcam-chto-delaet", "https://mycamdesk.com/vacancies"]
 ---
 
 # I've been a webcam studio operator for 2 years — here's what I learned about the business side
@@ -72,7 +72,7 @@ Not life-changing money, but it's fully remote, no degree required, and the skil
 
 If you're interested in the operator side of the industry, I put together some resources:
 
-- [Detailed guide on what operators do and how to get started](https://journal-bice-seven.vercel.app/operator-guide)
-- [Current operator vacancies](https://journal-bice-seven.vercel.app/vacancies)
+- [Detailed guide on what operators do and how to get started](https://mycamdesk.com/guides/operator-webcam-chto-delaet)
+- [Current operator vacancies](https://mycamdesk.com/vacancies)
 
 Happy to answer questions. Just don't ask me to share any model's details — that's a hard no.

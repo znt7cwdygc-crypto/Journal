@@ -3,7 +3,7 @@ platform: "habr.com"
 section: "Хаб: Информационная безопасность"
 title: "Threat model для контент-мейкера: от метаданных EXIF до DMCA-атак"
 description: "Технический разбор угроз для создателей контента: EXIF, fingerprinting, VPN, DMCA — с позиции инфобеза"
-links_to_site: ["https://journal-bice-seven.vercel.app/safety-checklist", "https://journal-bice-seven.vercel.app/safety"]
+links_to_site: ["https://mycamdesk.com/guides/chto-delat-esli-sliv-kontenta-s-webcam-sayta", "https://mycamdesk.com/safety"]
 ---
 
 # Threat model для контент-мейкера: от метаданных EXIF до DMCA-атак
@@ -98,7 +98,7 @@ exiftool -all= -overwrite_original ./content_folder/
 - Подавайте counter-notice сразу, с доказательствами авторства
 - Если это систематически — юрист, специализирующийся на IP
 
-Подробный чеклист безопасности — [здесь](https://journal-bice-seven.vercel.app/safety-checklist). А общий раздел по безопасности с разбором конкретных ситуаций — [тут](https://journal-bice-seven.vercel.app/safety).
+Подробный чеклист безопасности — [здесь](https://mycamdesk.com/guides/chto-delat-esli-sliv-kontenta-s-webcam-sayta). А общий раздел по безопасности с разбором конкретных ситуаций — [тут](https://mycamdesk.com/safety).
 
 ## Вектор 6: Социальная инженерия
 

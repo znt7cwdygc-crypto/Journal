@@ -3,7 +3,7 @@ platform: "habr.com"
 section: "Хаб: Удалённая работа"
 title: "Как организовать удалённую работу оператора: инструменты, процессы, автоматизация"
 description: "Стек инструментов и процессов для удалённого оператора контент-платформ: от CRM до Telegram-ботов"
-links_to_site: ["https://journal-bice-seven.vercel.app/vacancies", "https://journal-bice-seven.vercel.app/operator-guide"]
+links_to_site: ["https://mycamdesk.com/vacancies", "https://mycamdesk.com/guides/operator-webcam-chto-delaet"]
 ---
 
 # Как организовать удалённую работу оператора: инструменты, процессы, автоматизация
@@ -124,7 +124,7 @@ Telegram-бот собирает данные из Google Sheets и каждое
 
 Если к концу первой недели оператор не попадает в «голос» персонажа — не подходит. Лучше расстаться рано, чем потерять подписчиков.
 
-Подробнее о том, что нужно знать оператору — в [гайде по профессии](https://journal-bice-seven.vercel.app/operator-guide). Актуальные вакансии — [здесь](https://journal-bice-seven.vercel.app/vacancies).
+Подробнее о том, что нужно знать оператору — в [гайде по профессии](https://mycamdesk.com/guides/operator-webcam-chto-delaet). Актуальные вакансии — [здесь](https://mycamdesk.com/vacancies).
 
 ## Что не сработало
 

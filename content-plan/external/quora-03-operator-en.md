@@ -3,7 +3,7 @@ platform: "quora.com"
 section: "Answer to: What does a webcam operator/chatter do?"
 title: "[Answer format]"
 description: "Explanation of the operator role: responsibilities, skills, salary, how to find work"
-links_to_site: ["https://journal-bice-seven.vercel.app/operator-guide", "https://journal-bice-seven.vercel.app/vacancies"]
+links_to_site: ["https://mycamdesk.com/guides/operator-webcam-chto-delaet", "https://mycamdesk.com/vacancies"]
 ---
 
 I've been a webcam operator (also called "chatter") for over two years. Let me explain what this actually involves, because most people have no idea this job exists.
@@ -62,4 +62,4 @@ Operator is an entry point, not a dead end:
 
 The skills you develop — sales, copywriting, psychology, client management — are valuable in any industry.
 
-For a more detailed guide on the profession: [operator guide](https://journal-bice-seven.vercel.app/operator-guide). And if you're looking for current openings: [vacancies](https://journal-bice-seven.vercel.app/vacancies).
+For a more detailed guide on the profession: [operator guide](https://mycamdesk.com/guides/operator-webcam-chto-delaet). And if you're looking for current openings: [vacancies](https://mycamdesk.com/vacancies).

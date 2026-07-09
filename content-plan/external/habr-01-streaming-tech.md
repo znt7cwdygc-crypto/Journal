@@ -3,7 +3,7 @@ platform: "habr.com"
 section: "Хабы: Видеотрансляции / DIY"
 title: "Архитектура стриминга для контент-мейкера: OBS, CDN, кодеки и почему ваш стрим лагает"
 description: "Техническое погружение: как устроен пайплайн от камеры до зрителя, почему важен битрейт и чем H.265 лучше H.264"
-links_to_site: ["https://journal-bice-seven.vercel.app/obs-guide", "https://journal-bice-seven.vercel.app/services"]
+links_to_site: ["https://mycamdesk.com/guides/nastroyka-obs-dlya-webcam", "https://mycamdesk.com/services"]
 ---
 
 # Архитектура стриминга для контент-мейкера: OBS, CDN, кодеки и почему ваш стрим лагает
@@ -100,7 +100,7 @@ USB-камеры отдают поток в одном из форматов:
 
 Если dropped frames > 0.5% — зрители видят фризы. Больше 2% — смотреть невозможно.
 
-Подробный гайд по настройке OBS с привязкой к конкретным сценариям — [тут](https://journal-bice-seven.vercel.app/obs-guide). А если нужна помощь с выбором инструментов для стриминга — есть [подборка сервисов](https://journal-bice-seven.vercel.app/services).
+Подробный гайд по настройке OBS с привязкой к конкретным сценариям — [тут](https://mycamdesk.com/guides/nastroyka-obs-dlya-webcam). А если нужна помощь с выбором инструментов для стриминга — есть [подборка сервисов](https://mycamdesk.com/services).
 
 ## Рекомендации по железу
 

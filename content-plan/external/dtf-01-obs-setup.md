@@ -3,7 +3,7 @@ platform: "dtf.ru"
 section: "Техника"
 title: "Настройка OBS для стриминга в 2026: гайд, который реально работает"
 description: "Пошаговая настройка OBS Studio для контент-мейкеров — сцены, источники, битрейт и пресеты под разный интернет"
-links_to_site: ["https://journal-bice-seven.vercel.app/obs-guide", "https://journal-bice-seven.vercel.app/services"]
+links_to_site: ["https://mycamdesk.com/guides/nastroyka-obs-dlya-webcam", "https://mycamdesk.com/services"]
 ---
 
 # Настройка OBS для стриминга в 2026: гайд, который реально работает
@@ -65,7 +65,7 @@ OBS работает на двух понятиях: **сцены** (набор�
 
 Проверить скорость: speedtest.net → смотрите Upload, не Download.
 
-Детальный гайд по OBS с разбором каждой настройки и скриншотами — [есть тут](https://journal-bice-seven.vercel.app/obs-guide).
+Детальный гайд по OBS с разбором каждой настройки и скриншотами — [есть тут](https://mycamdesk.com/guides/nastroyka-obs-dlya-webcam).
 
 ## Настройки звука
 
@@ -118,7 +118,7 @@ OBS работает на двух понятиях: **сцены** (набор�
 - **Advanced Scene Switcher** — автоматическое переключение сцен по условиям (время, окно, горячие клавиши).
 - **obs-websocket** (встроен в OBS 28+) — удалённое управление через телефон или планшет.
 
-Больше рекомендаций по софту и сервисам для стриминга — на [странице сервисов](https://journal-bice-seven.vercel.app/services).
+Больше рекомендаций по софту и сервисам для стриминга — на [странице сервисов](https://mycamdesk.com/services).
 
 ## Итого
 

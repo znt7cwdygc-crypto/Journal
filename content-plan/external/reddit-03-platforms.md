@@ -3,7 +3,7 @@ platform: "reddit"
 section: "r/camming"
 title: "Honest comparison of cam platforms in 2026: commission rates, traffic, and what nobody tells you"
 description: "Data-driven comparison of Chaturbate, Stripchat, BongaCams, OnlyFans, and Fansly for creators"
-links_to_site: ["https://journal-bice-seven.vercel.app/platform-comparison", "https://journal-bice-seven.vercel.app/earnings-guide"]
+links_to_site: ["https://mycamdesk.com/guides", "https://mycamdesk.com/guides/skolko-zarabatyvaet-webcam-model-v-rossii-i-sng"]
 ---
 
 # Honest comparison of cam platforms in 2026: commission rates, traffic, and what nobody tells you
@@ -82,6 +82,6 @@ No affiliate links. No platform is paying me. Just data and observations.
 
 **Long-term:** OnlyFans as primary (low commission, stable income) + Fansly as backup (never put all eggs in one basket) + occasional cam sessions for new audience acquisition.
 
-For a deeper dive into platform specifics, payout details, and geo-restrictions, there's a [comprehensive comparison guide here](https://journal-bice-seven.vercel.app/platform-comparison). And for earnings strategies across platforms: [earnings breakdown](https://journal-bice-seven.vercel.app/earnings-guide).
+For a deeper dive into platform specifics, payout details, and geo-restrictions, there's a [comprehensive comparison guide here](https://mycamdesk.com/guides). And for earnings strategies across platforms: [earnings breakdown](https://mycamdesk.com/guides/skolko-zarabatyvaet-webcam-model-v-rossii-i-sng).
 
 Would love to hear from people who've worked on multiple platforms — does your experience match these numbers?

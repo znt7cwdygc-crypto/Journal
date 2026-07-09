@@ -3,7 +3,7 @@ platform: "vc.ru"
 section: "Информационная безопасность"
 title: "Цифровая безопасность для контент-мейкеров: DMCA, утечки, анонимность"
 description: "Практический гайд по защите для тех, кто создаёт контент: от раздельных аккаунтов до DMCA-запросов"
-links_to_site: ["https://journal-bice-seven.vercel.app/safety-checklist", "https://journal-bice-seven.vercel.app/safety"]
+links_to_site: ["https://mycamdesk.com/guides/chto-delat-esli-sliv-kontenta-s-webcam-sayta", "https://mycamdesk.com/safety"]
 ---
 
 # Цифровая безопасность для контент-мейкеров: DMCA, утечки, анонимность
@@ -66,7 +66,7 @@ DMCA (Digital Millennium Copyright Act) — американский закон,
 
 Для автоматизации есть сервисы: BrandItScan, DMCA.com, Rulta. Стоят $100-300/мес, но сканируют сеть постоянно и отправляют запросы автоматически.
 
-Полный чеклист по безопасности — со ссылками на инструменты и пошаговыми инструкциями — [собран здесь](https://journal-bice-seven.vercel.app/safety-checklist).
+Полный чеклист по безопасности — со ссылками на инструменты и пошаговыми инструкциями — [собран здесь](https://mycamdesk.com/guides/chto-delat-esli-sliv-kontenta-s-webcam-sayta).
 
 ## Шаг 5: Что делать, если контент утёк
 
@@ -108,7 +108,7 @@ DMCA (Digital Millennium Copyright Act) — американский закон,
 
 Это занимает час на настройку и спасает от 90% типичных проблем.
 
-Развёрнутый раздел по безопасности — с разборами конкретных ситуаций и рекомендациями — [доступен в нашем журнале](https://journal-bice-seven.vercel.app/safety).
+Развёрнутый раздел по безопасности — с разборами конкретных ситуаций и рекомендациями — [доступен в нашем журнале](https://mycamdesk.com/safety).
 
 ## Итог
 

@@ -3,7 +3,7 @@ platform: "medium.com"
 section: "Tags: Creator Economy, Freelancing, Digital Nomad"
 title: "The Creator Economy Nobody Talks About: Inside the Webcam Industry in 2026"
 description: "A look at the webcam industry as a legitimate part of the creator economy: market size, roles, and how it actually works"
-links_to_site: ["https://journal-bice-seven.vercel.app/platform-comparison", "https://journal-bice-seven.vercel.app/articles"]
+links_to_site: ["https://mycamdesk.com/guides", "https://mycamdesk.com/articles"]
 ---
 
 # The Creator Economy Nobody Talks About: Inside the Webcam Industry in 2026
@@ -81,6 +81,6 @@ The webcam industry in 2026 is more professionalized than ever. Studios operate 
 
 But the fundamental tension remains: an industry that generates enormous economic value while being largely invisible in mainstream business discourse.
 
-For anyone curious about the specifics — platform comparisons, earnings data, and operational details — I maintain a resource at [journal-bice-seven.vercel.app](https://journal-bice-seven.vercel.app/platform-comparison) that covers the business side of the industry. And for a broader collection of industry guides and articles: [resource library](https://journal-bice-seven.vercel.app/articles).
+For anyone curious about the specifics — platform comparisons, earnings data, and operational details — I maintain a resource at [mycamdesk.com](https://mycamdesk.com/guides) that covers the business side of the industry. And for a broader collection of industry guides and articles: [resource library](https://mycamdesk.com/articles).
 
 The creator economy is bigger than what makes it into TechCrunch headlines. It's time we acknowledged all of it.

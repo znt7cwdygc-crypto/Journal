@@ -3,7 +3,7 @@ platform: "pikabu.ru"
 section: "Истории из жизни"
 title: "Как я ушёл в вебкам-индустрию оператором и что из этого вышло"
 description: "История первого месяца работы вебкам-оператором: от собеседования до первой зарплаты $400"
-links_to_site: ["https://journal-bice-seven.vercel.app/operator-guide", "https://journal-bice-seven.vercel.app/vacancies"]
+links_to_site: ["https://mycamdesk.com/guides/operator-webcam-chto-delaet", "https://mycamdesk.com/vacancies"]
 ---
 
 # Как я ушёл в вебкам-индустрию оператором и что из этого вышло
@@ -78,6 +78,6 @@ links_to_site: ["https://journal-bice-seven.vercel.app/operator-guide", "https:/
 
 **Деньги придут позже.** $400 за первый месяц — это инвестиция в обучение. Если стратегия работает — доход растёт. Если нет — можно уйти без потерь.
 
-Подробнее про профессию оператора — требования, обязанности, ожидания — есть в [гайде](https://journal-bice-seven.vercel.app/operator-guide). А кто ищет вакансию — можно глянуть [актуальные предложения](https://journal-bice-seven.vercel.app/vacancies).
+Подробнее про профессию оператора — требования, обязанности, ожидания — есть в [гайде](https://mycamdesk.com/guides/operator-webcam-chto-delaet). А кто ищет вакансию — можно глянуть [актуальные предложения](https://mycamdesk.com/vacancies).
 
 Если есть вопросы про работу оператором — пишите, расскажу подробнее. Только без вопросов «а скинь контакт модели» — нет.

@@ -3,7 +3,7 @@ platform: "quora.com"
 section: "Answer to: How do I start as a webcam model?"
 title: "[Answer format]"
 description: "Step-by-step answer for beginners: platform choice, equipment, safety, expectations"
-links_to_site: ["https://journal-bice-seven.vercel.app/start-guide", "https://journal-bice-seven.vercel.app/equipment"]
+links_to_site: ["https://mycamdesk.com/guides/kak-stat-webcam-modelyu-s-nulya", "https://mycamdesk.com/guides/nastroyka-obs-dlya-webcam"]
 ---
 
 I've helped dozens of people get started on content platforms over the past two years (I work on the management/operations side). Here's the honest step-by-step:
@@ -24,7 +24,7 @@ You don't need thousands of dollars. Here's the minimum:
 
 That's it for equipment. Everything else (green screens, fancy backdrops, multiple lights) can come later when you're earning.
 
-A more detailed equipment breakdown with options at different price points: [equipment guide](https://journal-bice-seven.vercel.app/equipment).
+A more detailed equipment breakdown with options at different price points: [equipment guide](https://mycamdesk.com/guides/nastroyka-obs-dlya-webcam).
 
 **Step 3: Set up your digital safety BEFORE going live**
 
@@ -68,6 +68,6 @@ The people who quit after two weeks because "it didn't work" are the same people
 - Anyone who pressures you to do things you're uncomfortable with
 - Comparing yourself to top earners — they have years of experience and usually a team
 
-For a comprehensive beginner's guide covering all of this in detail: [starter guide](https://journal-bice-seven.vercel.app/start-guide).
+For a comprehensive beginner's guide covering all of this in detail: [starter guide](https://mycamdesk.com/guides/kak-stat-webcam-modelyu-s-nulya).
 
 Feel free to ask follow-up questions — happy to help with specifics.

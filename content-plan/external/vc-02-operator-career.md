@@ -3,7 +3,7 @@ platform: "vc.ru"
 section: "Карьера"
 title: "Вебкам-оператор — профессия, о которой не пишут на hh.ru: обязанности, зарплата, вход"
 description: "Карьерный гайд по профессии вебкам-оператора: что делает, сколько получает, как попасть"
-links_to_site: ["https://journal-bice-seven.vercel.app/vacancies", "https://journal-bice-seven.vercel.app/operator-guide"]
+links_to_site: ["https://mycamdesk.com/vacancies", "https://mycamdesk.com/guides/operator-webcam-chto-delaet"]
 ---
 
 # Вебкам-оператор — профессия, о которой не пишут на hh.ru: обязанности, зарплата, вход
@@ -50,7 +50,7 @@ links_to_site: ["https://journal-bice-seven.vercel.app/vacancies", "https://jour
 
 Средний доход оператора в 2026 — $500-1 200 в месяц. Это при стандартной 8-часовой загрузке, 5 дней в неделю. Не миллионы, но для удалёнки без формальных требований — вполне конкурентно.
 
-Актуальные вакансии операторов и условия можно посмотреть [здесь](https://journal-bice-seven.vercel.app/vacancies).
+Актуальные вакансии операторов и условия можно посмотреть [здесь](https://mycamdesk.com/vacancies).
 
 ## Как попасть
 
@@ -76,7 +76,7 @@ links_to_site: ["https://journal-bice-seven.vercel.app/vacancies", "https://jour
 
 **Запуск своего агентства.** Знаешь процессы, знаешь рынок, есть контакты — можно набрать команду и работать с несколькими моделями. Тут доход зависит от масштаба.
 
-Подробнее о карьерных путях и обязанностях на каждом уровне — в [гайде по профессии оператора](https://journal-bice-seven.vercel.app/operator-guide).
+Подробнее о карьерных путях и обязанностях на каждом уровне — в [гайде по профессии оператора](https://mycamdesk.com/guides/operator-webcam-chto-delaet).
 
 ## Мифы об этой работе
 

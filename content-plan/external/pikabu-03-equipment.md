@@ -3,7 +3,7 @@ platform: "pikabu.ru"
 section: "Технологии"
 title: "Собрал рабочее место для стриминга за $300 — показываю что купил и зачем"
 description: "Бюджетный сетап для стриминга: камера, свет, микрофон, и всё это за $300"
-links_to_site: ["https://journal-bice-seven.vercel.app/equipment", "https://journal-bice-seven.vercel.app/obs-guide"]
+links_to_site: ["https://mycamdesk.com/guides/nastroyka-obs-dlya-webcam", "https://mycamdesk.com/guides/nastroyka-obs-dlya-webcam"]
 ---
 
 # Собрал рабочее место для стриминга за $300 — показываю что купил и зачем
@@ -106,9 +106,9 @@ Fifine K669B — USB-конденсаторный микрофон. Подклю
 
 ## Как всё это настроить
 
-Подключили оборудование — теперь нужен софт. OBS Studio — бесплатный и стандарт индустрии. [Пошаговый гайд по настройке OBS](https://journal-bice-seven.vercel.app/obs-guide) — от установки до первого стрима.
+Подключили оборудование — теперь нужен софт. OBS Studio — бесплатный и стандарт индустрии. [Пошаговый гайд по настройке OBS](https://mycamdesk.com/guides/nastroyka-obs-dlya-webcam) — от установки до первого стрима.
 
-А полный список рекомендуемого оборудования с вариантами под разный бюджет — в [гайде по оборудованию](https://journal-bice-seven.vercel.app/equipment). Там и $300-сетап, и $500, и $1 000 — для тех, кто готов вложиться серьёзнее.
+А полный список рекомендуемого оборудования с вариантами под разный бюджет — в [гайде по оборудованию](https://mycamdesk.com/guides/nastroyka-obs-dlya-webcam). Там и $300-сетап, и $500, и $1 000 — для тех, кто готов вложиться серьёзнее.
 
 ## Мой совет
 

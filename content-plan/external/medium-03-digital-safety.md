@@ -3,7 +3,7 @@ platform: "medium.com"
 section: "Tags: Cybersecurity, Privacy, Content Creation"
 title: "A Content Creator's Guide to Digital Safety: Protect Your Identity Online"
 description: "Universal safety guide for content creators: EXIF, reverse image search, DMCA, VPN, separate identities"
-links_to_site: ["https://journal-bice-seven.vercel.app/safety-checklist", "https://journal-bice-seven.vercel.app/safety"]
+links_to_site: ["https://mycamdesk.com/guides/chto-delat-esli-sliv-kontenta-s-webcam-sayta", "https://mycamdesk.com/safety"]
 ---
 
 # A Content Creator's Guide to Digital Safety: Protect Your Identity Online
@@ -114,9 +114,9 @@ The first 24 hours matter most. Having a plan before something happens means fas
 
 ## Resources
 
-I've put together a detailed safety checklist with specific tools, step-by-step procedures, and platform-specific guidance: [safety checklist](https://journal-bice-seven.vercel.app/safety-checklist).
+I've put together a detailed safety checklist with specific tools, step-by-step procedures, and platform-specific guidance: [safety checklist](https://mycamdesk.com/guides/chto-delat-esli-sliv-kontenta-s-webcam-sayta).
 
-For a broader collection of safety resources and scenario-specific guides: [safety section](https://journal-bice-seven.vercel.app/safety).
+For a broader collection of safety resources and scenario-specific guides: [safety section](https://mycamdesk.com/safety).
 
 Digital safety isn't a one-time setup. It's an ongoing practice. The good news: once the foundation is in place, maintenance takes minutes per week. The investment is small. The cost of not doing it can be enormous.
 

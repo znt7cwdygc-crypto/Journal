@@ -3,7 +3,7 @@ platform: "dzen.ru"
 section: "Финансы"
 title: "Налоги для контент-мейкеров: самозанятость, ИП или вообще ничего?"
 description: "Как платить налоги с дохода на контент-платформах в России — просто и по делу"
-links_to_site: ["https://journal-bice-seven.vercel.app/legal-guide", "https://journal-bice-seven.vercel.app/earnings-guide"]
+links_to_site: ["https://mycamdesk.com/guides/webcam-model-zakonno-ili-net", "https://mycamdesk.com/guides/skolko-zarabatyvaet-webcam-model-v-rossii-i-sng"]
 ---
 
 # Налоги для контент-мейкеров: самозанятость, ИП или вообще ничего?
@@ -101,7 +101,7 @@ links_to_site: ["https://journal-bice-seven.vercel.app/legal-guide", "https://jo
 
 **Криптовалюта.** Некоторые платформы выводят в крипто. В России налогообложение крипты — серая зона. Формально доход от продажи крипты облагается НДФЛ 13%. Практически — сложно отследить. Но если суммы серьёзные — лучше легализовать.
 
-Более подробный разбор юридических аспектов — в [гайде по правовым вопросам](https://journal-bice-seven.vercel.app/legal-guide). А про реальные доходы, от которых эти налоги считать — в [разборе заработков](https://journal-bice-seven.vercel.app/earnings-guide).
+Более подробный разбор юридических аспектов — в [гайде по правовым вопросам](https://mycamdesk.com/guides/webcam-model-zakonno-ili-net). А про реальные доходы, от которых эти налоги считать — в [разборе заработков](https://mycamdesk.com/guides/skolko-zarabatyvaet-webcam-model-v-rossii-i-sng).
 
 ## Итог
 

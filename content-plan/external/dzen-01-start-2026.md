@@ -3,7 +3,7 @@ platform: "dzen.ru"
 section: "Заработок в интернете"
 title: "Заработок на контент-платформах в 2026: реальные цифры и с чего начать"
 description: "Простым языком: какие платформы есть, сколько можно заработать и что нужно для старта"
-links_to_site: ["https://journal-bice-seven.vercel.app/start-guide", "https://journal-bice-seven.vercel.app/earnings-guide"]
+links_to_site: ["https://mycamdesk.com/guides/kak-stat-webcam-modelyu-s-nulya", "https://mycamdesk.com/guides/skolko-zarabatyvaet-webcam-model-v-rossii-i-sng"]
 ---
 
 # Заработок на контент-платформах в 2026: реальные цифры и с чего начать
@@ -43,7 +43,7 @@ links_to_site: ["https://journal-bice-seven.vercel.app/start-guide", "https://jo
 
 Топ-мейкеры зарабатывают $10 000+, но это исключения. Строить ожидания на них — всё равно что планировать стать следующим Моргенштерном.
 
-Детальный разбор заработков с цифрами по каждой платформе — в [гайде по доходам](https://journal-bice-seven.vercel.app/earnings-guide).
+Детальный разбор заработков с цифрами по каждой платформе — в [гайде по доходам](https://mycamdesk.com/guides/skolko-zarabatyvaet-webcam-model-v-rossii-i-sng).
 
 ## Что нужно для старта
 
@@ -105,7 +105,7 @@ links_to_site: ["https://journal-bice-seven.vercel.app/start-guide", "https://jo
 4. Установите OBS, настройте (10-20 минут).
 5. Начните стримить. Первые 2-3 стрима — привыкание. Не ждите денег сразу.
 
-Пошаговый гайд для начинающих — с разбором каждого этапа — [тут](https://journal-bice-seven.vercel.app/start-guide).
+Пошаговый гайд для начинающих — с разбором каждого этапа — [тут](https://mycamdesk.com/guides/kak-stat-webcam-modelyu-s-nulya).
 
 ## Главное
 
