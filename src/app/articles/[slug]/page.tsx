@@ -211,12 +211,12 @@ export default async function ArticleDetailsPage({
               name: article.createdBy.name || article.createdBy.email || "Автор MyCamDesk",
               url: siteUrl(`/profiles/${article.createdById}`).toString()
             },
-            image: coverImage || siteUrl("/favicon.svg").toString(),
+            image: coverImage || siteUrl("/logo.png").toString(),
             publisher: {
               "@type": "Organization",
               name: siteName,
               url: siteUrl("/").toString(),
-              logo: { "@type": "ImageObject", url: siteUrl("/favicon.svg").toString() }
+              logo: { "@type": "ImageObject", url: siteUrl("/logo.png").toString() }
             }
           })
         }}

@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       description: guide.description,
       url: guide.path,
       type: "article",
-      images: [{ url: siteUrl("/favicon.svg").toString() }]
+      images: [{ url: siteUrl("/logo.png").toString() }]
     },
     twitter: {
       card: "summary_large_image",
@@ -66,7 +66,7 @@ export default async function GuidePage({ params }: { params: { slug: string } }
         "publisher": {
           "@type": "Organization",
           "name": "MyCamDesk",
-          "logo": { "@type": "ImageObject", "url": siteUrl("/favicon.svg").toString() }
+          "logo": { "@type": "ImageObject", "url": siteUrl("/logo.png").toString() }
         },
         "mainEntityOfPage": {
           "@type": "WebPage",

@@ -22,7 +22,7 @@ export const metadata: Metadata = {
       { url: "/favicon.svg", type: "image/svg+xml" }
     ],
     shortcut: [{ url: "/favicon.ico" }],
-    apple: [{ url: "/favicon.svg" }],
+    apple: [{ url: "/logo.png" }],
   },
   manifest: "/manifest.json",
   alternates: {},
@@ -35,7 +35,8 @@ export const metadata: Metadata = {
     siteName,
     title: siteName,
     description: siteDescription,
-    url: "/"
+    url: "/",
+    images: [{ url: siteUrl("/logo.png").toString() }]
   },
   twitter: {
     card: "summary_large_image",

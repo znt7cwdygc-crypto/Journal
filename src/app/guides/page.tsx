@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     title: "Гайды по вебкам-индустрии — MyCamDesk",
     description: "Понятные гайды о работе в вебкам-индустрии: безопасность, деньги, студии, оборудование, продвижение и частые вопросы новичков.",
     url: "/guides",
-    images: [{ url: siteUrl("/favicon.svg").toString() }]
+    images: [{ url: siteUrl("/logo.png").toString() }]
   }
 };
 

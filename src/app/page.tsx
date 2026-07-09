@@ -143,7 +143,7 @@ export default async function HomePage() {
         "name": siteName,
         "url": siteUrl("/").toString(),
         "description": siteDescription,
-        "logo": { "@type": "ImageObject", "url": siteUrl("/favicon.svg").toString() },
+        "logo": { "@type": "ImageObject", "url": siteUrl("/logo.png").toString() },
         "sameAs": []
       }) }} />
       <section className="section-card overflow-hidden">
