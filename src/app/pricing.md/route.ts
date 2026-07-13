@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isCatalogEnabled } from "@/lib/features";
 import { siteName, siteUrl } from "@/lib/seo";
 
 export const dynamic = "force-static";
@@ -15,6 +16,7 @@ export async function GET() {
     "- Posting a resume (model, operator, administrator, specialist).",
     "- Posting a vacancy, service listing, or marketplace product.",
     "- Browsing public resumes, vacancies, services, and products.",
+    ...(isCatalogEnabled() ? ["- Listing a webcam studio or content-platform agency in the directory (/studios, /agencies) — free, moderated, no time limit while data stays current."] : []),
     "",
     "## Paid: contacting a resume (invite)",
     "",
@@ -29,6 +31,7 @@ export async function GET() {
     "",
     "- Advertising placements are sold off-platform by direct arrangement, not through a self-serve priced flow.",
     "- There is no subscription or membership fee for using the platform.",
+    ...(isCatalogEnabled() ? ["- Paid directory promotion (featured placement for studios/agencies) is planned but not yet available."] : []),
     "",
     "Pricing last reviewed: " + new Date().toISOString().slice(0, 10),
     "Source: " + siteUrl("/pricing.md").toString(),

@@ -1,38 +1,42 @@
 import Link from "next/link";
+import { isCatalogEnabled } from "@/lib/features";
 
-const menuGroups = [
-  {
-    title: "Контент",
-    links: [
-      ["Лента", "/articles"],
-      ["Гайды", "/guides"]
-    ]
-  },
-  {
-    title: "Работа и услуги",
-    links: [
-      ["Вакансии", "/vacancies"],
-      ["Резюме", "/resumes"],
-      ["Услуги", "/services"],
-      ["Товары", "/products"],
-      ["Модель оператор", "/model-operator"]
-    ]
-  },
-  {
-    title: "Справка",
-    links: [
-      ["Авторы", "/authors"],
-      ["Полезные ссылки", "/links"]
-    ]
-  }
-] as const;
+function menuGroups(): { title: string; links: [string, string][] }[] {
+  return [
+    {
+      title: "Контент",
+      links: [
+        ["Лента", "/articles"],
+        ["Гайды", "/guides"]
+      ]
+    },
+    {
+      title: "Работа и услуги",
+      links: [
+        ["Вакансии", "/vacancies"],
+        ["Резюме", "/resumes"],
+        ["Услуги", "/services"],
+        ["Товары", "/products"],
+        ["Модель оператор", "/model-operator"],
+        ...(isCatalogEnabled() ? ([["Студии", "/studios"], ["Агентства", "/agencies"]] as [string, string][]) : [])
+      ]
+    },
+    {
+      title: "Справка",
+      links: [
+        ["Авторы", "/authors"],
+        ["Полезные ссылки", "/links"]
+      ]
+    }
+  ];
+}
 
 export function ShellNav() {
   return (
     <aside className="hidden lg:block">
       <div className="sticky top-20 overflow-hidden rounded-2xl border border-zinc-200 bg-white">
         <nav>
-          {menuGroups.map((group, index) => (
+          {menuGroups().map((group, index) => (
             <section key={group.title} className={index > 0 ? "border-t border-zinc-200" : undefined}>
               <p className="px-5 pt-4 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
                 {group.title}

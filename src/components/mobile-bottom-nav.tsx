@@ -13,10 +13,15 @@ const createItems = [
   ["Найти модель/оператора", "/cabinet#match"]
 ] as const;
 
-const workItems = [
+const baseWorkItems = [
   ["Вакансии", "/vacancies"],
   ["Резюме", "/resumes"],
   ["Модель оператор", "/model-operator"]
+] as const;
+
+const catalogWorkItems = [
+  ["Студии", "/studios"],
+  ["Агентства", "/agencies"]
 ] as const;
 
 const marketItems = [
@@ -24,7 +29,6 @@ const marketItems = [
   ["Товары", "/products"]
 ] as const;
 
-const workPaths = workItems.map(([, href]) => href);
 const marketPaths = marketItems.map(([, href]) => href);
 
 function isPathActive(pathname: string, href: string) {
@@ -54,9 +58,11 @@ function QuickMenu({
   );
 }
 
-export function MobileBottomNav() {
+export function MobileBottomNav({ catalogEnabled = false }: { catalogEnabled?: boolean }) {
   const pathname = usePathname() ?? "";
   const [openMenu, setOpenMenu] = useState<"create" | "work" | "market" | null>(null);
+  const workItems = catalogEnabled ? [...baseWorkItems, ...catalogWorkItems] : baseWorkItems;
+  const workPaths = workItems.map(([, href]) => href);
   const workActive = workPaths.some((href) => isPathActive(pathname, href));
   const marketActive = marketPaths.some((href) => isPathActive(pathname, href));
 

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { logoutAction } from "@/app/actions";
+import { isCatalogEnabled } from "@/lib/features";
 
 export async function Header() {
   const session = await auth();
@@ -49,6 +50,7 @@ export async function Header() {
       <nav className="no-scrollbar flex gap-2 overflow-x-auto border-t border-zinc-100 px-3 py-2 text-xs font-semibold text-zinc-600 lg:hidden">
         <Link className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5" href="/articles">Лента</Link>
         <Link className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5" href="/vacancies">Вакансии</Link>
+        {isCatalogEnabled() && <Link className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5" href="/studios">Студии</Link>}
         <Link className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5" href="/resumes">Резюме</Link>
         <Link className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5" href="/services">Услуги</Link>
         <Link className="shrink-0 rounded-full bg-zinc-100 px-3 py-1.5" href="/products">Товары</Link>

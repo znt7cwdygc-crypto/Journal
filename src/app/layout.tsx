@@ -7,6 +7,7 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { ShellNav } from "@/components/shell-nav";
 import { ShellRail } from "@/components/shell-rail";
 import { YandexMetrikaRouter } from "@/components/yandex-metrika";
+import { isCatalogEnabled } from "@/lib/features";
 import { siteDescription, siteName, siteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -91,7 +92,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="min-w-0">{children}</main>
           <ShellRail />
         </div>
-        <MobileBottomNav />
+        <MobileBottomNav catalogEnabled={isCatalogEnabled()} />
       </body>
     </html>
   );

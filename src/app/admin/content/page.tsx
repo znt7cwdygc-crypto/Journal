@@ -7,8 +7,10 @@ import {
   adminEditMatchProfileAction,
   adminEditProductAction,
   adminEditResumeAction,
+  toggleArticleCatalogUsefulAction,
 } from "@/app/actions";
 import { requireRole } from "@/lib/access";
+import { isCatalogEnabled } from "@/lib/features";
 import { prisma } from "@/lib/prisma";
 import { Badge, Table, statusColor } from "@/components/admin/ui";
 
@@ -176,6 +178,14 @@ async function ArticlesTab() {
                 <HideBtn contentType="ARTICLE" id={a.id} />
                 <Link href={`/blog/${a.slug}`} className="rounded bg-zinc-200 px-2 py-1 text-xs" target="_blank">Открыть</Link>
               </div>
+              {isCatalogEnabled() && (
+                <form action={toggleArticleCatalogUsefulAction}>
+                  <input type="hidden" name="articleId" value={a.id} />
+                  <button type="submit" className={`rounded px-2 py-1 text-xs font-medium ${a.isCatalogUseful ? "bg-emerald-600 text-white" : "bg-zinc-200 text-zinc-700"}`}>
+                    {a.isCatalogUseful ? "Полезна для каталога ✓" : "Одобрить для каталога"}
+                  </button>
+                </form>
+              )}
             </div>
           </td>
         </tr>

@@ -189,6 +189,8 @@ model Article {
   status        ContentStatus @default(PENDING_REVIEW)
   hiddenReason  String?
   isEditorPick  Boolean       @default(false)
+  isCatalogUseful   Boolean   @default(false)
+  catalogUsefulAt   DateTime?
   createdById   String
   createdBy     User          @relation(fields: [createdById], references: [id])
   publishedAt   DateTime?

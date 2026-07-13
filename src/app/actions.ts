@@ -15,7 +15,7 @@ import { isUserBlocked, requireRole } from "@/lib/access";
 import { isCatalogEnabled } from "@/lib/features";
 import { accountModeFromKind } from "@/lib/roles";
 import { safeInternalPath } from "@/lib/safe-redirect";
-import { articleSeoPath, listingSeoPath, matchProfileSeoPath, productSeoPath, resumeSeoPath, slugifyTranslit } from "@/lib/seo-url";
+import { articleSeoPath, directoryProfileSeoPath, listingSeoPath, matchProfileSeoPath, productSeoPath, resumeSeoPath, slugifyTranslit } from "@/lib/seo-url";
 import { articleTopic } from "@/lib/topics";
 import { isUploadedFile, saveUploadedImage } from "@/lib/uploaded-image";
 import { cleanMultiline, cleanNumber, cleanText, makeSlug, optionalUrl, requireMultiline, requireText } from "@/lib/validation";
@@ -2588,6 +2588,22 @@ export async function adminEditArticleAction(formData: FormData) {
   redirect("/admin/content?tab=articles");
 }
 
+export async function toggleArticleCatalogUsefulAction(formData: FormData) {
+  if (!isCatalogEnabled()) throw new Error("Функция сейчас недоступна");
+  const admin = await requireRole(["ADMIN", "MODERATOR"]);
+  const articleId = requireText(formData.get("articleId"), "articleId");
+  const article = await prisma.article.findUniqueOrThrow({ where: { id: articleId } });
+
+  const isCatalogUseful = !article.isCatalogUseful;
+  await prisma.article.update({
+    where: { id: articleId },
+    data: { isCatalogUseful, catalogUsefulAt: isCatalogUseful ? new Date() : null }
+  });
+
+  await logAudit(admin.id, isCatalogUseful ? "mark_article_catalog_useful" : "unmark_article_catalog_useful", "ARTICLE", articleId);
+  revalidatePath("/admin/content");
+}
+
 export async function adminEditListingAction(formData: FormData) {
   const admin = await requireRole(["ADMIN", "MODERATOR"]);
   const listingId = String(formData.get("listingId") ?? "");
@@ -3025,7 +3041,7 @@ export async function submitDirectoryProfileAction(formData: FormData) {
 export async function approveDirectoryProfileAction(formData: FormData) {
   const admin = await requireRole(["ADMIN", "MODERATOR"]);
   const id = requireText(formData.get("id"), "id");
-  await prisma.directoryProfile.update({
+  const profile = await prisma.directoryProfile.update({
     where: { id },
     data: {
       status: "PUBLISHED",
@@ -3039,6 +3055,8 @@ export async function approveDirectoryProfileAction(formData: FormData) {
   });
   await logAudit(admin.id, "approve_directory_profile", "DirectoryProfile", id);
   revalidatePath("/admin/directory-profiles");
+  revalidatePath(profile.type === "STUDIO" ? "/studios" : "/agencies");
+  void notifyIndexNow(directoryProfileSeoPath(profile));
 }
 
 export async function requestDirectoryProfileChangesAction(formData: FormData) {
@@ -3054,9 +3072,10 @@ export async function hideDirectoryProfileAction(formData: FormData) {
   const admin = await requireRole(["ADMIN", "MODERATOR"]);
   const id = requireText(formData.get("id"), "id");
   const reason = cleanText(formData.get("reason"), 500) || null;
-  await prisma.directoryProfile.update({ where: { id }, data: { status: "HIDDEN", rejectionReason: reason } });
+  const profile = await prisma.directoryProfile.update({ where: { id }, data: { status: "HIDDEN", rejectionReason: reason } });
   await logAudit(admin.id, "hide_directory_profile", "DirectoryProfile", id, reason ?? undefined);
   revalidatePath("/admin/directory-profiles");
+  revalidatePath(profile.type === "STUDIO" ? "/studios" : "/agencies");
 }
 
 export async function saveDirectoryProfileAction(formData: FormData) {

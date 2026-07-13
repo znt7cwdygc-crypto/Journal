@@ -1,10 +1,14 @@
 import type { MetadataRoute } from "next";
+import { distinctDirectoryCities, distinctDirectoryPlatforms } from "@/lib/directory-queries";
+import { isCatalogEnabled } from "@/lib/features";
 import { prisma } from "@/lib/prisma";
 import { siteUrl } from "@/lib/seo";
-import { articleSeoPath, listingSeoPath, matchProfileSeoPath, productSeoPath, resumeSeoPath } from "@/lib/seo-url";
+import { articleSeoPath, directoryProfileSeoPath, listingSeoPath, matchProfileSeoPath, productSeoPath, resumeSeoPath, slugifyTranslit } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 3600;
+
+const CATALOG_INDEX_THRESHOLD = 3;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
@@ -22,7 +26,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ["/safety", 0.75, "daily"],
     ["/work", 0.75, "daily"],
     ["/guides", 0.8, "daily"],
-    ["/links", 0.5, "weekly"]
+    ["/links", 0.5, "weekly"],
+    ...(isCatalogEnabled() ? ([["/studios", 0.8, "daily"], ["/agencies", 0.8, "daily"]] as const) : [])
   ].map(([path, priority, changeFrequency]) => ({
     url: siteUrl(String(path)).toString(),
     lastModified: now,
@@ -43,7 +48,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   try {
-    const [articles, profiles, listings, products, resumes, matchProfiles] = await Promise.all([
+    const [articles, profiles, listings, products, resumes, matchProfiles, directoryProfiles] = await Promise.all([
       prisma.article.findMany({
         where: { status: "PUBLISHED" },
         select: { id: true, title: true, updatedAt: true, publishedAt: true },
@@ -84,8 +89,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         select: { id: true, title: true, city: true, seekerRole: true, lookingFor: true, updatedAt: true },
         orderBy: { updatedAt: "desc" },
         take: 1000
-      })
+      }),
+      isCatalogEnabled()
+        ? prisma.directoryProfile.findMany({
+            where: { status: "PUBLISHED", profileCompleteness: { gte: 70 } },
+            select: { id: true, type: true, name: true, city: true, slug: true, updatedAt: true },
+            orderBy: { updatedAt: "desc" },
+            take: 500
+          })
+        : Promise.resolve([])
     ]);
+
+    let catalogSubPages: MetadataRoute.Sitemap = [];
+    if (isCatalogEnabled()) {
+      const [studioCities, agencyPlatforms] = await Promise.all([distinctDirectoryCities("STUDIO"), distinctDirectoryPlatforms("AGENCY")]);
+      const [studioCounts, platformCounts] = await Promise.all([
+        Promise.all(studioCities.map((city) => prisma.directoryProfile.count({ where: { type: "STUDIO", status: "PUBLISHED", city } }))),
+        Promise.all(agencyPlatforms.map((platform) => prisma.directoryProfile.count({ where: { type: "AGENCY", status: "PUBLISHED", platforms: { has: platform } } })))
+      ]);
+
+      catalogSubPages = [
+        ...studioCities
+          .map((city, index) => ({ city, count: studioCounts[index] }))
+          .filter(({ count }) => count >= CATALOG_INDEX_THRESHOLD)
+          .map(({ city }) => ({ url: siteUrl(`/studios/${slugifyTranslit(city)}`).toString(), lastModified: now, priority: 0.7, changeFrequency: "daily" as const })),
+        ...agencyPlatforms
+          .map((platform, index) => ({ platform, count: platformCounts[index] }))
+          .filter(({ count }) => count >= CATALOG_INDEX_THRESHOLD)
+          .map(({ platform }) => ({ url: siteUrl(`/agencies/${platform.toLowerCase()}`).toString(), lastModified: now, priority: 0.7, changeFrequency: "daily" as const }))
+      ];
+    }
 
     return [
       ...staticRoutes,
@@ -125,7 +158,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         lastModified: profile.updatedAt || now,
         priority: 0.65,
         changeFrequency: "weekly" as const
-      }))
+      })),
+      ...directoryProfiles.map((profile) => ({
+        url: siteUrl(directoryProfileSeoPath(profile)).toString(),
+        lastModified: profile.updatedAt || now,
+        priority: 0.7,
+        changeFrequency: "weekly" as const
+      })),
+      ...catalogSubPages
     ];
   } catch {
     return [...staticRoutes, ...seoRoutes];

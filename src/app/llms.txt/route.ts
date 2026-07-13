@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
+import { isCatalogEnabled } from "@/lib/features";
 import { prisma } from "@/lib/prisma";
 import { siteDescription, siteName, siteUrl } from "@/lib/seo";
-import { articleSeoPath, listingSeoPath, matchProfileSeoPath, productSeoPath } from "@/lib/seo-url";
+import { articleSeoPath, directoryProfileSeoPath, listingSeoPath, matchProfileSeoPath, productSeoPath } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ function line(title: string, path: string, description?: string) {
 
 export async function GET() {
   const now = new Date();
-  const [articles, listings, products, matchProfiles, guides] = await Promise.all([
+  const [articles, listings, products, matchProfiles, guides, directoryProfiles] = await Promise.all([
     prisma.article.findMany({
       where: { status: "PUBLISHED" },
       select: { id: true, title: true, summary: true, topic: true, updatedAt: true },
@@ -42,7 +43,15 @@ export async function GET() {
       select: { h1: true, path: true, description: true },
       orderBy: { sortOrder: "asc" },
       take: 40
-    })
+    }),
+    isCatalogEnabled()
+      ? prisma.directoryProfile.findMany({
+          where: { status: "PUBLISHED" },
+          select: { id: true, type: true, name: true, summary: true, city: true, slug: true, updatedAt: true },
+          orderBy: { updatedAt: "desc" },
+          take: 30
+        })
+      : Promise.resolve([])
   ]);
 
   const body = [
@@ -66,6 +75,7 @@ export async function GET() {
     line("Money", "/money", "income, fees and finance-related materials"),
     line("Safety", "/safety", "privacy and safety guides"),
     line("Work", "/work", "work-related guides and listings"),
+    ...(isCatalogEnabled() ? [line("Studios", "/studios", "directory of webcam studios with filters by city, format and terms"), line("Agencies", "/agencies", "directory of content-platform agencies with filters by platform and terms")] : []),
     "",
     "## SEO guides and landing pages",
     "",
@@ -113,6 +123,18 @@ export async function GET() {
         )
       : ["- No public model-operator profiles yet."]),
     "",
+    ...(isCatalogEnabled()
+      ? [
+          "## Recent directory profiles (studios/agencies)",
+          "",
+          ...(directoryProfiles.length
+            ? directoryProfiles.map((profile) =>
+                line(profile.name, directoryProfileSeoPath(profile), [profile.type === "STUDIO" ? "Studio" : "Agency", profile.city, profile.summary].filter(Boolean).join(": "))
+              )
+            : ["- No published directory profiles yet."]),
+          ""
+        ]
+      : []),
     "## Crawling notes",
     "",
     "- Private areas are not intended for indexing: /cabinet, /admin, /auth, /api.",
