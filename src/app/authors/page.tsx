@@ -50,7 +50,8 @@ export default async function AuthorsPage({ searchParams }: { searchParams?: { k
         OR: [
           { articles: { some: { status: "PUBLISHED" } } },
           { listings: { some: { status: "PUBLISHED" } } },
-          { resume: { is: { isPublic: true, hiddenByInactivity: false, expiresAt: { gt: now } } } }
+          { resume: { is: { isPublic: true, hiddenByInactivity: false, expiresAt: { gt: now } } } },
+          ...(isCatalogEnabled() ? [{ directoryProfile: { is: { status: "PUBLISHED" as const } } }] : [])
         ]
       }
     ]
