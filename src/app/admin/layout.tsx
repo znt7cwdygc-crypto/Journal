@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { requireRole } from "@/lib/access";
+import { isCatalogEnabled } from "@/lib/features";
 import { prisma } from "@/lib/prisma";
 import { AdminShell, type AdminNavItem } from "@/components/admin/Sidebar";
 
@@ -8,6 +9,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const isAdmin = user.role === "ADMIN";
 
   const pendingReports = await prisma.report.count({ where: { status: "PENDING_REVIEW" } });
+  const catalogEnabled = isCatalogEnabled();
+  const pendingDirectoryProfiles = catalogEnabled
+    ? await prisma.directoryProfile.count({ where: { status: "PENDING_REVIEW" } })
+    : 0;
 
   type NavEntry = AdminNavItem & { adminOnly?: boolean };
 
@@ -18,6 +23,9 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     { section: "МОДЕРАЦИЯ" },
     { href: "/admin/reports", label: "Жалобы", icon: "⚠️", badge: pendingReports || undefined },
     { href: "/admin/content", label: "Контент", icon: "📝" },
+    ...(catalogEnabled
+      ? [{ href: "/admin/directory-profiles", label: "Организации", icon: "🏢", badge: pendingDirectoryProfiles || undefined } as NavEntry]
+      : []),
 
     { section: "ПОЛЬЗОВАТЕЛИ" },
     { href: "/admin/users", label: "Пользователи", icon: "👥", adminOnly: true },

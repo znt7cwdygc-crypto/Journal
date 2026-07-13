@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/access";
+import { isCatalogEnabled } from "@/lib/features";
 import {
   changePasswordAction,
   createResumeAction,
@@ -265,6 +267,7 @@ export default async function CabinetPage({
   const profileName = dbUser.name || dbUser.email || "Профиль";
   const profileKindLabel = roleLabel(dbUser.profileKind);
   const canPublishMatchProfile = dbUser.profileKind === "MODEL" || dbUser.profileKind === "OPERATOR";
+  const catalogEnabled = isCatalogEnabled();
   const emailVerified = Boolean(dbUser.emailVerified);
 
   return (
@@ -337,6 +340,16 @@ export default async function CabinetPage({
             </form>
           </div>
         </details>
+
+        {catalogEnabled && (dbUser.profileKind === "STUDIO" || dbUser.profileKind === "AGENCY") && (
+          <div className="border-t border-zinc-100 p-4">
+            <p className="text-sm font-semibold">Организация</p>
+            <p className="mt-1 text-xs text-zinc-500">Подробная карточка в каталоге студий/агентств — процент, условия, команда.</p>
+            <Link className="mt-2 inline-flex rounded-lg bg-hot px-3 py-1.5 text-xs font-semibold text-white" href="/cabinet/organization">
+              Открыть карточку организации
+            </Link>
+          </div>
+        )}
 
         <details className="border-t border-zinc-100">
           <summary className="flex cursor-pointer list-none items-center justify-center gap-1 px-4 py-2 text-xs font-medium text-zinc-400 hover:text-ink">

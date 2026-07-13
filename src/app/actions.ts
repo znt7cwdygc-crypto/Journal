@@ -12,9 +12,10 @@ import { notifyIndexNow } from "@/lib/indexnow";
 import { prisma } from "@/lib/prisma";
 import { listingExpiresAt, matchProfileExpiresAt, productExpiresAt, resumeExpiresAt } from "@/lib/publication-periods";
 import { isUserBlocked, requireRole } from "@/lib/access";
+import { isCatalogEnabled } from "@/lib/features";
 import { accountModeFromKind } from "@/lib/roles";
 import { safeInternalPath } from "@/lib/safe-redirect";
-import { articleSeoPath, listingSeoPath, matchProfileSeoPath, productSeoPath, resumeSeoPath } from "@/lib/seo-url";
+import { articleSeoPath, listingSeoPath, matchProfileSeoPath, productSeoPath, resumeSeoPath, slugifyTranslit } from "@/lib/seo-url";
 import { articleTopic } from "@/lib/topics";
 import { isUploadedFile, saveUploadedImage } from "@/lib/uploaded-image";
 import { cleanMultiline, cleanNumber, cleanText, makeSlug, optionalUrl, requireMultiline, requireText } from "@/lib/validation";
@@ -2881,4 +2882,176 @@ export async function toggleUsefulLinkAction(formData: FormData) {
   await logAudit(admin.id, "toggle_useful_link", "UsefulLink", id, `isPublished → ${!link.isPublished}`);
   revalidatePath("/admin/links");
   revalidatePath("/links");
+}
+
+// ---------------------------------------------------------------------------
+// Directory profiles (studio/agency catalog) — behind FEATURE_CATALOG.
+// See docs/STUDIO_CATALOG_SPEC.md, Block 1.
+// ---------------------------------------------------------------------------
+
+function directoryProfileDataFromForm(fd: FormData, type: "STUDIO" | "AGENCY") {
+  const workFormats = fd.getAll("workFormats").map(String).filter(Boolean);
+  const platforms = fd.getAll("platforms").map(String).filter(Boolean);
+  const audiences = fd.getAll("audiences").map(String).filter(Boolean);
+  const agencyIncludes = fd.getAll("agencyIncludes").map(String).filter(Boolean);
+
+  const penaltiesRaw = cleanMultiline(fd.get("penalties"), 2000);
+  const penalties = penaltiesRaw
+    ? JSON.stringify(
+        penaltiesRaw
+          .split("\n")
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((label) => ({ label }))
+      )
+    : null;
+
+  const hasTrainer = fd.get("hasTrainer") === "on";
+  const teamComposition = JSON.stringify({
+    admins: cleanNumber(fd.get("teamAdmins"), 0, 200),
+    operators: cleanNumber(fd.get("teamOperators"), 0, 200),
+    femaleCount: cleanNumber(fd.get("teamFemale"), 0, 200),
+    maleCount: cleanNumber(fd.get("teamMale"), 0, 200),
+    hasTrainer,
+    trainerNote: cleanText(fd.get("trainerNote"), 300) || null,
+  });
+
+  const percentMinRaw = cleanText(fd.get("percentMin"));
+  const percentMaxRaw = cleanText(fd.get("percentMax"));
+  const shareRaw = cleanText(fd.get("agencySharePercent"));
+  const roomsRaw = cleanText(fd.get("roomsCount"));
+  const modelsRaw = cleanText(fd.get("modelsCount"));
+  const foundedRaw = cleanText(fd.get("foundedYear"));
+
+  return {
+    type,
+    name: requireText(fd.get("name"), "название", 140),
+    logoUrl: optionalUrl(fd.get("logoUrl")),
+    coverUrl: optionalUrl(fd.get("coverUrl")),
+    summary: requireText(fd.get("summary"), "короткое описание", 240),
+    description: requireMultiline(fd.get("description"), "полное описание", 4000),
+    foundedYear: foundedRaw ? cleanNumber(fd.get("foundedYear"), 2000, 2030) : null,
+    workFormats,
+    platforms,
+    audiences,
+    city: cleanText(fd.get("city"), 120) || null,
+    district: cleanText(fd.get("district"), 120) || null,
+    landmark: cleanText(fd.get("landmark"), 160) || null,
+    addressIsPublic: fd.get("addressIsPublic") === "on",
+    privateAddress: cleanText(fd.get("privateAddress"), 300) || null,
+    photos: [] as string[],
+    roomsCount: roomsRaw ? cleanNumber(fd.get("roomsCount"), 0, 500) : null,
+    equipment: cleanMultiline(fd.get("equipment"), 1000) || null,
+    livingConditions: cleanMultiline(fd.get("livingConditions"), 1000) || null,
+    hasAccommodation: fd.get("hasAccommodation") === "on",
+    percentMin: percentMinRaw ? cleanNumber(fd.get("percentMin"), 0, 100) : null,
+    percentMax: percentMaxRaw ? cleanNumber(fd.get("percentMax"), 0, 100) : null,
+    payoutSchedule: cleanText(fd.get("payoutSchedule"), 200) || null,
+    penalties,
+    teamComposition,
+    hasTrainer,
+    agencySharePercent: shareRaw ? cleanNumber(fd.get("agencySharePercent"), 0, 100) : null,
+    agencyIncludes,
+    modelsCount: modelsRaw ? cleanNumber(fd.get("modelsCount"), 0, 100000) : null,
+    contactLink: cleanText(fd.get("contactLink"), 200) || null,
+    telegramLink: cleanText(fd.get("telegramLink"), 200) || null,
+    websiteUrl: optionalUrl(fd.get("websiteUrl")),
+  };
+}
+
+export async function upsertDirectoryProfileAction(formData: FormData) {
+  if (!isCatalogEnabled()) throw new Error("Функция сейчас недоступна");
+  const sessionUser = await requireActiveSessionUser();
+  await requireVerifiedEmail(sessionUser.id);
+
+  const user = await prisma.user.findUnique({ where: { id: sessionUser.id }, select: { profileKind: true } });
+  if (user?.profileKind !== "STUDIO" && user?.profileKind !== "AGENCY") {
+    throw new Error("Карточку организации может создать только аккаунт студии или агентства");
+  }
+  const type = user.profileKind;
+  const data = directoryProfileDataFromForm(formData, type);
+
+  const existing = await prisma.directoryProfile.findUnique({ where: { ownerId: sessionUser.id } });
+
+  if (existing) {
+    // Публикация не откатывается правками — на модерацию заново уходит только
+    // возврат из CHANGES_REQUESTED. Полная версионность — Блок 6.
+    const nextStatus = existing.status === "CHANGES_REQUESTED" ? "DRAFT" : existing.status;
+    await prisma.directoryProfile.update({
+      where: { id: existing.id },
+      data: { ...data, status: nextStatus },
+    });
+  } else {
+    const slug = `${slugifyTranslit(data.name, type === "STUDIO" ? "studiya" : "agentstvo")}-${Date.now().toString(36)}`;
+    await prisma.directoryProfile.create({
+      data: { ...data, slug, ownerId: sessionUser.id, status: "DRAFT" },
+    });
+  }
+
+  revalidatePath("/cabinet/organization");
+  redirect("/cabinet/organization?saved=1");
+}
+
+export async function submitDirectoryProfileAction(formData: FormData) {
+  if (!isCatalogEnabled()) throw new Error("Функция сейчас недоступна");
+  const sessionUser = await requireActiveSessionUser();
+  await requireVerifiedEmail(sessionUser.id);
+
+  const profile = await prisma.directoryProfile.findUnique({ where: { ownerId: sessionUser.id } });
+  if (!profile) throw new Error("Сначала заполните карточку организации");
+  if (profile.status === "PUBLISHED" || profile.status === "PENDING_REVIEW") {
+    throw new Error("Карточка уже опубликована или отправлена на проверку");
+  }
+
+  const missing: string[] = [];
+  if (!profile.contactLink) missing.push("контакт");
+  if (!profile.description) missing.push("описание");
+  if (!profile.city && !profile.workFormats.includes("ONLINE")) missing.push("город или онлайн-формат");
+  if (profile.type === "STUDIO" && profile.percentMin == null) missing.push("процент модели");
+  if (profile.type === "AGENCY" && profile.agencySharePercent == null) missing.push("доля агентства");
+
+  if (missing.length > 0) {
+    throw new Error(`Перед отправкой заполните: ${missing.join(", ")}`);
+  }
+
+  await prisma.directoryProfile.update({ where: { id: profile.id }, data: { status: "PENDING_REVIEW" } });
+  revalidatePath("/cabinet/organization");
+  redirect("/cabinet/organization?submitted=1");
+}
+
+export async function approveDirectoryProfileAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN", "MODERATOR"]);
+  const id = requireText(formData.get("id"), "id");
+  await prisma.directoryProfile.update({
+    where: { id },
+    data: {
+      status: "PUBLISHED",
+      verificationStatus: "VERIFIED",
+      verifiedAt: new Date(),
+      verifiedById: admin.id,
+      publishedAt: new Date(),
+      lastDataConfirmedAt: new Date(),
+      rejectionReason: null,
+    },
+  });
+  await logAudit(admin.id, "approve_directory_profile", "DirectoryProfile", id);
+  revalidatePath("/admin/directory-profiles");
+}
+
+export async function requestDirectoryProfileChangesAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN", "MODERATOR"]);
+  const id = requireText(formData.get("id"), "id");
+  const reason = requireText(formData.get("reason"), "причину", 500);
+  await prisma.directoryProfile.update({ where: { id }, data: { status: "CHANGES_REQUESTED", rejectionReason: reason } });
+  await logAudit(admin.id, "request_directory_profile_changes", "DirectoryProfile", id, reason);
+  revalidatePath("/admin/directory-profiles");
+}
+
+export async function hideDirectoryProfileAction(formData: FormData) {
+  const admin = await requireRole(["ADMIN", "MODERATOR"]);
+  const id = requireText(formData.get("id"), "id");
+  const reason = cleanText(formData.get("reason"), 500) || null;
+  await prisma.directoryProfile.update({ where: { id }, data: { status: "HIDDEN", rejectionReason: reason } });
+  await logAudit(admin.id, "hide_directory_profile", "DirectoryProfile", id, reason ?? undefined);
+  revalidatePath("/admin/directory-profiles");
 }
