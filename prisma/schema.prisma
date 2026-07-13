@@ -168,6 +168,7 @@ model User {
   violationCount      Int                  @default(0)
   advertisements      Advertisement[]
   auditLogs           AuditLog[]           @relation("AuditLogs")
+  directoryProfile    DirectoryProfile?
 
   accounts Account[]
   sessions Session[]
@@ -693,4 +694,90 @@ model SearchQuery {
 
   @@index([query, createdAt])
   @@index([createdAt])
+}
+
+// ─── Каталог студий/агентств — за флагом FEATURE_CATALOG, см. docs/STUDIO_CATALOG_SPEC.md ───
+
+enum DirectoryProfileType {
+  STUDIO
+  AGENCY
+}
+
+enum DirectoryProfileStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  CHANGES_REQUESTED
+  HIDDEN
+  ARCHIVED
+}
+
+enum DirectoryVerificationStatus {
+  UNVERIFIED
+  VERIFIED
+}
+
+model DirectoryProfile {
+  id      String @id @default(cuid())
+  ownerId String @unique
+  owner   User   @relation(fields: [ownerId], references: [id])
+
+  type DirectoryProfileType
+
+  name    String
+  slug    String  @unique
+  logoUrl String?
+  coverUrl String?
+  summary String
+  description String
+
+  foundedYear Int?
+  workFormats String[] // "OFFLINE" | "ONLINE" | "HYBRID"
+  platforms   String[] // "CHATURBATE" | "STRIPCHAT" | "BONGACAMS" | "ONLYFANS" | "FANSLY" | ...
+  audiences   String[] // "WOMEN" | "MEN" | "COUPLES" | "NEWCOMERS"
+
+  // Локация — прямо на профиле, без отдельной DirectoryLocation (см. docs, раздел 2.1)
+  city            String?
+  district        String?
+  landmark        String?
+  privateAddress  String?
+  addressIsPublic Boolean  @default(false)
+  photos          String[]
+  roomsCount      Int?
+  equipment       String?
+  livingConditions String?
+  hasAccommodation Boolean @default(false)
+
+  // Условия — студия
+  percentMin     Int?
+  percentMax     Int?
+  payoutSchedule String?
+  penalties      String? // JSON string: [{ "label": "...", "type": "ok" | "warn" }]
+  teamComposition String? // JSON string: { admins, operators, femaleCount, maleCount, hasTrainer, trainerNote }
+  hasTrainer     Boolean @default(false)
+
+  // Условия — агентство
+  agencySharePercent Int?
+  agencyIncludes     String[] // "CHATTING_24_7" | "PROMOTION" | "CONTENT_PLAN" | "PAYOUT_PAXUM" | ...
+  modelsCount        Int?
+
+  contactLink   String?
+  telegramLink  String?
+  websiteUrl    String?
+
+  status             DirectoryProfileStatus      @default(DRAFT)
+  verificationStatus DirectoryVerificationStatus @default(UNVERIFIED)
+  verifiedAt         DateTime?
+  verifiedById       String?
+  rejectionReason    String?
+
+  profileCompleteness Int       @default(0)
+  lastDataConfirmedAt DateTime?
+  publishedAt         DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type, status])
+  @@index([status, city])
 }
