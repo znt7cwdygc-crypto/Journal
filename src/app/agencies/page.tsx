@@ -72,7 +72,7 @@ export default async function AgenciesHubPage({ searchParams }: { searchParams?:
 
   const filterGroups: DirectoryFilterGroup[] = [
     { type: "chips", name: "platform", label: "Платформа", value: searchParams?.platform || "", options: [{ value: "", label: "Любая" }, ...platforms.map((v) => ({ value: v, label: platformLabel(v) }))] },
-    { type: "range", name: "maxShare", label: "Доля агентства, до", min: shareSteps[0], max: shareSteps[shareSteps.length - 1], step: 10, value: searchParams?.maxShare ? Number(searchParams.maxShare) : shareSteps[shareSteps.length - 1], formatValue: (v) => `${v}%` },
+    { type: "range", name: "maxShare", label: "Доля агентства, до", min: shareSteps[0], max: shareSteps[shareSteps.length - 1], step: 10, value: searchParams?.maxShare ? Number(searchParams.maxShare) : shareSteps[shareSteps.length - 1], unit: "%" },
     { type: "chips", name: "include", label: "Что включено", value: searchParams?.include || "", options: [{ value: "", label: "Любое" }, ...agencyIncludeOptions] },
     { type: "switch", name: "vacancies", label: "Есть вакансии", value: searchParams?.vacancies === "1" },
     { type: "switch", name: "verified", label: "Только проверенные", value: searchParams?.verified === "1" }

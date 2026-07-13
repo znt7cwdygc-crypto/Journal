@@ -26,7 +26,7 @@ type RangeGroup = {
   max: number;
   step?: number;
   value: number;
-  formatValue?: (value: number) => string;
+  unit?: string;
 };
 
 export type DirectoryFilterGroup = ChipGroup | SwitchGroup | RangeGroup;
@@ -117,9 +117,8 @@ export function DirectoryFilterSidebar({ basePath, groups }: { basePath: string;
                 onKeyUp={(e) => commitRange(group.name, (e.target as HTMLInputElement).value)}
               />
               <span className="w-14 shrink-0 text-right font-bold text-zinc-900">
-                {group.formatValue
-                  ? group.formatValue(params[group.name] ? Number(params[group.name]) : group.min)
-                  : params[group.name] || group.min}
+                {params[group.name] || group.min}
+                {group.unit || ""}
               </span>
             </div>
           )}

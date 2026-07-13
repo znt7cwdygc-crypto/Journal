@@ -83,7 +83,7 @@ export default async function StudiosHubPage({ searchParams }: { searchParams?: 
 
   const filterGroups: DirectoryFilterGroup[] = [
     { type: "chips", name: "city", label: "Город", value: searchParams?.city || "", options: [{ value: "", label: "Все" }, { value: "online", label: "Онлайн" }, ...cities.map((city) => ({ value: city, label: city }))] },
-    { type: "range", name: "minPercent", label: "Процент модели, от", min: percentSteps[0], max: percentSteps[percentSteps.length - 1], step: 10, value: searchParams?.minPercent ? Number(searchParams.minPercent) : percentSteps[0], formatValue: (v) => `${v}%` },
+    { type: "range", name: "minPercent", label: "Процент модели, от", min: percentSteps[0], max: percentSteps[percentSteps.length - 1], step: 10, value: searchParams?.minPercent ? Number(searchParams.minPercent) : percentSteps[0], unit: "%" },
     { type: "chips", name: "format", label: "Формат", value: searchParams?.format || "", options: [{ value: "", label: "Любой" }, ...workFormatOptions] },
     { type: "chips", name: "audience", label: "Набирают", value: searchParams?.audience || "", options: [{ value: "", label: "Любой" }, ...audienceOptions] },
     { type: "switch", name: "trainer", label: "Есть тренер", value: searchParams?.trainer === "1" },
