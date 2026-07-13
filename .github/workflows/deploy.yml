@@ -75,7 +75,14 @@ jobs:
             git fetch origin dev
             git checkout dev
             git reset --hard origin/dev
-            cp /opt/env.production .env.local
+            # Separate env file from prod so dev-only settings (feature flags, etc.)
+            # never leak into production. Falls back to the shared file the first
+            # time, until /opt/env.dev is created on the server.
+            if [ -f /opt/env.dev ]; then
+              cp /opt/env.dev .env.local
+            else
+              cp /opt/env.production .env.local
+            fi
             chmod 600 .env.local
             npm install
             npx prisma generate
