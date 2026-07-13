@@ -152,6 +152,14 @@ MyCamDesk — UGC-медиа и комьюнити-платформа для в�
 - QA-скрипт: scripts/role-scenarios-qa.mjs (56 проверок, 9 типов пользователей)
 - Playwright E2E: 163 теста на 3 устройствах (Desktop Chrome, iPhone 14, Safari WebKit)
 
+### Каталог студий/агентств (за флагом FEATURE_CATALOG, только на dev)
+- Полное ТЗ: `docs/STUDIO_CATALOG_SPEC.md` (ревизия 2, блоки 0-6). Флаг: `src/lib/features.ts`, включается через `.env` (`.opt/env.dev` на сервере), на production выключен
+- Блок 0 — модель `DirectoryProfile` (+ `SavedDirectoryProfile`) в `prisma/schema.prisma`, статусы DRAFT/PENDING_REVIEW/PUBLISHED/CHANGES_REQUESTED/HIDDEN/ARCHIVED
+- Блок 1 — кабинет `/cabinet/organization` (форма `directory-profile-form.tsx`), модерация `/admin/directory-profiles`, server actions в `actions.ts` (`upsertDirectoryProfileAction`, `submitDirectoryProfileAction`, `approve/requestChanges/hideDirectoryProfileAction`)
+- Блок 2 — публичная карточка `/studios/[slug]-[shortId]`, `/agencies/[slug]-[shortId]` (общий компонент `directory-profile-view.tsx`, запрос `directory-queries.ts`, путь `directoryProfileSeoPath` в `seo-url.ts`); избранное (`saveDirectoryProfileAction`), жалобы и контакт переиспользуют существующие `ReportButton`/`ContactReveal` с новым `targetType: "DIRECTORY_PROFILE"`; бейдж «Есть карточка в каталоге» на `/authors` и `/profiles/[id]`; JSON-LD LocalBusiness/Organization/FAQPage/BreadcrumbList
+- Не сделано: `/studios`, `/agencies` хабы и city-страницы (Блок 3 — фильтры, ранжирование, sitemap/IndexNow, навигация shell-nav/mobile-bottom-nav), монетизация (Блок 4), отзывы и `/compare` (Блок 5-6)
+- Общие метки полей (форматы работы, платформы, состав команды и т.п.) — `src/lib/directory-labels.ts`, переиспользуются формой кабинета и публичной карточкой
+
 ## Принятые решения (не менять)
 
 - Репост в ленте убран. Репост только на странице статьи — копирование ссылки

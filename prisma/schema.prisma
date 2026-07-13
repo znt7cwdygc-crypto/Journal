@@ -78,6 +78,7 @@ enum ReportTargetType {
   RESUME
   MATCH_PROFILE
   INVITE
+  DIRECTORY_PROFILE
 }
 
 enum InviteStatus {
@@ -169,6 +170,7 @@ model User {
   advertisements      Advertisement[]
   auditLogs           AuditLog[]           @relation("AuditLogs")
   directoryProfile    DirectoryProfile?
+  savedDirectoryProfiles SavedDirectoryProfile[]
 
   accounts Account[]
   sessions Session[]
@@ -775,9 +777,26 @@ model DirectoryProfile {
   lastDataConfirmedAt DateTime?
   publishedAt         DateTime?
 
+  viewCount     Int @default(0)
+  responseCount Int @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  savedBy SavedDirectoryProfile[]
+
   @@index([type, status])
   @@index([status, city])
+}
+
+model SavedDirectoryProfile {
+  id                 String           @id @default(cuid())
+  userId             String
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  directoryProfileId String
+  directoryProfile   DirectoryProfile @relation(fields: [directoryProfileId], references: [id], onDelete: Cascade)
+  createdAt          DateTime         @default(now())
+
+  @@unique([userId, directoryProfileId])
+  @@index([directoryProfileId])
 }

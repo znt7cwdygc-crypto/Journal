@@ -1,13 +1,14 @@
-type TeamComposition = {
-  admins?: number;
-  operators?: number;
-  femaleCount?: number;
-  maleCount?: number;
-  hasTrainer?: boolean;
-  trainerNote?: string | null;
-};
-
-type Penalty = { label: string };
+import {
+  agencyIncludeOptions,
+  agencyPlatforms,
+  audienceOptions,
+  parseJson,
+  platformLabel,
+  studioPlatforms,
+  workFormatOptions,
+  type Penalty,
+  type TeamComposition,
+} from "@/lib/directory-labels";
 
 type DirectoryProfileFormValues = {
   name?: string;
@@ -40,35 +41,6 @@ type DirectoryProfileFormValues = {
   telegramLink?: string | null;
   websiteUrl?: string | null;
 };
-
-const studioPlatforms = ["CHATURBATE", "STRIPCHAT", "BONGACAMS", "LIVEJASMIN"];
-const agencyPlatforms = ["ONLYFANS", "FANSLY", "LOYALFANS", "FANVUE"];
-const workFormatOptions = [
-  { value: "OFFLINE", label: "Офлайн" },
-  { value: "ONLINE", label: "Онлайн" },
-  { value: "HYBRID", label: "Гибрид" },
-];
-const audienceOptions = [
-  { value: "WOMEN", label: "Девушки" },
-  { value: "MEN", label: "Парни" },
-  { value: "COUPLES", label: "Пары" },
-  { value: "NEWCOMERS", label: "Новички" },
-];
-const agencyIncludeOptions = [
-  { value: "CHATTING_24_7", label: "Переписка 24/7" },
-  { value: "PROMOTION", label: "Продвижение (Reddit/X)" },
-  { value: "CONTENT_PLAN", label: "Контент-план / съёмки" },
-  { value: "PAYOUT_PAXUM", label: "Официальный Paxum" },
-];
-
-function parseJson<T>(raw: string | null | undefined, fallback: T): T {
-  if (!raw) return fallback;
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
 
 function CheckboxGroup({ name, options, defaultValues }: { name: string; options: { value: string; label: string }[]; defaultValues: string[] }) {
   return (
@@ -137,7 +109,7 @@ export function DirectoryProfileForm({
 
       <div className="border-b border-zinc-100 p-3 sm:p-4">
         <span className="form-label">Платформы</span>
-        <CheckboxGroup name="platforms" options={(isStudio ? studioPlatforms : agencyPlatforms).map((v) => ({ value: v, label: v.charAt(0) + v.slice(1).toLowerCase() }))} defaultValues={profile?.platforms ?? []} />
+        <CheckboxGroup name="platforms" options={(isStudio ? studioPlatforms : agencyPlatforms).map((v) => ({ value: v, label: platformLabel(v) }))} defaultValues={profile?.platforms ?? []} />
       </div>
 
       {isStudio && (

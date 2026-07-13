@@ -5,7 +5,7 @@ import { useState } from "react";
 import { recordContactClickAction } from "@/app/actions";
 import { reachYandexGoal } from "@/components/yandex-metrika";
 
-type ContactTargetType = "PRODUCT" | "LISTING" | "RESUME" | "MATCH_PROFILE";
+type ContactTargetType = "PRODUCT" | "LISTING" | "RESUME" | "MATCH_PROFILE" | "DIRECTORY_PROFILE";
 
 function parseTelegram(contact: string) {
   const trimmed = contact.trim();

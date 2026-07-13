@@ -25,6 +25,13 @@ type ResumePathInput = {
   roleGoal?: string | null;
 };
 
+type DirectoryProfilePathInput = {
+  id: string;
+  type: "STUDIO" | "AGENCY" | string;
+  name: string;
+  city?: string | null;
+};
+
 type MatchProfilePathInput = {
   id: string;
   title: string;
@@ -135,6 +142,13 @@ export function resumeSeoPath(resume: ResumePathInput) {
   const title = slugifyTranslit(resume.title, "resume");
   const city = citySlug(resume.city);
   return `/resume/${withWebcamKeyword(`${role}-${title}`, "webcam-model")}-${city}-${seoShortId(resume.id)}`;
+}
+
+export function directoryProfileSeoPath(profile: DirectoryProfilePathInput) {
+  const section = profile.type === "AGENCY" ? "agencies" : "studios";
+  const base = slugifyTranslit(profile.name, profile.type === "AGENCY" ? "agentstvo" : "studiya");
+  const city = citySlug(profile.city);
+  return `/${section}/${base}-${city}-${seoShortId(profile.id)}`;
 }
 
 export function matchProfileSeoPath(profile: MatchProfilePathInput) {

@@ -5,10 +5,11 @@ import { followAuthorAction } from "@/app/actions";
 import { auth } from "@/auth";
 import { ReportButton } from "@/components/report-button";
 import { SafeImage } from "@/components/safe-image";
+import { isCatalogEnabled } from "@/lib/features";
 import { safeImageUrl } from "@/lib/media";
 import { prisma } from "@/lib/prisma";
 import { siteUrl, truncateSeo } from "@/lib/seo";
-import { articleSeoPath, listingSeoPath, productSeoPath, resumeSeoPath } from "@/lib/seo-url";
+import { articleSeoPath, directoryProfileSeoPath, listingSeoPath, productSeoPath, resumeSeoPath } from "@/lib/seo-url";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,7 @@ async function findProfile(id: string) {
       },
       resume: true,
       authorFollowers: true,
+      directoryProfile: true,
       articleComments: {
         include: { article: true },
         orderBy: { createdAt: "desc" },
@@ -103,6 +105,8 @@ export default async function ProfilePage({
     : null;
   const profilePath = `/profiles/${user.id}`;
   const profileImage = safeImageUrl(user.image);
+  const directoryPath =
+    isCatalogEnabled() && user.directoryProfile?.status === "PUBLISHED" ? directoryProfileSeoPath(user.directoryProfile) : null;
 
   return (
     <div className="space-y-4">
@@ -163,6 +167,14 @@ export default async function ProfilePage({
                 )}
                 {/t\.me\/|telegram\.me\//.test(user.externalLink) ? "Написать в Telegram" : "Перейти на сайт"}
               </a>
+            )}
+            {directoryPath && (
+              <Link
+                href={directoryPath}
+                className="mt-3 flex w-fit items-center gap-2 rounded-lg bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100"
+              >
+                Карточка организации в каталоге →
+              </Link>
             )}
             <div className="mt-4 flex flex-wrap gap-2 text-xs">
               <span className="rounded-full bg-red-50 px-3 py-1 font-medium text-hot">{user.articles.length} статей</span>

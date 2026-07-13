@@ -672,7 +672,7 @@ export async function likeCommentAction(formData: FormData) {
   await revalidateArticle(comment.articleId);
 }
 
-type ContactClickTargetType = "PRODUCT" | "LISTING" | "RESUME" | "MATCH_PROFILE";
+type ContactClickTargetType = "PRODUCT" | "LISTING" | "RESUME" | "MATCH_PROFILE" | "DIRECTORY_PROFILE";
 
 export async function recordContactClickAction(targetType: ContactClickTargetType, targetId: string) {
   const session = await auth();
@@ -692,6 +692,9 @@ export async function recordContactClickAction(targetType: ContactClickTargetTyp
       break;
     case "MATCH_PROFILE":
       await prisma.matchProfile.updateMany({ where: { id: targetId }, data: increment }).catch(() => null);
+      break;
+    case "DIRECTORY_PROFILE":
+      await prisma.directoryProfile.updateMany({ where: { id: targetId }, data: increment }).catch(() => null);
       break;
   }
 }
@@ -1564,7 +1567,7 @@ export async function reportContentAction(_state: ReportContentState, formData: 
   const targetType = String(formData.get("targetType") ?? "");
   const targetId = String(formData.get("targetId") ?? "");
   const reason = cleanText(formData.get("reason"), 500);
-  if (!["ARTICLE", "COMMENT", "PROFILE", "LISTING", "PRODUCT", "RESUME", "MATCH_PROFILE", "INVITE"].includes(targetType) || !targetId) {
+  if (!["ARTICLE", "COMMENT", "PROFILE", "LISTING", "PRODUCT", "RESUME", "MATCH_PROFILE", "INVITE", "DIRECTORY_PROFILE"].includes(targetType) || !targetId) {
     return { status: "error", message: "Некорректная жалоба." };
   }
   if (reason.length < 10) {
@@ -3054,4 +3057,25 @@ export async function hideDirectoryProfileAction(formData: FormData) {
   await prisma.directoryProfile.update({ where: { id }, data: { status: "HIDDEN", rejectionReason: reason } });
   await logAudit(admin.id, "hide_directory_profile", "DirectoryProfile", id, reason ?? undefined);
   revalidatePath("/admin/directory-profiles");
+}
+
+export async function saveDirectoryProfileAction(formData: FormData) {
+  if (!isCatalogEnabled()) throw new Error("Функция сейчас недоступна");
+  const sessionUser = await requireActiveSessionUser();
+
+  const directoryProfileId = requireText(formData.get("directoryProfileId"), "directoryProfileId");
+  const next = safeInternalPath(cleanText(formData.get("next"), 500), "/cabinet#organizations");
+
+  const existing = await prisma.savedDirectoryProfile.findUnique({
+    where: { userId_directoryProfileId: { userId: sessionUser.id, directoryProfileId } }
+  });
+
+  if (existing) {
+    await prisma.savedDirectoryProfile.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.savedDirectoryProfile.create({ data: { userId: sessionUser.id, directoryProfileId } });
+  }
+
+  revalidatePath("/cabinet");
+  redirect(withStatusParam(next, "favorite", existing ? "removed" : "added"));
 }

@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Prisma, ProfileKind } from "@prisma/client";
 import { AdBlock } from "@/components/ad-block";
 import { SafeImage } from "@/components/safe-image";
+import { isCatalogEnabled } from "@/lib/features";
 import { safeImageUrl } from "@/lib/media";
 import { roleLabel } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
@@ -69,7 +70,8 @@ export default async function AuthorsPage({ searchParams }: { searchParams?: { k
           authorFollowers: true
         }
       },
-      resume: true
+      resume: true,
+      directoryProfile: { select: { status: true } }
     },
     orderBy: { updatedAt: "desc" },
     take: 60
@@ -158,6 +160,7 @@ export default async function AuthorsPage({ searchParams }: { searchParams?: { k
           const verified = author.role === "ADMIN" || useful >= 5 || author._count.authorFollowers >= 3;
           const activeAuthor = articles >= 3;
           const authorImage = safeImageUrl(author.image);
+          const hasDirectoryProfile = isCatalogEnabled() && author.directoryProfile?.status === "PUBLISHED";
 
           return (
             <Fragment key={author.id}>
@@ -186,6 +189,7 @@ export default async function AuthorsPage({ searchParams }: { searchParams?: { k
                     <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
                       {verified && <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-700">проверенный</span>}
                       {activeAuthor && <span className="rounded bg-sky-50 px-1.5 py-0.5 text-sky-700">активный автор</span>}
+                      {hasDirectoryProfile && <span className="rounded bg-mint px-1.5 py-0.5 text-ink">есть карточка в каталоге</span>}
                     </div>
                   </div>
                 </div>

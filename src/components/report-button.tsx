@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { reportContentAction, type ReportContentState } from "@/app/actions";
 
-type ReportTargetType = "ARTICLE" | "COMMENT" | "PROFILE" | "LISTING" | "PRODUCT" | "RESUME" | "MATCH_PROFILE";
+type ReportTargetType = "ARTICLE" | "COMMENT" | "PROFILE" | "LISTING" | "PRODUCT" | "RESUME" | "MATCH_PROFILE" | "DIRECTORY_PROFILE";
 
 export function ReportButton({
   targetType,
