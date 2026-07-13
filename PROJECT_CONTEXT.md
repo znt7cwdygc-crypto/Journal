@@ -127,6 +127,7 @@ MyCamDesk — UGC-медиа и комьюнити-платформа для в�
 - robots.txt с AI-ботами
 - llms.txt
 - IndexNow API
+- Яндекс: Метрика 110404557 только на production-домене, Webvisor/clickmap, SPA pageview через `ym(..., "hit")`, цели `article_publish`, `product_publish`, `vacancy_publish`, `service_publish`, `resume_publish`, `match_profile_publish`, `resume_invite_sent`, `contact_reveal`, автоматический IndexNow для публичных страниц; чеклист в `YANDEX_SETUP.md`
 - Мета-теги на всех страницах
 - Актуальные SEO-проблемы и план работ записаны в `SEO_RECOMMENDATIONS.md`
 

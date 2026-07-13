@@ -8,12 +8,13 @@ import { auth, signIn, signOut } from "@/auth";
 import { getExpertLicenseEnd, getResumeUnlockEnd } from "@/lib/licenses";
 import { adRevalidatePaths, isHttpUrl, normalizeAdPlacement } from "@/lib/ads";
 import { normalizeArticleBody, stripArticleHtml } from "@/lib/article-html";
+import { notifyIndexNow } from "@/lib/indexnow";
 import { prisma } from "@/lib/prisma";
 import { listingExpiresAt, matchProfileExpiresAt, productExpiresAt, resumeExpiresAt } from "@/lib/publication-periods";
 import { isUserBlocked, requireRole } from "@/lib/access";
 import { accountModeFromKind } from "@/lib/roles";
 import { safeInternalPath } from "@/lib/safe-redirect";
-import { articleSeoPath } from "@/lib/seo-url";
+import { articleSeoPath, listingSeoPath, matchProfileSeoPath, productSeoPath, resumeSeoPath } from "@/lib/seo-url";
 import { articleTopic } from "@/lib/topics";
 import { isUploadedFile, saveUploadedImage } from "@/lib/uploaded-image";
 import { cleanMultiline, cleanNumber, cleanText, makeSlug, optionalUrl, requireMultiline, requireText } from "@/lib/validation";
@@ -844,6 +845,7 @@ export async function submitBlogArticleAction(formData: FormData) {
       });
 
       await revalidateArticle(article.id);
+      void notifyIndexNow(articleSeoPath(article));
       revalidatePath("/cabinet");
       redirect(`/cabinet?created=article&articleId=${encodeURIComponent(article.id)}#article-result`);
     }
@@ -867,6 +869,7 @@ export async function submitBlogArticleAction(formData: FormData) {
 
   revalidatePath("/articles");
   revalidatePath("/cabinet");
+  void notifyIndexNow(articleSeoPath(article));
   redirect(`/cabinet?created=article&articleId=${encodeURIComponent(article.id)}#article-result`);
 }
 
@@ -955,6 +958,7 @@ export async function updateBlogArticleAction(formData: FormData) {
   });
 
   await revalidateArticle(article.id);
+  void notifyIndexNow(articleSeoPath(article));
   revalidatePath("/cabinet");
   redirect("/cabinet?updated=article#materials");
 }
@@ -967,7 +971,7 @@ export async function toggleArticleVisibilityAction(formData: FormData) {
   if (!article) throw new Error("Статья не найдена");
   if (article.status !== ContentStatus.PUBLISHED) await requireVerifiedEmail(sessionUser.id);
 
-  await prisma.article.update({
+  const updatedArticle = await prisma.article.update({
     where: { id: article.id },
     data: {
       status: article.status === ContentStatus.PUBLISHED ? ContentStatus.ARCHIVED : ContentStatus.PUBLISHED,
@@ -977,6 +981,7 @@ export async function toggleArticleVisibilityAction(formData: FormData) {
   });
 
   await revalidateArticle(article.id);
+  void notifyIndexNow(articleSeoPath(updatedArticle));
   revalidatePath("/cabinet");
   redirect("/cabinet?updated=article#materials");
 }
@@ -995,6 +1000,7 @@ export async function deleteArticleAction(formData: FormData) {
 
   revalidatePath("/articles");
   revalidatePath("/cabinet");
+  void notifyIndexNow(articleSeoPath(article));
   redirect("/cabinet?updated=article#materials");
 }
 
@@ -1077,6 +1083,7 @@ export async function submitListingAction(formData: FormData) {
   revalidatePath(type === ListingType.VACANCY ? "/vacancies" : "/services");
   revalidatePath("/listings");
   revalidatePath("/cabinet");
+  void notifyIndexNow(listingSeoPath(listing));
   redirect(`/cabinet?created=${type === ListingType.VACANCY ? "vacancy" : "service"}&listingId=${encodeURIComponent(listing.id)}#listing-result`);
 }
 
@@ -1090,7 +1097,7 @@ export async function updateListingAction(formData: FormData) {
   const baseDescription = requireMultiline(formData.get("description"), "описание", 1200);
   const description = buildListingDescription(formData, listing.type, baseDescription);
 
-  await prisma.listing.update({
+  const updatedListing = await prisma.listing.update({
     where: { id: listing.id },
     data: {
       title: requireText(formData.get("title"), "название", 140),
@@ -1105,6 +1112,7 @@ export async function updateListingAction(formData: FormData) {
   revalidatePath(listing.type === ListingType.VACANCY ? "/vacancies" : "/services");
   revalidatePath(`/listings/${listing.id}`);
   revalidatePath("/cabinet");
+  void notifyIndexNow(listingSeoPath(updatedListing));
   redirect("/cabinet?updated=listing#materials");
 }
 
@@ -1116,7 +1124,7 @@ export async function toggleListingVisibilityAction(formData: FormData) {
   if (!listing) throw new Error("Размещение не найдено");
   if (listing.status !== ContentStatus.PUBLISHED) await requireVerifiedEmail(sessionUser.id);
 
-  await prisma.listing.update({
+  const updatedListing = await prisma.listing.update({
     where: { id: listing.id },
     data: {
       status: listing.status === ContentStatus.PUBLISHED ? ContentStatus.ARCHIVED : ContentStatus.PUBLISHED,
@@ -1128,6 +1136,7 @@ export async function toggleListingVisibilityAction(formData: FormData) {
   revalidatePath(listing.type === ListingType.VACANCY ? "/vacancies" : "/services");
   revalidatePath(`/listings/${listing.id}`);
   revalidatePath("/cabinet");
+  void notifyIndexNow(listingSeoPath(updatedListing));
   redirect("/cabinet?updated=listing#materials");
 }
 
@@ -1140,7 +1149,7 @@ export async function renewListingAction(formData: FormData) {
   if (!listing) throw new Error("Размещение не найдено");
   if (listing.status !== ContentStatus.ARCHIVED) throw new Error("Продлить можно только архивное размещение");
 
-  await prisma.listing.update({
+  const updatedListing = await prisma.listing.update({
     where: { id: listing.id },
     data: { status: ContentStatus.PUBLISHED, hiddenReason: null, expiresAt: listingExpiresAt() }
   });
@@ -1148,6 +1157,7 @@ export async function renewListingAction(formData: FormData) {
   revalidatePath(listing.type === ListingType.VACANCY ? "/vacancies" : "/services");
   revalidatePath(`/listings/${listing.id}`);
   revalidatePath("/cabinet");
+  void notifyIndexNow(listingSeoPath(updatedListing));
   redirect("/cabinet?updated=listingRenewed#materials");
 }
 
@@ -1163,6 +1173,7 @@ export async function deleteListingAction(formData: FormData) {
   revalidatePath(listing.type === ListingType.VACANCY ? "/vacancies" : "/services");
   revalidatePath("/listings");
   revalidatePath("/cabinet");
+  void notifyIndexNow(listingSeoPath(listing));
   redirect("/cabinet?updated=listing#materials");
 }
 
@@ -1226,6 +1237,11 @@ export async function submitProductAction(formData: FormData) {
 
   await revalidateProduct(productId);
   revalidatePath("/cabinet");
+  const publicProduct = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { id: true, title: true, category: true, city: true }
+  });
+  if (publicProduct) void notifyIndexNow(productSeoPath(publicProduct));
   redirect(`/cabinet?created=product&productReset=${encodeURIComponent(productId)}#products-result`);
 }
 
@@ -1241,7 +1257,7 @@ export async function updateProductAction(formData: FormData) {
   const legacyImage = await saveUploadedImage(formData.get("imageFile"), `tovar-${title}`) ?? await productImageDataUrl(formData.get("imageFile"));
   const images = productImages.length > 0 ? productImages : legacyImage ? [legacyImage] : product.images?.length ? product.images : product.imageUrl ? [product.imageUrl] : [];
   const imageUrl = images[0] || product.imageUrl;
-  await prisma.product.update({
+  const updatedProduct = await prisma.product.update({
     where: { id: product.id },
     data: {
       title: requireText(formData.get("title"), "название товара", 140),
@@ -1259,6 +1275,7 @@ export async function updateProductAction(formData: FormData) {
 
   await revalidateProduct(product.id);
   revalidatePath("/cabinet");
+  void notifyIndexNow(productSeoPath(updatedProduct));
   redirect("/cabinet?updated=product#materials");
 }
 
@@ -1270,7 +1287,7 @@ export async function toggleProductVisibilityAction(formData: FormData) {
   if (!product) throw new Error("Товар не найден");
   if (product.status !== ContentStatus.PUBLISHED) await requireVerifiedEmail(sessionUser.id);
 
-  await prisma.product.update({
+  const updatedProduct = await prisma.product.update({
     where: { id: product.id },
     data: {
       status: product.status === ContentStatus.PUBLISHED ? ContentStatus.ARCHIVED : ContentStatus.PUBLISHED,
@@ -1281,6 +1298,7 @@ export async function toggleProductVisibilityAction(formData: FormData) {
 
   await revalidateProduct(product.id);
   revalidatePath("/cabinet");
+  void notifyIndexNow(productSeoPath(updatedProduct));
   redirect("/cabinet?updated=product#materials");
 }
 
@@ -1293,13 +1311,14 @@ export async function renewProductAction(formData: FormData) {
   if (!product) throw new Error("Товар не найден");
   if (product.status !== ContentStatus.ARCHIVED) throw new Error("Продлить можно только архивный товар");
 
-  await prisma.product.update({
+  const updatedProduct = await prisma.product.update({
     where: { id: product.id },
     data: { status: ContentStatus.PUBLISHED, hiddenReason: null, expiresAt: productExpiresAt() }
   });
 
   await revalidateProduct(product.id);
   revalidatePath("/cabinet");
+  void notifyIndexNow(productSeoPath(updatedProduct));
   redirect("/cabinet?updated=productRenewed#materials");
 }
 
@@ -1314,6 +1333,7 @@ export async function deleteProductAction(formData: FormData) {
 
   revalidatePath("/products");
   revalidatePath("/cabinet");
+  void notifyIndexNow(productSeoPath(product));
   redirect("/cabinet?updated=product#materials");
 }
 
@@ -1587,22 +1607,27 @@ export async function reviewReportAction(formData: FormData) {
 
   if (decision === "hide") {
     if (report.targetType === "ARTICLE") {
-      await prisma.article.update({ where: { id: report.targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: report.reason } }).catch(() => null);
+      const article = await prisma.article.update({ where: { id: report.targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: report.reason } }).catch(() => null);
+      if (article) void notifyIndexNow(articleSeoPath(article));
     }
     if (report.targetType === "COMMENT") {
       await prisma.articleComment.update({ where: { id: report.targetId }, data: { isHidden: true, hiddenReason: report.reason } }).catch(() => null);
     }
     if (report.targetType === "LISTING") {
-      await prisma.listing.update({ where: { id: report.targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: report.reason } }).catch(() => null);
+      const listing = await prisma.listing.update({ where: { id: report.targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: report.reason } }).catch(() => null);
+      if (listing) void notifyIndexNow(listingSeoPath(listing));
     }
     if (report.targetType === "PRODUCT") {
-      await prisma.product.update({ where: { id: report.targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: report.reason } }).catch(() => null);
+      const product = await prisma.product.update({ where: { id: report.targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: report.reason } }).catch(() => null);
+      if (product) void notifyIndexNow(productSeoPath(product));
     }
     if (report.targetType === "RESUME") {
-      await prisma.resume.update({ where: { id: report.targetId }, data: { isPublic: false } }).catch(() => null);
+      const resume = await prisma.resume.update({ where: { id: report.targetId }, data: { isPublic: false } }).catch(() => null);
+      if (resume) void notifyIndexNow(resumeSeoPath(resume));
     }
     if (report.targetType === "MATCH_PROFILE") {
-      await prisma.matchProfile.update({ where: { id: report.targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: report.reason } }).catch(() => null);
+      const profile = await prisma.matchProfile.update({ where: { id: report.targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: report.reason } }).catch(() => null);
+      if (profile) void notifyIndexNow(matchProfileSeoPath(profile));
     }
   }
 
@@ -1895,6 +1920,7 @@ export async function createResumeAction(formData: FormData) {
 
   revalidatePath("/resumes");
   revalidatePath("/cabinet");
+  void notifyIndexNow(resumeSeoPath(resume));
   redirect(`/cabinet?updated=resume&resumeId=${encodeURIComponent(resume.id)}#resume-result`);
 }
 
@@ -1906,13 +1932,14 @@ export async function renewResumeAction() {
   if (!resume) throw new Error("Резюме не найдено");
   if (!resume.expiresAt || resume.expiresAt > new Date()) throw new Error("Продлить можно только архивное резюме");
 
-  await prisma.resume.update({
+  const updatedResume = await prisma.resume.update({
     where: { id: resume.id },
     data: { hiddenByInactivity: false, lastVisitedAt: new Date(), expiresAt: resumeExpiresAt() }
   });
 
   revalidatePath("/resumes");
   revalidatePath("/cabinet");
+  void notifyIndexNow(resumeSeoPath(updatedResume));
   redirect("/cabinet?updated=resumeRenewed#materials");
 }
 
@@ -1977,6 +2004,7 @@ export async function submitMatchProfileAction(formData: FormData) {
 
   revalidatePath("/model-operator");
   revalidatePath("/cabinet");
+  void notifyIndexNow(matchProfileSeoPath(profile));
   redirect(`/cabinet?created=matchProfile&matchProfileId=${encodeURIComponent(profile.id)}#match-result`);
 }
 
@@ -1987,13 +2015,14 @@ export async function renewMatchProfileAction() {
   const profile = await prisma.matchProfile.findUnique({ where: { userId: sessionUser.id } });
   if (!profile) throw new Error("Анкета не найдена");
 
-  await prisma.matchProfile.update({
+  const updatedProfile = await prisma.matchProfile.update({
     where: { id: profile.id },
     data: { status: ContentStatus.PUBLISHED, hiddenReason: null, expiresAt: matchProfileExpiresAt() }
   });
 
   revalidatePath("/model-operator");
   revalidatePath("/cabinet");
+  void notifyIndexNow(matchProfileSeoPath(updatedProfile));
   redirect("/cabinet?updated=matchProfileRenewed#materials");
 }
 
@@ -2052,14 +2081,16 @@ export async function reviewPaymentAction(formData: FormData) {
     });
 
     if (payment.referenceType === "article") {
-      await prisma.article.update({ where: { id: payment.referenceId }, data: { status: ContentStatus.PUBLISHED, publishedAt: new Date() } });
+      const article = await prisma.article.update({ where: { id: payment.referenceId }, data: { status: ContentStatus.PUBLISHED, publishedAt: new Date() } });
+      void notifyIndexNow(articleSeoPath(article));
     }
 
     if (payment.referenceType === "listing") {
-      await prisma.listing.update({
+      const listing = await prisma.listing.update({
         where: { id: payment.referenceId },
         data: { status: ContentStatus.PUBLISHED, expiresAt: listingExpiresAt() }
       });
+      void notifyIndexNow(listingSeoPath(listing));
     }
 
     if (payment.referenceType === "resume_unlock") {
@@ -2535,7 +2566,7 @@ export async function adminEditArticleAction(formData: FormData) {
   const article = await prisma.article.findUnique({ where: { id: articleId } });
   if (!article) throw new Error("Статья не найдена");
 
-  await prisma.article.update({
+  const updatedArticle = await prisma.article.update({
     where: { id: articleId },
     data: {
       ...(title ? { title } : {}),
@@ -2549,6 +2580,7 @@ export async function adminEditArticleAction(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/content");
   revalidatePath("/articles");
+  void notifyIndexNow(articleSeoPath(updatedArticle));
   redirect("/admin/content?tab=articles");
 }
 
@@ -2563,7 +2595,7 @@ export async function adminEditListingAction(formData: FormData) {
   const listing = await prisma.listing.findUnique({ where: { id: listingId } });
   if (!listing) throw new Error("Размещение не найдено");
 
-  await prisma.listing.update({
+  const updatedListing = await prisma.listing.update({
     where: { id: listingId },
     data: {
       ...(title ? { title } : {}),
@@ -2577,6 +2609,7 @@ export async function adminEditListingAction(formData: FormData) {
   revalidatePath("/admin/content");
   revalidatePath("/vacancies");
   revalidatePath("/services");
+  void notifyIndexNow(listingSeoPath(updatedListing));
   redirect("/admin/content?tab=listings");
 }
 
@@ -2590,7 +2623,7 @@ export async function adminEditProductAction(formData: FormData) {
   const product = await prisma.product.findUnique({ where: { id: productId } });
   if (!product) throw new Error("Товар не найден");
 
-  await prisma.product.update({
+  const updatedProduct = await prisma.product.update({
     where: { id: productId },
     data: {
       ...(title ? { title } : {}),
@@ -2604,6 +2637,7 @@ export async function adminEditProductAction(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/content");
   revalidatePath("/products");
+  void notifyIndexNow(productSeoPath(updatedProduct));
   redirect("/admin/content?tab=products");
 }
 
@@ -2618,7 +2652,7 @@ export async function adminEditResumeAction(formData: FormData) {
   const resume = await prisma.resume.findUnique({ where: { id: resumeId } });
   if (!resume) throw new Error("Резюме не найдено");
 
-  await prisma.resume.update({
+  const updatedResume = await prisma.resume.update({
     where: { id: resumeId },
     data: {
       ...(title ? { title } : {}),
@@ -2633,6 +2667,7 @@ export async function adminEditResumeAction(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/content");
   revalidatePath("/resumes");
+  void notifyIndexNow(resumeSeoPath(updatedResume));
   redirect("/admin/content?tab=resumes");
 }
 
@@ -2646,7 +2681,7 @@ export async function adminEditMatchProfileAction(formData: FormData) {
   const profile = await prisma.matchProfile.findUnique({ where: { id: matchProfileId } });
   if (!profile) throw new Error("Анкета не найдена");
 
-  await prisma.matchProfile.update({
+  const updatedProfile = await prisma.matchProfile.update({
     where: { id: matchProfileId },
     data: {
       ...(title ? { title } : {}),
@@ -2660,6 +2695,7 @@ export async function adminEditMatchProfileAction(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/content");
   revalidatePath("/model-operator");
+  void notifyIndexNow(matchProfileSeoPath(updatedProfile));
   redirect("/admin/content?tab=matches");
 }
 
@@ -2673,15 +2709,20 @@ export async function adminDeleteContentAction(formData: FormData) {
   if (!targetId || !targetType) throw new Error("Missing target");
 
   if (targetType === "ARTICLE") {
-    await prisma.article.update({ where: { id: targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: reason || "Удалено администратором" } });
+    const article = await prisma.article.update({ where: { id: targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: reason || "Удалено администратором" } });
+    void notifyIndexNow(articleSeoPath(article));
   } else if (targetType === "LISTING") {
-    await prisma.listing.update({ where: { id: targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: reason || "Удалено администратором" } });
+    const listing = await prisma.listing.update({ where: { id: targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: reason || "Удалено администратором" } });
+    void notifyIndexNow(listingSeoPath(listing));
   } else if (targetType === "PRODUCT") {
-    await prisma.product.update({ where: { id: targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: reason || "Удалено администратором" } });
+    const product = await prisma.product.update({ where: { id: targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: reason || "Удалено администратором" } });
+    void notifyIndexNow(productSeoPath(product));
   } else if (targetType === "RESUME") {
-    await prisma.resume.update({ where: { id: targetId }, data: { isPublic: false, hiddenByInactivity: true } });
+    const resume = await prisma.resume.update({ where: { id: targetId }, data: { isPublic: false, hiddenByInactivity: true } });
+    void notifyIndexNow(resumeSeoPath(resume));
   } else if (targetType === "MATCH_PROFILE") {
-    await prisma.matchProfile.update({ where: { id: targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: reason || "Удалено администратором" } });
+    const profile = await prisma.matchProfile.update({ where: { id: targetId }, data: { status: ContentStatus.ARCHIVED, hiddenReason: reason || "Удалено администратором" } });
+    void notifyIndexNow(matchProfileSeoPath(profile));
   } else {
     throw new Error("Неизвестный тип контента");
   }

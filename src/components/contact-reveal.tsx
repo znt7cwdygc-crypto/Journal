@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { recordContactClickAction } from "@/app/actions";
+import { reachYandexGoal } from "@/components/yandex-metrika";
 
 type ContactTargetType = "PRODUCT" | "LISTING" | "RESUME" | "MATCH_PROFILE";
 
@@ -81,6 +82,7 @@ export function ContactReveal({
       const next = !current;
       if (next && targetType && targetId) {
         recordContactClickAction(targetType, targetId).catch(() => null);
+        reachYandexGoal("contact_reveal", { target_type: targetType });
       }
       return next;
     });

@@ -2,6 +2,16 @@ import type { MetadataRoute } from "next";
 import { siteUrl } from "@/lib/seo";
 
 export default function robots(): MetadataRoute.Robots {
+  const currentSiteUrl = siteUrl();
+  if (currentSiteUrl.host !== "mycamdesk.com") {
+    return {
+      rules: {
+        userAgent: "*",
+        disallow: "/"
+      }
+    };
+  }
+
   const privatePaths = ["/admin", "/cabinet", "/auth", "/api"];
 
   return {
@@ -27,6 +37,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: privatePaths
       }
     ],
-    sitemap: siteUrl("/sitemap.xml").toString()
+    sitemap: currentSiteUrl.origin + "/sitemap.xml"
   };
 }

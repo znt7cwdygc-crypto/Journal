@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-
-const INDEXNOW_KEY = "wejournal-indexnow-key-2026";
+import { INDEXNOW_KEY } from "@/lib/indexnow";
 
 export async function GET() {
   return new NextResponse(INDEXNOW_KEY, { headers: { "Content-Type": "text/plain" } });
