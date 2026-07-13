@@ -1,3 +1,4 @@
+import { MultiImageUpload, SingleImageUpload } from "@/components/directory-image-input";
 import {
   agencyIncludeOptions,
   agencyPlatforms,
@@ -25,6 +26,7 @@ type DirectoryProfileFormValues = {
   landmark?: string | null;
   addressIsPublic?: boolean;
   privateAddress?: string | null;
+  photos?: string[];
   roomsCount?: number | null;
   equipment?: string | null;
   livingConditions?: string | null;
@@ -81,14 +83,10 @@ export function DirectoryProfileForm({
             <span className="form-label">Год основания</span>
             <input className="form-field mt-1 h-10" name="foundedYear" type="number" min={2000} max={2030} defaultValue={profile?.foundedYear ?? ""} placeholder="2021" />
           </label>
-          <label className="block">
-            <span className="form-label">Логотип (URL)</span>
-            <input className="form-field mt-1 h-10" name="logoUrl" defaultValue={profile?.logoUrl ?? ""} placeholder="https://..." />
-          </label>
-          <label className="block">
-            <span className="form-label">Обложка (URL)</span>
-            <input className="form-field mt-1 h-10" name="coverUrl" defaultValue={profile?.coverUrl ?? ""} placeholder="https://..." />
-          </label>
+        </div>
+        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          <SingleImageUpload name="logoUrl" initialUrl={profile?.logoUrl} seoContext={isStudio ? "studio-logo" : "agency-logo"} label="Логотип" />
+          <SingleImageUpload name="coverUrl" initialUrl={profile?.coverUrl} seoContext={isStudio ? "studio-cover" : "agency-cover"} label="Обложка" rounded="rounded-lg" />
         </div>
       </div>
 
@@ -175,6 +173,9 @@ export function DirectoryProfileForm({
               <span className="form-label">Бытовые условия</span>
               <textarea className="form-textarea mt-1 min-h-[70px]" name="livingConditions" defaultValue={profile?.livingConditions ?? ""} placeholder="Душ, кухня, зона отдыха и т.п." />
             </label>
+            <div className="mt-2">
+              <MultiImageUpload name="photos" initialUrls={profile?.photos ?? []} max={6} seoContext="studio-photo" label="Фото комнат и оборудования" />
+            </div>
           </div>
 
           <div className="border-b border-zinc-100 p-3 sm:p-4">

@@ -37,6 +37,50 @@ export async function findDirectoryProfile(slug: string, type: "STUDIO" | "AGENC
 
 export type DirectoryProfileWithRelations = NonNullable<Awaited<ReturnType<typeof findDirectoryProfile>>>;
 
+/** Full merged organization/author profile — powers the canonical /studios, /agencies page. */
+export async function findDirectoryProfileWithFullOwner(slug: string, type: "STUDIO" | "AGENCY") {
+  const resolved = idFromSeoParam(slug);
+  const now = new Date();
+
+  return prisma.directoryProfile.findFirst({
+    where: {
+      type,
+      status: "PUBLISHED",
+      OR: [
+        { slug },
+        ...(resolved.id ? [{ id: resolved.id }] : []),
+        ...(resolved.shortId ? [{ id: { endsWith: resolved.shortId } }] : []),
+        { id: slug }
+      ]
+    },
+    include: {
+      owner: {
+        include: {
+          articles: {
+            where: { status: "PUBLISHED" },
+            include: { ratings: true, comments: true },
+            orderBy: { createdAt: "desc" },
+            take: 10
+          },
+          listings: { where: { status: "PUBLISHED" }, orderBy: { createdAt: "desc" }, take: 10 },
+          products: {
+            where: { status: "PUBLISHED", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+            select: { id: true, title: true, category: true, priceRub: true },
+            orderBy: { createdAt: "desc" },
+            take: 10
+          },
+          resume: true,
+          authorFollowers: true,
+          articleComments: { include: { article: true }, orderBy: { createdAt: "desc" }, take: 10 }
+        }
+      },
+      savedBy: true
+    }
+  });
+}
+
+export type DirectoryProfileWithFullOwner = NonNullable<Awaited<ReturnType<typeof findDirectoryProfileWithFullOwner>>>;
+
 export type DirectoryHubFilters = {
   city?: string;
   online?: boolean;

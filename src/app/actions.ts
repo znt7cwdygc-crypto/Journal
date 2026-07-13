@@ -2958,7 +2958,7 @@ function directoryProfileDataFromForm(fd: FormData, type: "STUDIO" | "AGENCY") {
     landmark: cleanText(fd.get("landmark"), 160) || null,
     addressIsPublic: fd.get("addressIsPublic") === "on",
     privateAddress: cleanText(fd.get("privateAddress"), 300) || null,
-    photos: [] as string[],
+    photos: fd.getAll("photos").map((v) => optionalUrl(v)).filter((v): v is string => Boolean(v)).slice(0, 6),
     roomsCount: roomsRaw ? cleanNumber(fd.get("roomsCount"), 0, 500) : null,
     equipment: cleanMultiline(fd.get("equipment"), 1000) || null,
     livingConditions: cleanMultiline(fd.get("livingConditions"), 1000) || null,

@@ -3,13 +3,15 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { DirectoryHubCard } from "@/components/directory-hub-card";
-import { DirectoryProfileView, buildFaq } from "@/components/directory-profile-view";
+import { OrganizationProfileView } from "@/components/organization-profile-view";
 import { platformLabel } from "@/lib/directory-labels";
 import {
   distinctDirectoryPlatforms,
   findDirectoryProfile,
+  findDirectoryProfileWithFullOwner,
   listDirectoryProfiles
 } from "@/lib/directory-queries";
+import { buildFaq } from "@/lib/directory-faq";
 import { rankDirectoryProfiles, usefulArticleCounts } from "@/lib/directory-ranking";
 import { isCatalogEnabled } from "@/lib/features";
 import { prisma } from "@/lib/prisma";
@@ -59,7 +61,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default async function AgencySlugPage({ params }: { params: { slug: string } }) {
+export default async function AgencySlugPage({
+  params,
+  searchParams
+}: {
+  params: { slug: string };
+  searchParams?: { follow?: string; reported?: string; favorite?: string };
+}) {
   if (!isCatalogEnabled()) notFound();
 
   const session = await auth();
@@ -69,7 +77,15 @@ export default async function AgencySlugPage({ params }: { params: { slug: strin
     const path = directoryProfileSeoPath(profile);
     if (pathTail(path) !== params.slug) redirect(path);
 
+    const fullProfile = await findDirectoryProfileWithFullOwner(params.slug, "AGENCY");
+    if (!fullProfile) notFound();
+
     await prisma.directoryProfile.update({ where: { id: profile.id }, data: { viewCount: { increment: 1 } } });
+
+    const isFollowing =
+      session?.user && session.user.id !== fullProfile.ownerId
+        ? await prisma.follow.findUnique({ where: { followerId_authorId: { followerId: session.user.id, authorId: fullProfile.ownerId } } })
+        : null;
 
     const faq = buildFaq(profile);
     const organizationSchema = {
@@ -110,7 +126,7 @@ export default async function AgencySlugPage({ params }: { params: { slug: strin
             })
           }}
         />
-        <DirectoryProfileView profile={profile} signedIn={Boolean(session?.user)} />
+        <OrganizationProfileView profile={fullProfile} session={session} isFollowing={Boolean(isFollowing)} searchParams={searchParams} />
       </>
     );
   }
@@ -181,7 +197,7 @@ export default async function AgencySlugPage({ params }: { params: { slug: strin
         {ranked.map((p) => (
           <DirectoryHubCard
             key={p.id}
-            profile={{ ...p, vacancyCount: p.owner._count.listings, usefulArticleCount: usefulCounts.get(p.ownerId) || 0 }}
+            profile={{ ...p, vacancyCount: p.owner._count.listings }}
             currentPath={currentPath}
             isSaved={Boolean(session?.user?.id && p.savedBy.some((item) => item.userId === session.user.id))}
           />
