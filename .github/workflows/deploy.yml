@@ -45,9 +45,17 @@ jobs:
             npm ci
             npx prisma generate
             npm run check:security
+            npm run check:article-html
+            npm run content:low-demand:validate
             npm run build
             DB_VAL=$(grep -E '^DATABASE_URL=' .env.local | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
             DATABASE_URL="$DB_VAL" npx prisma db push 2>&1 | tail -1
+            CONTENT_MARKER="/opt/content-updates/low-demand-v1.done"
+            if [ ! -f "$CONTENT_MARKER" ]; then
+              mkdir -p /opt/content-updates /opt/content-backups
+              DATABASE_URL="$DB_VAL" CONTENT_UPDATE_CONFIRM=low-demand-v1 CONTENT_BACKUP_DIR=/opt/content-backups npx tsx prisma/update-low-demand-content.ts --apply
+              touch "$CONTENT_MARKER"
+            fi
             unset DB_VAL
             cp -r .next/static /var/www/static/_next/
 
@@ -99,9 +107,17 @@ jobs:
             npm ci
             npx prisma generate
             npm run check:security
+            npm run check:article-html
+            npm run content:low-demand:validate
             npm run build
             DB_VAL=$(grep -E '^DATABASE_URL=' .env.local | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
             DATABASE_URL="$DB_VAL" npx prisma db push 2>&1 | tail -1
+            CONTENT_MARKER="/opt/content-updates/low-demand-v1.done"
+            if [ ! -f "$CONTENT_MARKER" ]; then
+              mkdir -p /opt/content-updates /opt/content-backups
+              DATABASE_URL="$DB_VAL" CONTENT_UPDATE_CONFIRM=low-demand-v1 CONTENT_BACKUP_DIR=/opt/content-backups npx tsx prisma/update-low-demand-content.ts --apply
+              touch "$CONTENT_MARKER"
+            fi
             unset DB_VAL
 
             rm -rf "$OLD_DIR"
