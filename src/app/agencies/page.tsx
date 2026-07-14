@@ -31,7 +31,7 @@ function hasActiveFilters(searchParams?: SearchParams) {
 export async function generateMetadata({ searchParams }: { searchParams?: SearchParams }): Promise<Metadata> {
   if (!isCatalogEnabled()) return { robots: { index: false, follow: false } };
   return {
-    title: "Агентства контент-платформ — каталог с условиями | MyCamDesk",
+    title: "Агентства контент-платформ — каталог с условиями",
     description: "Каталог агентств OnlyFans, Fansly и других платформ: доля, что входит в услугу, платформы и вакансии.",
     alternates: { canonical: "/agencies" },
     openGraph: { title: "Каталог агентств контент-платформ", description: "Условия агентств: доля, платформы, вакансии.", url: "/agencies" },

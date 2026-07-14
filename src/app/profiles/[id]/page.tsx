@@ -75,7 +75,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     description,
     alternates: { canonical: `/profiles/${user.id}` },
     openGraph: {
-      title: `${name} — MyCamDesk`,
+      title: name,
       description,
       url: `/profiles/${user.id}`,
       type: "profile"

@@ -55,7 +55,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const label = platformLabel(platform);
 
   return {
-    title: `Агентства ${label} — условия и сравнение | MyCamDesk`,
+    title: `Агентства ${label} — условия и сравнение`,
     description: `Каталог агентств, работающих с ${label}: доля, что входит в услугу, вакансии.`,
     alternates: { canonical: `/agencies/${params.slug}` },
     robots: indexable ? undefined : { index: false, follow: true }

@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const indexable = count >= CITY_INDEX_THRESHOLD;
 
   return {
-    title: `Вебкам-студии${cityMatch.online ? "" : ` ${label}`} — условия и сравнение | MyCamDesk`,
+    title: `Вебкам-студии${cityMatch.online ? "" : ` ${label}`} — условия и сравнение`,
     description: `Каталог вебкам-студий${cityMatch.online ? ", работающих онлайн" : ` в городе ${label}`}: процент, формат работы, обучение и вакансии.`,
     alternates: { canonical: `/studios/${params.slug}` },
     robots: indexable ? undefined : { index: false, follow: true }

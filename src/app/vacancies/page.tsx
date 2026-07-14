@@ -11,7 +11,7 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Вакансии в вебкам-индустрии — MyCamDesk",
+  title: "Вакансии в вебкам-индустрии",
   description: "Актуальные вакансии студий и команд в вебкам-индустрии: модели, операторы, администраторы. Фильтрация по городу и формату работы на MyCamDesk.",
   alternates: { canonical: "/vacancies" },
   openGraph: {

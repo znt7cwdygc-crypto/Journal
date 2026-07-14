@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
-export const metadata = { title: "Подтверждение email — MyCamDesk" };
+export const metadata = { title: "Подтверждение email" };
 
 export default async function VerifyEmailPage({ searchParams }: { searchParams: Promise<{ token?: string }> }) {
   const { token } = await searchParams;

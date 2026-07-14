@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Гайды по вебкам-индустрии — MyCamDesk",
+  title: "Гайды по вебкам-индустрии",
   description: "Понятные гайды о работе в вебкам-индустрии: безопасность, деньги, студии, оборудование, продвижение и частые вопросы новичков. Всё в одном месте.",
   alternates: { canonical: "/guides" },
   openGraph: {

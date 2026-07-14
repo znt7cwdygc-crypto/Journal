@@ -36,7 +36,7 @@ function hasActiveFilters(searchParams?: SearchParams) {
 export async function generateMetadata({ searchParams }: { searchParams?: SearchParams }): Promise<Metadata> {
   if (!isCatalogEnabled()) return { robots: { index: false, follow: false } };
   return {
-    title: "Вебкам-студии — каталог с условиями и фильтрами | MyCamDesk",
+    title: "Вебкам-студии — каталог с условиями и фильтрами",
     description: "Каталог вебкам-студий: город, процент модели, формат работы, обучение и вакансии. Сравнивайте реальные условия перед откликом.",
     alternates: { canonical: "/studios" },
     openGraph: { title: "Каталог вебкам-студий", description: "Условия студий: процент, формат, обучение, вакансии.", url: "/studios" },
