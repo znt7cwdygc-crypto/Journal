@@ -14,7 +14,7 @@ import { auth } from "@/auth";
 import { ReportButton } from "@/components/report-button";
 import { ShareArticleButton } from "@/components/share-article-button";
 import { SafeImage } from "@/components/safe-image";
-import { isHtmlArticleBody, sanitizeArticleHtml, stripArticleHtml } from "@/lib/article-html";
+import { articleBodyToHtml, stripArticleHtml } from "@/lib/article-html";
 import { safeImageUrl } from "@/lib/media";
 import { siteName, siteUrl, truncateSeo } from "@/lib/seo";
 import { articleSeoPath, idFromSeoParam, pathTail } from "@/lib/seo-url";
@@ -56,68 +56,12 @@ async function findPublishedArticle(slug: string, commentSort = "new") {
 }
 
 function renderArticleBody(body: string) {
-  if (isHtmlArticleBody(body)) {
-    return (
-      <div
-        className="article-html"
-        dangerouslySetInnerHTML={{ __html: sanitizeArticleHtml(body) }}
-      />
-    );
-  }
-
-  return body
-    .split(/\n{2,}/)
-    .map((block) => block.trim())
-    .filter(Boolean)
-    .map((block, index) => {
-      const imageMatch = block.match(/^!\[(.*?)\]\((\/(?:uploads|media)\/[^)\s]+|https?:\/\/[^)\s]+)\)$/);
-
-      if (imageMatch) {
-        const src = safeImageUrl(imageMatch[2].replace("/uploads/", "/media/"));
-        if (src) {
-          return (
-            <SafeImage
-              key={`${index}-${src}`}
-              className="my-6 max-h-[560px] w-full rounded-lg object-cover"
-              src={src}
-              alt={imageMatch[1] || "Изображение статьи"}
-              fallback={null}
-            />
-          );
-        }
-      }
-
-      if (block.startsWith("- ")) {
-        return (
-          <ul key={index} className="my-5 list-disc space-y-2 pl-5">
-            {block
-              .split("\n")
-              .map((item) => item.replace(/^-\s*/, "").trim())
-              .filter(Boolean)
-              .map((item, itemIndex) => <li key={itemIndex}>{item}</li>)}
-          </ul>
-        );
-      }
-
-      if (block.startsWith("“") || block.startsWith(">")) {
-        return (
-          <blockquote key={index} className="my-6 border-l-4 border-hot bg-red-50 px-4 py-3 text-lg font-medium leading-8 text-zinc-900">
-            {block.replace(/^>\s*/, "")}
-          </blockquote>
-        );
-      }
-
-      const isHeading = block.length <= 80 && !/[.!?]$/.test(block) && !block.includes("\n");
-      if (isHeading) {
-        return <h2 key={index} className="mt-9 text-2xl font-semibold leading-tight tracking-tight text-zinc-950">{block}</h2>;
-      }
-
-      return (
-        <p key={index} className="my-5 whitespace-pre-line text-base leading-8 text-zinc-800">
-          {block}
-        </p>
-      );
-    });
+  return (
+    <div
+      className="article-html"
+      dangerouslySetInnerHTML={{ __html: articleBodyToHtml(body) }}
+    />
+  );
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {

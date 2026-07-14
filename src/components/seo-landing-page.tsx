@@ -2,6 +2,7 @@ import { safeJsonLd } from "@/lib/json-ld";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { SeoLanding } from "@/lib/seo-landings";
+import { relatedLinkLabel } from "@/lib/related-link-label";
 
 /** Shape returned by DB after parsing JSON fields */
 export type GuidePageData = {
@@ -112,7 +113,7 @@ export function SeoLandingPage({
         <div className="mt-3 flex flex-wrap gap-2">
           {landing.related.map((href) => (
             <Link key={href} href={href} className="rounded-full border border-zinc-200 px-3 py-1.5 text-sm text-zinc-700 hover:border-hot hover:text-hot">
-              {href.replace("/", "").replaceAll("/", " / ")}
+              {relatedLinkLabel(href)}
             </Link>
           ))}
         </div>

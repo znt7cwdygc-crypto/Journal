@@ -7,6 +7,7 @@ import { parseGuide } from "@/lib/guide-helpers";
 import { prisma } from "@/lib/prisma";
 import { siteUrl } from "@/lib/seo";
 import { SalaryCalculator } from "@/components/salary-calculator";
+import { relatedLinkLabel } from "@/lib/related-link-label";
 
 export const revalidate = 60;
 
@@ -39,6 +40,13 @@ export default async function GuidePage({ params }: { params: { slug: string } }
 
   const guide = parseGuide(raw);
   const updatedAt = raw.updatedAt;
+  const relatedGuides = guide.related.length
+    ? await prisma.guide.findMany({
+        where: { path: { in: guide.related }, isPublished: true },
+        select: { path: true, title: true }
+      })
+    : [];
+  const relatedLabels = new Map(relatedGuides.map((item) => [item.path, item.title]));
 
   return (
     <div className="space-y-6">
@@ -61,7 +69,7 @@ export default async function GuidePage({ params }: { params: { slug: string } }
         "description": guide.description,
         "datePublished": raw.createdAt.toISOString(),
         "dateModified": raw.updatedAt.toISOString(),
-        "author": guide.authorName
+        "author": guide.authorName && guide.authorName !== "Редакция MyCamDesk"
           ? { "@type": "Person", "name": guide.authorName, ...(guide.authorTitle ? { "jobTitle": guide.authorTitle } : {}) }
           : { "@type": "Organization", "name": "MyCamDesk" },
         "publisher": {
@@ -228,7 +236,9 @@ export default async function GuidePage({ params }: { params: { slug: string } }
           <ul className="space-y-1">
             {guide.related.map((href) => (
               <li key={href}>
-                <Link href={href} className="text-sm text-zinc-600 underline hover:text-zinc-900">{href}</Link>
+                <Link href={href} className="text-sm text-zinc-600 underline hover:text-zinc-900">
+                  {relatedLabels.get(href) || relatedLinkLabel(href)}
+                </Link>
               </li>
             ))}
           </ul>
