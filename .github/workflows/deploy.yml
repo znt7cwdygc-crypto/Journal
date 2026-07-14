@@ -15,9 +15,14 @@ jobs:
           host: 185.112.83.74
           username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 15m
+          command_timeout: 20m
           script: |
-            # Zero-downtime deploy
+            set -e
+            # Zero-downtime deploy. DEPLOY_DIR is a persistent working copy reused
+            # across runs so updates are an incremental `git fetch`, not a full
+            # re-clone every time (full clones are what timed out during a network
+            # slowdown on 2026-07-14 and, combined with the old script continuing
+            # past that failure, wiped out both the live and backup directories).
             DEPLOY_DIR="/opt/site-next"
             LIVE_DIR="/opt/site"
             OLD_DIR="/opt/site-old"
@@ -28,26 +33,33 @@ jobs:
               cp "$LIVE_DIR/.env.local" "$ENV_FILE" 2>/dev/null || true
             fi
 
-            # 1. Clone fresh
-            rm -rf "$DEPLOY_DIR"
-            git clone --depth 1 https://github.com/znt7cwdygc-crypto/Journal.git "$DEPLOY_DIR"
-            cp "$ENV_FILE" "$DEPLOY_DIR/.env.local"
-            chmod 600 "$DEPLOY_DIR/.env.local"
-
-            # 2. Build (site stays live)
+            # 1. Update the persistent working copy incrementally
+            if [ ! -d "$DEPLOY_DIR/.git" ]; then
+              rm -rf "$DEPLOY_DIR"
+              git clone https://github.com/znt7cwdygc-crypto/Journal.git "$DEPLOY_DIR"
+            fi
             cd "$DEPLOY_DIR"
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+            cp "$ENV_FILE" .env.local
+            chmod 600 .env.local
+
+            # 2. Build (site stays live on the old build the whole time — this only
+            # touches DEPLOY_DIR, never LIVE_DIR)
             npm install
             npx prisma generate
             DB_VAL=$(grep -E '^DATABASE_URL=' .env.local | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
             DATABASE_URL="$DB_VAL" npx prisma db push --accept-data-loss 2>&1 | tail -1
             unset DB_VAL
             npm run build
-            cp -r .next/static /var/www/static/_next/
+            cp -r .next/static/* /var/www/static/_next/static/
 
-            # 3. Swap instantly
+            # 3. Swap instantly. Copy (not move) DEPLOY_DIR so it stays intact as the
+            # persistent working copy for next time.
             rm -rf "$OLD_DIR"
             mv "$LIVE_DIR" "$OLD_DIR"
-            mv "$DEPLOY_DIR" "$LIVE_DIR"
+            cp -a "$DEPLOY_DIR" "$LIVE_DIR"
 
             # 4. Restart PM2
             cd "$LIVE_DIR"
@@ -55,9 +67,32 @@ jobs:
             NODE_ENV=production PORT=3000 pm2 start node --name site -- node_modules/.bin/next start -p 3000
             pm2 save
 
-            # 5. Cleanup
-            rm -rf "$OLD_DIR"
-            echo "Production deploy done: $(date)"
+            # 5. Health check before touching the backup. Only delete OLD_DIR — or
+            # count the deploy as successful — once the new process actually answers
+            # requests. On failure, automatically roll back to OLD_DIR.
+            HEALTHY=""
+            for i in $(seq 1 15); do
+              if curl -sf -o /dev/null http://127.0.0.1:3000/; then
+                HEALTHY="1"
+                break
+              fi
+              sleep 2
+            done
+
+            if [ "$HEALTHY" = "1" ]; then
+              rm -rf "$OLD_DIR"
+              echo "Production deploy done: $(date)"
+            else
+              echo "Health check FAILED — rolling back to previous version"
+              pm2 delete site 2>/dev/null || true
+              rm -rf "$LIVE_DIR"
+              mv "$OLD_DIR" "$LIVE_DIR"
+              cd "$LIVE_DIR"
+              NODE_ENV=production PORT=3000 pm2 start node --name site -- node_modules/.bin/next start -p 3000
+              pm2 save
+              echo "Rolled back to previous version due to failed health check"
+              exit 1
+            fi
 
   deploy-dev:
     if: github.ref == 'refs/heads/dev'
@@ -71,6 +106,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           command_timeout: 15m
           script: |
+            set -e
             cd /opt/site-dev
             git fetch origin dev
             git checkout dev
