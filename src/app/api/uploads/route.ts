@@ -13,10 +13,9 @@ export async function POST(request: Request) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { emailVerified: true, blockedPermanently: true, blockedUntil: true }
+    select: { blockedPermanently: true, blockedUntil: true }
   });
   if (!user || isUserBlocked(user)) return NextResponse.json({ error: "Действие недоступно" }, { status: 403 });
-  if (!user.emailVerified) return NextResponse.json({ error: "Подтвердите email перед загрузкой файлов" }, { status: 403 });
   if (consumeRateLimit(`upload:${session.user.id}`, 30, 60 * 60 * 1000)) {
     return NextResponse.json({ error: "Слишком много загрузок. Попробуйте позже" }, { status: 429 });
   }
