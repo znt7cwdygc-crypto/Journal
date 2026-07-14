@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -100,14 +101,14 @@ export default async function StudiosHubPage({ searchParams }: { searchParams?: 
 
   return (
     <div>
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         name: "Вебкам-студии",
         url: siteUrl("/studios").toString(),
         isPartOf: { "@type": "WebSite", name: "MyCamDesk", url: siteUrl("/").toString() }
       }) }} />
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         itemListElement: [

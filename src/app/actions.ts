@@ -80,7 +80,7 @@ export async function registerAction(formData: FormData) {
   const accountMode = accountModeFromKind(profileKind);
 
   ensureAdult(formData);
-  if (!email || !password || password.length < 6) throw new Error("Некорректные данные регистрации");
+  if (!email || name.length < 2 || !password || password.length < 6) throw new Error("Некорректные данные регистрации");
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) throw new Error("Пользователь уже существует");
@@ -674,29 +674,62 @@ export async function likeCommentAction(formData: FormData) {
 
 type ContactClickTargetType = "PRODUCT" | "LISTING" | "RESUME" | "MATCH_PROFILE" | "DIRECTORY_PROFILE";
 
-export async function recordContactClickAction(targetType: ContactClickTargetType, targetId: string) {
-  const session = await auth();
-  if (!session?.user || !targetId) return;
+export async function revealContactAction(targetType: ContactClickTargetType, targetId: string) {
+  const sessionUser = await requireActiveSessionUser();
+  if (!targetId) throw new Error("Контакт не найден");
 
-  const increment = { responseCount: { increment: 1 } };
+  const now = new Date();
+  let contact: string | null = null;
 
   switch (targetType) {
-    case "PRODUCT":
-      await prisma.product.updateMany({ where: { id: targetId }, data: increment }).catch(() => null);
+    case "PRODUCT": {
+      const product = await prisma.product.findFirst({
+        where: { id: targetId, status: ContentStatus.PUBLISHED, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+        select: { contact: true }
+      });
+      contact = product?.contact ?? null;
+      if (contact) await prisma.product.update({ where: { id: targetId }, data: { responseCount: { increment: 1 } } });
       break;
-    case "LISTING":
-      await prisma.listing.updateMany({ where: { id: targetId }, data: increment }).catch(() => null);
+    }
+    case "LISTING": {
+      const listing = await prisma.listing.findFirst({
+        where: { id: targetId, status: ContentStatus.PUBLISHED, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+        select: { contact: true }
+      });
+      contact = listing?.contact ?? null;
+      if (contact) await prisma.listing.update({ where: { id: targetId }, data: { responseCount: { increment: 1 } } });
       break;
-    case "RESUME":
-      await prisma.resume.updateMany({ where: { id: targetId }, data: increment }).catch(() => null);
+    }
+    case "MATCH_PROFILE": {
+      const profile = await prisma.matchProfile.findFirst({
+        where: { id: targetId, status: ContentStatus.PUBLISHED, OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] },
+        select: { contact: true }
+      });
+      contact = profile?.contact ?? null;
+      if (contact) await prisma.matchProfile.update({ where: { id: targetId }, data: { responseCount: { increment: 1 } } });
       break;
-    case "MATCH_PROFILE":
-      await prisma.matchProfile.updateMany({ where: { id: targetId }, data: increment }).catch(() => null);
+    }
+    case "DIRECTORY_PROFILE": {
+      const profile = await prisma.directoryProfile.findFirst({
+        where: { id: targetId, status: "PUBLISHED" },
+        select: { contactLink: true }
+      });
+      contact = profile?.contactLink ?? null;
+      if (contact) await prisma.directoryProfile.update({ where: { id: targetId }, data: { responseCount: { increment: 1 } } });
       break;
-    case "DIRECTORY_PROFILE":
-      await prisma.directoryProfile.updateMany({ where: { id: targetId }, data: increment }).catch(() => null);
+    }
+    case "RESUME": {
+      const resume = await prisma.resume.findFirst({
+        where: { id: targetId, userId: sessionUser.id },
+        select: { contactTelegram: true, contactEmail: true }
+      });
+      contact = resume?.contactTelegram || resume?.contactEmail || null;
       break;
+    }
   }
+
+  if (!contact) throw new Error("Контакт недоступен");
+  return { contact };
 }
 
 export async function rateArticleAction(formData: FormData) {

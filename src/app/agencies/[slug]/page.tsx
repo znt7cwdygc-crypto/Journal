@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -99,12 +100,12 @@ export default async function AgencySlugPage({
 
     return (
       <>
-        <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
+        <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd(organizationSchema) }} />
         <script
           type="application/ld+json"
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+            __html: safeJsonLd({
               "@context": "https://schema.org",
               "@type": "FAQPage",
               mainEntity: faq.map((item) => ({ "@type": "Question", name: item.question, acceptedAnswer: { "@type": "Answer", text: item.answer } }))
@@ -115,7 +116,7 @@ export default async function AgencySlugPage({
           type="application/ld+json"
           suppressHydrationWarning
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
+            __html: safeJsonLd({
               "@context": "https://schema.org",
               "@type": "BreadcrumbList",
               itemListElement: [
@@ -150,7 +151,7 @@ export default async function AgencySlugPage({
             type="application/ld+json"
             suppressHydrationWarning
             dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
+              __html: safeJsonLd({
                 "@context": "https://schema.org",
                 "@type": "CollectionPage",
                 name: `Агентства ${label}`,
@@ -163,7 +164,7 @@ export default async function AgencySlugPage({
             type="application/ld+json"
             suppressHydrationWarning
             dangerouslySetInnerHTML={{
-              __html: JSON.stringify({
+              __html: safeJsonLd({
                 "@context": "https://schema.org",
                 "@type": "BreadcrumbList",
                 itemListElement: [

@@ -1,5 +1,9 @@
 name: Deploy to server
 
+concurrency:
+  group: mycamdesk-server-deploy
+  cancel-in-progress: false
+
 on:
   push:
     branches: [main, dev]
@@ -32,16 +36,19 @@ jobs:
             rm -rf "$DEPLOY_DIR"
             git clone --depth 1 https://github.com/znt7cwdygc-crypto/Journal.git "$DEPLOY_DIR"
             cp "$ENV_FILE" "$DEPLOY_DIR/.env.local"
+            sed -i '/^DEPLOY_ENV=/d' "$DEPLOY_DIR/.env.local"
+            echo 'DEPLOY_ENV=production' >> "$DEPLOY_DIR/.env.local"
             chmod 600 "$DEPLOY_DIR/.env.local"
 
             # 2. Build (site stays live)
             cd "$DEPLOY_DIR"
-            npm install
+            npm ci
             npx prisma generate
-            DB_VAL=$(grep -E '^DATABASE_URL=' .env.local | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
-            DATABASE_URL="$DB_VAL" npx prisma db push --accept-data-loss 2>&1 | tail -1
-            unset DB_VAL
+            npm run check:security
             npm run build
+            DB_VAL=$(grep -E '^DATABASE_URL=' .env.local | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
+            DATABASE_URL="$DB_VAL" npx prisma db push 2>&1 | tail -1
+            unset DB_VAL
             cp -r .next/static /var/www/static/_next/
 
             # 3. Swap instantly
@@ -71,26 +78,39 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           command_timeout: 15m
           script: |
-            cd /opt/site-dev
-            git fetch origin dev
-            git checkout dev
-            git reset --hard origin/dev
-            # Separate env file from prod so dev-only settings (feature flags, etc.)
-            # never leak into production. Falls back to the shared file the first
-            # time, until /opt/env.dev is created on the server.
-            if [ -f /opt/env.dev ]; then
-              cp /opt/env.dev .env.local
-            else
-              cp /opt/env.production .env.local
+            DEPLOY_DIR="/opt/site-dev-next"
+            LIVE_DIR="/opt/site-dev"
+            OLD_DIR="/opt/site-dev-old"
+            ENV_FILE="/opt/env.dev"
+
+            if [ ! -f "$ENV_FILE" ]; then
+              echo "Missing $ENV_FILE; refusing to use production environment for dev"
+              exit 1
             fi
-            chmod 600 .env.local
-            npm install
+
+            rm -rf "$DEPLOY_DIR"
+            git clone --depth 1 --branch dev https://github.com/znt7cwdygc-crypto/Journal.git "$DEPLOY_DIR"
+            cp "$ENV_FILE" "$DEPLOY_DIR/.env.local"
+            sed -i '/^DEPLOY_ENV=/d' "$DEPLOY_DIR/.env.local"
+            echo 'DEPLOY_ENV=dev' >> "$DEPLOY_DIR/.env.local"
+            chmod 600 "$DEPLOY_DIR/.env.local"
+
+            cd "$DEPLOY_DIR"
+            npm ci
             npx prisma generate
-            DB_VAL=$(grep -E '^DATABASE_URL=' .env.local | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
-            DATABASE_URL="$DB_VAL" npx prisma db push --accept-data-loss 2>&1 | tail -1
-            unset DB_VAL
+            npm run check:security
             npm run build
+            DB_VAL=$(grep -E '^DATABASE_URL=' .env.local | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
+            DATABASE_URL="$DB_VAL" npx prisma db push 2>&1 | tail -1
+            unset DB_VAL
+
+            rm -rf "$OLD_DIR"
+            mv "$LIVE_DIR" "$OLD_DIR"
+            mv "$DEPLOY_DIR" "$LIVE_DIR"
+
+            cd "$LIVE_DIR"
             pm2 delete site-dev 2>/dev/null || true
             NODE_ENV=production PORT=3001 pm2 start node --name site-dev -- node_modules/.bin/next start -p 3001
             pm2 save
+            rm -rf "$OLD_DIR"
             echo "Dev deploy done: $(date)"

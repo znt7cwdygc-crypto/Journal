@@ -5,6 +5,7 @@ import sharp from "sharp";
 
 // Максимальная ширина стороны — сайт нигде не показывает изображения крупнее.
 const MAX_DIMENSION = 2000;
+const MAX_INPUT_PIXELS = 40_000_000;
 const WEBP_QUALITY = 80;
 
 const allowedTypes = new Map([
@@ -68,6 +69,18 @@ export async function saveUploadedImage(value: unknown, seoContext?: string) {
   await mkdir(UPLOAD_DIR, { recursive: true });
 
   const bytes = Buffer.from(await value.arrayBuffer());
+  const expectedFormat = extension === ".jpg" || extension === ".jpeg" ? "jpeg" : extension.slice(1);
+  let metadata: sharp.Metadata;
+  try {
+    metadata = await sharp(bytes, { animated: extension === ".gif", limitInputPixels: MAX_INPUT_PIXELS }).metadata();
+  } catch {
+    throw new Error("Файл поврежден или не является изображением");
+  }
+  if (metadata.format !== expectedFormat) throw new Error("Содержимое файла не соответствует его формату");
+  if (!metadata.width || !metadata.height || metadata.width * metadata.height > MAX_INPUT_PIXELS) {
+    throw new Error("Слишком большое разрешение изображения");
+  }
+  if ((metadata.pages ?? 1) > 200) throw new Error("В GIF слишком много кадров");
 
   // Анимированный GIF пережимать нельзя (потеряет анимацию) — сохраняем как есть.
   // Остальные форматы: сжимаем и переводим в WebP, чтобы вес файла упал в разы.
@@ -78,7 +91,7 @@ export async function saveUploadedImage(value: unknown, seoContext?: string) {
   }
 
   const filename = seoFilename(seoContext, ".webp");
-  const compressed = await sharp(bytes)
+  const compressed = await sharp(bytes, { limitInputPixels: MAX_INPUT_PIXELS })
     .rotate() // учитывает EXIF-ориентацию перед ресайзом
     .resize({ width: MAX_DIMENSION, height: MAX_DIMENSION, fit: "inside", withoutEnlargement: true })
     .webp({ quality: WEBP_QUALITY })

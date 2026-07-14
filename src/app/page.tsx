@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { AdBlock } from "@/components/ad-block";
@@ -54,7 +55,7 @@ function previewText(text: string, max = 180) {
 
 function articleMeta(article: { comments: unknown[]; responseCount: number; viewCount: number; createdBy: { name: string | null; email: string | null } }) {
   return [
-    article.createdBy.name || article.createdBy.email || "Автор",
+    article.createdBy.name || "Автор",
     `${article.comments.length + article.responseCount} обсуждений`,
     `${article.viewCount} просмотров`
   ].join(" • ");
@@ -108,7 +109,7 @@ export default async function HomePage() {
   ]);
 
   const mainArticle = articles[0] ?? null;
-  const mainAuthorLabel = mainArticle ? mainArticle.createdBy.name || mainArticle.createdBy.email || "Автор" : "";
+  const mainAuthorLabel = mainArticle ? mainArticle.createdBy.name || "Автор" : "";
   const mainCommentsLabel = mainArticle ? `${mainArticle.comments.length} комментариев` : "";
   const mainViewsLabel = mainArticle ? `${mainArticle.viewCount} просмотров` : "";
   const mainCoverImage = mainArticle ? safeImageUrl(mainArticle.coverImage) : null;
@@ -125,7 +126,7 @@ export default async function HomePage() {
 
   return (
     <div className="page-stack">
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "WebSite",
         "name": siteName,
@@ -137,7 +138,7 @@ export default async function HomePage() {
           "query-input": "required name=search_term_string"
         }
       }) }} />
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "Organization",
         "name": siteName,
@@ -247,7 +248,7 @@ export default async function HomePage() {
                   {items.map((listing) => (
                     <Link key={listing.id} href={listingSeoPath(listing)} className="block border-b border-zinc-100 pb-3 last:border-0">
                       <p className="font-medium leading-snug line-clamp-2">{listing.title}</p>
-                      <p className="mt-1 text-xs text-zinc-500">{listing.createdBy.name || listing.createdBy.email || "Автор"} • {listing.city || "без города"}</p>
+                      <p className="mt-1 text-xs text-zinc-500">{listing.createdBy.name || "Автор"} • {listing.city || "без города"}</p>
                     </Link>
                   ))}
                   {items.length === 0 && <p className="text-sm text-zinc-500">Пока нет активных объявлений.</p>}

@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { AdBlock } from "@/components/ad-block";
@@ -77,10 +78,6 @@ export default async function ResumesPage({ searchParams }: { searchParams?: { s
     return !cityValue || (cityValue === "remote" ? remote : remote || resume.city?.trim() === cityValue);
   });
 
-  if (resumes.length > 0) {
-    await prisma.resume.updateMany({ where: { id: { in: resumes.map((r) => r.id) } }, data: { viewCount: { increment: 1 } } });
-  }
-
   const userId = session?.user?.id;
   const role = session?.user?.role;
 
@@ -98,7 +95,7 @@ export default async function ResumesPage({ searchParams }: { searchParams?: { s
 
   return (
     <div className="space-y-4">
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "Резюме",

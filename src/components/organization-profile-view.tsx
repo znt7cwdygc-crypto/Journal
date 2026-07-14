@@ -135,7 +135,7 @@ export function OrganizationProfileView({
 
             <div className="mt-4 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
               {profile.contactLink && (
-                <ContactReveal contact={profile.contactLink} signedIn={Boolean(session?.user)} compact targetType="DIRECTORY_PROFILE" targetId={profile.id} />
+                <ContactReveal signedIn={Boolean(session?.user)} compact targetType="DIRECTORY_PROFILE" targetId={profile.id} />
               )}
               <form action={saveDirectoryProfileAction}>
                 <input type="hidden" name="directoryProfileId" value={profile.id} />

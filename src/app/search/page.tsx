@@ -177,7 +177,7 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
         <SearchSection title="Статьи">
           {articles.map((article) => (
             <Link key={article.id} href={articleSeoPath(article)} className="block border border-zinc-200 bg-white p-4 hover:border-hot">
-              <p className="text-xs text-zinc-500">{article.createdBy.name || article.createdBy.email || "Автор"}</p>
+              <p className="text-xs text-zinc-500">{article.createdBy.name || "Автор"}</p>
               <h2 className="mt-1 font-semibold">{article.title}</h2>
               <p className="mt-2 text-sm text-zinc-600">{article.summary}</p>
             </Link>
@@ -189,7 +189,7 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
         <SearchSection title="Авторы">
           {authors.map((author) => (
             <Link key={author.id} href={`/profiles/${author.id}`} className="block border border-zinc-200 bg-white p-4 hover:border-hot">
-              <h2 className="font-semibold">{author.name || author.email || "Автор"}</h2>
+              <h2 className="font-semibold">{author.name || "Автор"}</h2>
               <p className="mt-1 text-sm text-zinc-600">{author.role}</p>
             </Link>
           ))}
@@ -212,7 +212,7 @@ export default async function SearchPage({ searchParams }: { searchParams?: { q?
         <SearchSection title="Резюме">
           {resumes.map((resume) => (
             <Link key={resume.id} href={resumeSeoPath(resume)} className="block border border-zinc-200 bg-white p-4 hover:border-hot">
-              <p className="text-xs text-zinc-500">{resume.user.name || resume.user.email || "Профиль"} • {resume.city || "город не указан"}</p>
+              <p className="text-xs text-zinc-500">{resume.user.name || "Участник"} • {resume.city || "город не указан"}</p>
               <h2 className="mt-1 font-semibold">{resume.title}</h2>
               <p className="mt-2 text-sm text-zinc-600">{resume.bio}</p>
             </Link>

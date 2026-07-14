@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -84,7 +85,7 @@ export default async function MatchProfileDetailsPage({
 
   await prisma.matchProfile.update({ where: { id: profile.id }, data: { viewCount: { increment: 1 } } });
 
-  const authorName = profile.user.name || profile.user.email || "Профиль";
+  const authorName = profile.user.name || "Участник";
   const isSaved = Boolean(session?.user?.id && profile.savedBy.some((item) => item.userId === session.user.id));
   const favoriteMessage =
     searchParams?.favorite === "added"
@@ -99,7 +100,7 @@ export default async function MatchProfileDetailsPage({
         type="application/ld+json"
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "ProfilePage",
             name: profile.title,
@@ -131,7 +132,7 @@ export default async function MatchProfileDetailsPage({
         type="application/ld+json"
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": [
@@ -178,7 +179,7 @@ export default async function MatchProfileDetailsPage({
       )}
 
       <div className="directory-actions mt-5 grid grid-cols-3 gap-2">
-        <ContactReveal contact={profile.contact} signedIn={Boolean(session?.user)} compact targetType="MATCH_PROFILE" targetId={profile.id} />
+        <ContactReveal signedIn={Boolean(session?.user)} compact targetType="MATCH_PROFILE" targetId={profile.id} />
         <form action={saveMatchProfileAction}>
           <input type="hidden" name="matchProfileId" value={profile.id} />
           <input type="hidden" name="next" value={profilePath} />

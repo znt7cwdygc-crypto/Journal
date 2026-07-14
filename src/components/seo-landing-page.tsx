@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { SeoLanding } from "@/lib/seo-landings";
@@ -49,7 +50,7 @@ export function SeoLandingPage({
       <script
         type="application/ld+json"
         suppressHydrationWarning
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(faqJsonLd) }}
       />
       <section className="border border-zinc-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap gap-2">

@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { saveMatchProfileAction } from "@/app/actions";
@@ -79,10 +80,6 @@ export default async function ModelOperatorPage({
 
   const profiles = allProfiles.filter((profile) => !lookingFor || profile.lookingFor === lookingFor);
 
-  if (profiles.length > 0) {
-    await prisma.matchProfile.updateMany({ where: { id: { in: profiles.map((profile) => profile.id) } }, data: { viewCount: { increment: 1 } } });
-  }
-
   const favoriteMessage =
     searchParams?.favorite === "added"
       ? "Анкета добавлена в избранное."
@@ -92,14 +89,14 @@ export default async function ModelOperatorPage({
 
   return (
     <div className="space-y-4">
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "Модель оператор",
         "url": siteUrl("/model-operator").toString(),
         "isPartOf": { "@type": "WebSite", "name": "MyCamDesk", "url": siteUrl("/").toString() }
       }) }} />
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         "itemListElement": [
@@ -158,7 +155,7 @@ export default async function ModelOperatorPage({
       )}
 
       {profiles.map((profile) => {
-        const authorName = profile.user.name || profile.user.email || "Профиль";
+        const authorName = profile.user.name || "Участник";
         const isSaved = Boolean(profile.savedBy?.length);
         const profilePath = matchProfileSeoPath(profile);
 
@@ -188,12 +185,12 @@ export default async function ModelOperatorPage({
               <span>График: {profile.schedule}</span>
               {profile.currentCheck && <span>Чек: {profile.currentCheck}</span>}
               {profile.niche && <span>Ниша: {profile.niche}</span>}
-              <span>Просмотры: {profile.viewCount + 1}</span>
+              <span>Просмотры: {profile.viewCount}</span>
               <span>Отклики: {profile.responseCount}</span>
             </div>
 
             <div className="directory-actions mt-4 grid grid-cols-3 gap-2">
-              <ContactReveal contact={profile.contact} signedIn={Boolean(session?.user)} compact targetType="MATCH_PROFILE" targetId={profile.id} />
+              <ContactReveal signedIn={Boolean(session?.user)} compact targetType="MATCH_PROFILE" targetId={profile.id} />
               <form action={saveMatchProfileAction}>
                 <input type="hidden" name="matchProfileId" value={profile.id} />
                 <input type="hidden" name="next" value={currentPath} />

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { recordContactClickAction } from "@/app/actions";
+import { revealContactAction } from "@/app/actions";
 import { reachYandexGoal } from "@/components/yandex-metrika";
 
 type ContactTargetType = "PRODUCT" | "LISTING" | "RESUME" | "MATCH_PROFILE" | "DIRECTORY_PROFILE";
@@ -51,19 +51,22 @@ function ContactPopup({ contact, compact }: { contact: string; compact: boolean 
 }
 
 export function ContactReveal({
-  contact,
   signedIn,
   compact = false,
   targetType,
-  targetId
+  targetId,
+  initialContact
 }: {
-  contact: string;
   signedIn: boolean;
   compact?: boolean;
-  targetType?: ContactTargetType;
-  targetId?: string;
+  targetType: ContactTargetType;
+  targetId: string;
+  initialContact?: string;
 }) {
   const [visible, setVisible] = useState(false);
+  const [contact, setContact] = useState(initialContact || "");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
   const buttonClass = compact ? "btn btn-primary h-10 w-full px-2 text-xs" : "btn btn-primary w-full sm:w-auto";
 
   if (!signedIn) {
@@ -77,23 +80,37 @@ export function ContactReveal({
     );
   }
 
-  function handleClick() {
-    setVisible((current) => {
-      const next = !current;
-      if (next && targetType && targetId) {
-        recordContactClickAction(targetType, targetId).catch(() => null);
-        reachYandexGoal("contact_reveal", { target_type: targetType });
-      }
-      return next;
-    });
+  async function handleClick() {
+    if (visible) {
+      setVisible(false);
+      return;
+    }
+    if (contact) {
+      setVisible(true);
+      return;
+    }
+
+    setPending(true);
+    setError("");
+    try {
+      const result = await revealContactAction(targetType, targetId);
+      setContact(result.contact);
+      setVisible(true);
+      reachYandexGoal("contact_reveal", { target_type: targetType });
+    } catch {
+      setError("Не удалось показать контакт. Обновите страницу и попробуйте снова.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
     <div className={compact ? "relative min-w-0" : "rounded-lg bg-zinc-50 p-3 text-sm text-zinc-700"}>
-      <button className={buttonClass} type="button" onClick={handleClick}>
-        {compact ? "Контакт" : "Посмотреть контакт"}
+      <button className={buttonClass} type="button" onClick={handleClick} disabled={pending} aria-busy={pending}>
+        {pending ? "Загрузка..." : compact ? "Контакт" : "Посмотреть контакт"}
       </button>
-      {visible && <ContactPopup contact={contact} compact={compact} />}
+      {visible && contact && <ContactPopup contact={contact} compact={compact} />}
+      {error && <p className="mt-2 text-xs text-red-700">{error}</p>}
     </div>
   );
 }

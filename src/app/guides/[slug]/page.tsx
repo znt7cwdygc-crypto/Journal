@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import type { Metadata } from "next";
 import { Fragment } from "react";
 import Link from "next/link";
@@ -42,7 +43,7 @@ export default async function GuidePage({ params }: { params: { slug: string } }
   return (
     <div className="space-y-6">
       {/* Breadcrumb JSON-LD */}
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         "itemListElement": [
@@ -53,7 +54,7 @@ export default async function GuidePage({ params }: { params: { slug: string } }
       }) }} />
 
       {/* Article JSON-LD */}
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "Article",
         "headline": guide.h1,
@@ -76,7 +77,7 @@ export default async function GuidePage({ params }: { params: { slug: string } }
 
       {/* FAQ JSON-LD */}
       {guide.faq.length > 0 && (
-        <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
           "@context": "https://schema.org",
           "@type": "FAQPage",
           "mainEntity": guide.faq.map((item) => ({

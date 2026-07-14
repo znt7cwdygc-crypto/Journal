@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { AdBlock } from "@/components/ad-block";
@@ -83,10 +84,6 @@ export default async function ServicesPage({ searchParams }: { searchParams?: { 
     return categoryMatches && cityMatches;
   });
 
-  if (services.length > 0) {
-    await prisma.listing.updateMany({ where: { id: { in: services.map((s) => s.id) } }, data: { viewCount: { increment: 1 } } });
-  }
-
   const grouped = new Map<string, typeof services>();
   for (const service of services) {
     const key = serviceCategory(service.title, service.description);
@@ -101,7 +98,7 @@ export default async function ServicesPage({ searchParams }: { searchParams?: { 
 
   return (
     <div className="space-y-4">
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "Услуги",
@@ -109,7 +106,7 @@ export default async function ServicesPage({ searchParams }: { searchParams?: { 
         "url": siteUrl("/services").toString(),
         "isPartOf": { "@type": "WebSite", "name": "MyCamDesk", "url": siteUrl("/").toString() }
       }) }} />
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         "itemListElement": [

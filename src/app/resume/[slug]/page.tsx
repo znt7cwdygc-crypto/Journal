@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -98,7 +99,7 @@ export default async function ResumeDetailsPage({
       })
     : null;
 
-  const authorName = resume.user.name || resume.user.email || "Автор резюме";
+  const authorName = resume.user.name || "Автор резюме";
   const isSaved = Boolean(session?.user?.id && resume.savedBy.some((item) => item.userId === session.user.id));
   const favoriteMessage =
     searchParams?.favorite === "added"
@@ -113,7 +114,7 @@ export default async function ResumeDetailsPage({
         type="application/ld+json"
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "ProfilePage",
             name: resume.title,
@@ -146,7 +147,7 @@ export default async function ResumeDetailsPage({
         type="application/ld+json"
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": [
@@ -209,7 +210,7 @@ export default async function ResumeDetailsPage({
         </div>
 
         {isOwner ? (
-          <ContactReveal contact={contactValue(resume)} signedIn={Boolean(session?.user)} compact targetType="RESUME" targetId={resume.id} />
+          <ContactReveal signedIn={Boolean(session?.user)} compact targetType="RESUME" targetId={resume.id} initialContact={contactValue(resume)} />
         ) : existingInvite?.status === "ACCEPTED" ? (
           <div className="rounded-lg border border-sky-200 bg-sky-50 p-3 text-sm">
             <p className="font-semibold text-sky-800">Контакт раскрыт</p>

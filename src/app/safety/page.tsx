@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import type { Metadata } from "next";
 import { TopicLanding } from "@/components/topic-landing";
 import { siteUrl } from "@/lib/seo";
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 export default function SafetyPage() {
   return (
     <>
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "Безопасность",
