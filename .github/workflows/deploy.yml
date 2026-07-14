@@ -1,5 +1,9 @@
 name: Deploy to server
 
+concurrency:
+  group: mycamdesk-server-deploy
+  cancel-in-progress: false
+
 on:
   push:
     branches: [main, dev]
@@ -43,16 +47,19 @@ jobs:
             git checkout main
             git reset --hard origin/main
             cp "$ENV_FILE" .env.local
+            sed -i '/^DEPLOY_ENV=/d' .env.local
+            echo 'DEPLOY_ENV=production' >> .env.local
             chmod 600 .env.local
 
             # 2. Build (site stays live on the old build the whole time — this only
             # touches DEPLOY_DIR, never LIVE_DIR)
             npm install
             npx prisma generate
-            DB_VAL=$(grep -E '^DATABASE_URL=' .env.local | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
-            DATABASE_URL="$DB_VAL" npx prisma db push --accept-data-loss 2>&1 | tail -1
-            unset DB_VAL
+            npm run check:security
             npm run build
+            DB_VAL=$(grep -E '^DATABASE_URL=' .env.local | head -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
+            DATABASE_URL="$DB_VAL" npx prisma db push 2>&1 | tail -1
+            unset DB_VAL
             cp -r .next/static/* /var/www/static/_next/static/
 
             # 3. Swap instantly. Copy (not move) DEPLOY_DIR so it stays intact as the

@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import Link from "next/link";
 import { Fragment } from "react";
 import type { Metadata } from "next";
@@ -87,14 +88,14 @@ export default async function AuthorsPage({ searchParams }: { searchParams?: { k
 
   return (
     <div className="space-y-5">
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "Авторы",
         "url": siteUrl("/authors").toString(),
         "isPartOf": { "@type": "WebSite", "name": "MyCamDesk", "url": siteUrl("/").toString() }
       }) }} />
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         "itemListElement": [
@@ -171,17 +172,17 @@ export default async function AuthorsPage({ searchParams }: { searchParams?: { k
                       alt={author.name || "Аватар автора"}
                       fallback={
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-hot text-base font-black text-white">
-                          {(author.name || author.email || "A").slice(0, 1).toUpperCase()}
+                          {(author.name || "А").slice(0, 1).toUpperCase()}
                         </div>
                       }
                     />
                   ) : (
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-hot text-base font-black text-white">
-                      {(author.name || author.email || "A").slice(0, 1).toUpperCase()}
+                      {(author.name || "А").slice(0, 1).toUpperCase()}
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <h2 className="max-w-full truncate text-lg font-semibold">{author.name || author.email || "Автор"}</h2>
+                    <h2 className="max-w-full truncate text-lg font-semibold">{author.name || "Автор"}</h2>
                     <p className="mt-1 max-w-full truncate text-sm text-zinc-600">{authorRoleLabel}</p>
                     <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
                       {verified && <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-emerald-700">проверенный</span>}

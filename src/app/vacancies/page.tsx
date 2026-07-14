@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { AdBlock } from "@/components/ad-block";
@@ -10,7 +11,7 @@ import type { Metadata } from "next";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Вакансии в вебкам-индустрии — MyCamDesk",
+  title: "Вакансии в вебкам-индустрии",
   description: "Актуальные вакансии студий и команд в вебкам-индустрии: модели, операторы, администраторы. Фильтрация по городу и формату работы на MyCamDesk.",
   alternates: { canonical: "/vacancies" },
   openGraph: {
@@ -86,10 +87,6 @@ export default async function VacanciesPage({ searchParams }: { searchParams?: {
     return !cityValue || (cityValue === "remote" ? remote : remote || vacancy.city?.trim() === cityValue);
   });
 
-  if (vacancies.length > 0) {
-    await prisma.listing.updateMany({ where: { id: { in: vacancies.map((v) => v.id) } }, data: { viewCount: { increment: 1 } } });
-  }
-
   const grouped = new Map<string, typeof vacancies>();
   for (const v of vacancies) {
     const key = v.employmentType || "UNKNOWN";
@@ -104,7 +101,7 @@ export default async function VacanciesPage({ searchParams }: { searchParams?: {
 
   return (
     <div className="space-y-4">
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "Вакансии",
@@ -112,7 +109,7 @@ export default async function VacanciesPage({ searchParams }: { searchParams?: {
         "url": siteUrl("/vacancies").toString(),
         "isPartOf": { "@type": "WebSite", "name": "MyCamDesk", "url": siteUrl("/").toString() }
       }) }} />
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         "itemListElement": [

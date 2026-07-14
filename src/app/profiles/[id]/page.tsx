@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -59,7 +60,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const user = await findProfile(params.id);
   if (!user) return { title: "Профиль не найден", robots: { index: false, follow: false } };
 
-  const name = user.name || user.email || "Автор MyCamDesk";
+  const name = user.name || "Автор MyCamDesk";
   const profileType = profileLabels[user.profileKind];
   const description = truncateSeo(
     user.profileBio ||
@@ -72,7 +73,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     description,
     alternates: { canonical: `/profiles/${user.id}` },
     openGraph: {
-      title: `${name} — MyCamDesk`,
+      title: name,
       description,
       url: `/profiles/${user.id}`,
       type: "profile"
@@ -110,12 +111,12 @@ export default async function ProfilePage({
         type="application/ld+json"
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "ProfilePage",
             mainEntity: {
               "@type": "Person",
-              name: user.name || user.email || "Автор MyCamDesk",
+              name: user.name || "Автор MyCamDesk",
               description: truncateSeo(user.profileBio || user.resume?.bio || ""),
               image: user.image || undefined,
               url: siteUrl(`/profiles/${user.id}`).toString()
@@ -132,13 +133,13 @@ export default async function ProfilePage({
               alt={user.name || "Аватар профиля"}
               fallback={
                 <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg bg-hot text-3xl font-black text-white">
-                  {(user.name || user.email || "U").slice(0, 1).toUpperCase()}
+                  {(user.name || "А").slice(0, 1).toUpperCase()}
                 </div>
               }
             />
           ) : (
             <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg bg-hot text-3xl font-black text-white">
-              {(user.name || user.email || "U").slice(0, 1).toUpperCase()}
+              {(user.name || "А").slice(0, 1).toUpperCase()}
             </div>
           )}
           <div className="min-w-0">

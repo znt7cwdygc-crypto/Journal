@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Prisma } from "@prisma/client";
@@ -93,7 +94,7 @@ export default async function ArticlesPage({
 
   return (
     <div className="page-stack">
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "Статьи и материалы сообщества",
@@ -226,16 +227,16 @@ export default async function ArticlesPage({
                     alt={article.createdBy.name || "Аватар автора"}
                     fallback={
                       <span className="flex h-6 w-6 items-center justify-center rounded bg-zinc-900 text-[10px] font-black text-white">
-                        {(article.createdBy.name || article.createdBy.email || "A").slice(0, 1).toUpperCase()}
+                        {(article.createdBy.name || "А").slice(0, 1).toUpperCase()}
                       </span>
                     }
                   />
                 ) : (
                   <span className="flex h-6 w-6 items-center justify-center rounded bg-zinc-900 text-[10px] font-black text-white">
-                    {(article.createdBy.name || article.createdBy.email || "A").slice(0, 1).toUpperCase()}
+                    {(article.createdBy.name || "А").slice(0, 1).toUpperCase()}
                   </span>
                 )}
-                <span>{article.createdBy.name || article.createdBy.email || "Автор"}</span>
+                <span>{article.createdBy.name || "Автор"}</span>
                 <span>{article.publishedAt ? article.publishedAt.toLocaleDateString("ru-RU") : "на модерации"}</span>
               </div>
               <div className="pt-4">

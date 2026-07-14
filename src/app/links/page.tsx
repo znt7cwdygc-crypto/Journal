@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import type { Metadata } from "next";
 import { Fragment } from "react";
 import { AdBlock } from "@/components/ad-block";
@@ -19,7 +20,7 @@ export default async function UsefulLinksPage() {
   });
   return (
     <div className="space-y-6">
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "Полезные ссылки",

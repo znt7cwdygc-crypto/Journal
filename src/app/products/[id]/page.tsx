@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -82,7 +83,7 @@ export default async function ProductDetailsPage({
 
   await prisma.product.update({ where: { id: product.id }, data: { viewCount: { increment: 1 } } });
 
-  const authorName = product.createdBy.name || product.createdBy.email || "Продавец";
+  const authorName = product.createdBy.name || "Продавец";
   const isSaved = Boolean(session?.user?.id && product.savedBy.some((item) => item.userId === session.user.id));
   const favoriteMessage =
     searchParams?.favorite === "added"
@@ -97,7 +98,7 @@ export default async function ProductDetailsPage({
         type="application/ld+json"
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "Product",
             name: product.title,
@@ -125,7 +126,7 @@ export default async function ProductDetailsPage({
         type="application/ld+json"
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": [
@@ -178,7 +179,7 @@ export default async function ProductDetailsPage({
       )}
 
       <div className="mt-5 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
-        <ContactReveal contact={product.contact} signedIn={Boolean(session?.user)} compact targetType="PRODUCT" targetId={product.id} />
+        <ContactReveal signedIn={Boolean(session?.user)} compact targetType="PRODUCT" targetId={product.id} />
         <form action={saveProductAction}>
           <input type="hidden" name="productId" value={product.id} />
           <input type="hidden" name="next" value={productPath} />

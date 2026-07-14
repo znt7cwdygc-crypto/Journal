@@ -21,7 +21,6 @@ type ProductCardItem = {
   delivery: string;
   condition: string;
   description: string;
-  contact: string;
   imageUrl: string | null;
 
   viewCount: number;
@@ -45,7 +44,7 @@ const conditionLabels: Record<string, string> = {
 };
 
 function authorName(author: ProductUser) {
-  return author.name || author.email || "Продавец";
+  return author.name || "Продавец";
 }
 
 function formatPrice(value: number) {
@@ -100,12 +99,12 @@ export function ProductDirectoryCard({
         {product.city && <span>{product.city}</span>}
         <span>{conditionLabels[product.condition] || product.condition}</span>
         <span>{deliveryLabels[product.delivery] || product.delivery}</span>
-        <span>Просмотры: {product.viewCount + 1}</span>
+        <span>Просмотры: {product.viewCount}</span>
       </div>
 
       {/* Actions */}
       <div className="directory-actions mt-4 grid grid-cols-3 gap-2">
-        <ContactReveal contact={product.contact} signedIn={isSignedIn} compact targetType="PRODUCT" targetId={product.id} />
+        <ContactReveal signedIn={isSignedIn} compact targetType="PRODUCT" targetId={product.id} />
         <form action={saveProductAction}>
           <input type="hidden" name="productId" value={product.id} />
           <input type="hidden" name="next" value={currentPath} />

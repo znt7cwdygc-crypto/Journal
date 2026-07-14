@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
@@ -51,7 +52,7 @@ async function findListing(slug: string) {
 }
 
 function reviewerName(user: { name: string | null; email: string | null }) {
-  return user.name || user.email || "Пользователь";
+  return user.name || "Пользователь";
 }
 
 function structuredValue(text: string, label: string) {
@@ -218,7 +219,7 @@ export default async function ListingDetailsPage({
         areaServed: listing.city || (listing.employmentType === "REMOTE" ? "Online" : "Russia"),
         provider: {
           "@type": "Person",
-          name: listing.createdBy.name || listing.createdBy.email || "Автор MyCamDesk"
+          name: listing.createdBy.name || "Автор MyCamDesk"
         },
         offers: {
           "@type": "Offer",
@@ -244,7 +245,7 @@ export default async function ListingDetailsPage({
         url: siteUrl(listingPath).toString(),
         hiringOrganization: {
           "@type": "Organization",
-          name: companyName || listing.createdBy.name || listing.createdBy.email || "Автор MyCamDesk",
+          name: companyName || listing.createdBy.name || "Автор MyCamDesk",
           sameAs: siteUrl("/").toString()
         },
         baseSalary,
@@ -294,7 +295,7 @@ export default async function ListingDetailsPage({
         type="application/ld+json"
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLd({
             ...listingJsonLd
           })
         }}
@@ -303,7 +304,7 @@ export default async function ListingDetailsPage({
         type="application/ld+json"
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": [
@@ -354,7 +355,7 @@ export default async function ListingDetailsPage({
         {listing.type === "SERVICE" && visibleRatings.length > 0 && <span>Рейтинг: {averageRating.toFixed(1)} из 5</span>}
       </div>
       <div className="mt-5 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
-        <ContactReveal contact={listing.contact} signedIn={Boolean(session?.user)} compact targetType="LISTING" targetId={listing.id} />
+        <ContactReveal signedIn={Boolean(session?.user)} compact targetType="LISTING" targetId={listing.id} />
         <form action={saveListingAction}><input type="hidden" name="listingId" value={listing.id} /><input type="hidden" name="next" value={listingPath} /><button className="h-10 w-full rounded-lg bg-zinc-100 px-1 text-[11px] font-semibold text-zinc-800" type="submit">{isSaved ? "Убрать" : "В избранное"}</button></form>
         <ReportButton
           targetType="LISTING"
@@ -369,11 +370,11 @@ export default async function ListingDetailsPage({
           <img className="h-10 w-10 rounded object-cover" src={listing.createdBy.image} alt={listing.createdBy.name || "Аватар автора"} />
         ) : (
           <span className="flex h-10 w-10 items-center justify-center rounded bg-hot font-black text-white">
-            {(listing.createdBy.name || listing.createdBy.email || "A").slice(0, 1).toUpperCase()}
+            {(listing.createdBy.name || "А").slice(0, 1).toUpperCase()}
           </span>
         )}
         <span>
-          <span className="block font-medium text-zinc-900">{listing.createdBy.name || listing.createdBy.email || "Профиль автора"}</span>
+          <span className="block font-medium text-zinc-900">{listing.createdBy.name || "Профиль автора"}</span>
           {listing.createdBy.profileBio && <span className="block text-xs leading-5 text-zinc-600">{listing.createdBy.profileBio}</span>}
         </span>
       </Link>

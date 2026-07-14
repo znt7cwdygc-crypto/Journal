@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { siteUrl } from "@/lib/seo";
@@ -6,7 +7,7 @@ import type { Metadata } from "next";
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: "Гайды по вебкам-индустрии — MyCamDesk",
+  title: "Гайды по вебкам-индустрии",
   description: "Понятные гайды о работе в вебкам-индустрии: безопасность, деньги, студии, оборудование, продвижение и частые вопросы новичков. Всё в одном месте.",
   alternates: { canonical: "/guides" },
   openGraph: {
@@ -43,7 +44,7 @@ export default async function GuidesPage({ searchParams }: { searchParams?: { ca
 
   return (
     <div className="space-y-4">
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "Гайды",
@@ -51,7 +52,7 @@ export default async function GuidesPage({ searchParams }: { searchParams?: { ca
         "url": siteUrl("/guides").toString(),
         "isPartOf": { "@type": "WebSite", "name": "MyCamDesk", "url": siteUrl("/").toString() }
       }) }} />
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         "itemListElement": [

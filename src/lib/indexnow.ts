@@ -13,6 +13,7 @@ function normalizeUrl(pathOrUrl: string) {
 }
 
 export async function notifyIndexNow(pathsOrUrls: string | string[]) {
+  if (process.env.DEPLOY_ENV !== "production") return;
   const productionSiteUrl = siteUrl();
   if (productionSiteUrl.host !== "mycamdesk.com") return;
 

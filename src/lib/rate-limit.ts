@@ -1,6 +1,7 @@
 type Bucket = { count: number; firstAttempt: number };
 
 const buckets = new Map<string, Bucket>();
+const generalBuckets = new Map<string, Bucket>();
 
 const WINDOW_MS = 15 * 60 * 1000; // 15 минут
 const MAX_ATTEMPTS = 5;
@@ -11,7 +12,21 @@ setInterval(() => {
   for (const [key, bucket] of buckets) {
     if (now - bucket.firstAttempt > WINDOW_MS) buckets.delete(key);
   }
+  for (const [key, bucket] of generalBuckets) {
+    if (now - bucket.firstAttempt > 24 * 60 * 60 * 1000) generalBuckets.delete(key);
+  }
 }, 60 * 60 * 1000).unref?.();
+
+export function consumeRateLimit(key: string, maxAttempts: number, windowMs: number): boolean {
+  const now = Date.now();
+  const bucket = generalBuckets.get(key);
+  if (!bucket || now - bucket.firstAttempt > windowMs) {
+    generalBuckets.set(key, { count: 1, firstAttempt: now });
+    return false;
+  }
+  bucket.count += 1;
+  return bucket.count > maxAttempts;
+}
 
 export function isRateLimited(key: string): boolean {
   const bucket = buckets.get(key);

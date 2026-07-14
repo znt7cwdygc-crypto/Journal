@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
@@ -138,7 +139,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       siteName,
       publishedTime: article.publishedAt?.toISOString(),
       modifiedTime: article.updatedAt.toISOString(),
-      authors: [article.createdBy.name || article.createdBy.email || "Автор MyCamDesk"]
+      authors: [article.createdBy.name || "Автор MyCamDesk"]
     },
     twitter: {
       card: "summary_large_image",
@@ -204,7 +205,7 @@ export default async function ArticleDetailsPage({
         type="application/ld+json"
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "Article",
             headline: article.title,
@@ -214,7 +215,7 @@ export default async function ArticleDetailsPage({
             mainEntityOfPage: siteUrl(canonicalPath).toString(),
             author: {
               "@type": "Person",
-              name: article.createdBy.name || article.createdBy.email || "Автор MyCamDesk",
+              name: article.createdBy.name || "Автор MyCamDesk",
               url: siteUrl(`/profiles/${article.createdById}`).toString()
             },
             image: coverImage || siteUrl("/logo.png").toString(),
@@ -231,7 +232,7 @@ export default async function ArticleDetailsPage({
         type="application/ld+json"
         suppressHydrationWarning
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: safeJsonLd({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": [
@@ -298,17 +299,17 @@ export default async function ArticleDetailsPage({
             alt={article.createdBy.name || "Аватар автора"}
             fallback={
               <span className="flex h-10 w-10 items-center justify-center rounded bg-hot font-black text-white">
-                {(article.createdBy.name || article.createdBy.email || "A").slice(0, 1).toUpperCase()}
+                {(article.createdBy.name || "А").slice(0, 1).toUpperCase()}
               </span>
             }
           />
         ) : (
           <span className="flex h-10 w-10 items-center justify-center rounded bg-hot font-black text-white">
-            {(article.createdBy.name || article.createdBy.email || "A").slice(0, 1).toUpperCase()}
+            {(article.createdBy.name || "А").slice(0, 1).toUpperCase()}
           </span>
         )}
         <span>
-          <span className="block font-medium text-zinc-900">{article.createdBy.name || article.createdBy.email || "Профиль автора"}</span>
+          <span className="block font-medium text-zinc-900">{article.createdBy.name || "Профиль автора"}</span>
           {article.createdBy.profileBio && <span className="mt-0.5 block text-xs leading-5 text-zinc-600">{article.createdBy.profileBio}</span>}
           <span className="mt-1 flex flex-wrap gap-1 text-[11px] text-zinc-500">
             {article.createdBy.authorFollowers.length > 0 && <span>{article.createdBy.authorFollowers.length} подписчиков</span>}
@@ -401,7 +402,7 @@ export default async function ArticleDetailsPage({
         {article.comments.map((comment) => (
           <div key={comment.id} className="border border-zinc-100 bg-zinc-50 p-3">
             <p>
-              <span className="font-medium">{comment.user.name || comment.user.email}:</span> {comment.body}
+              <span className="font-medium">{comment.user.name || "Участник"}:</span> {comment.body}
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
               {session?.user && (
@@ -431,7 +432,7 @@ export default async function ArticleDetailsPage({
               <div className="mt-3 space-y-2 border-l-2 border-zinc-200 pl-3">
                 {comment.replies.map((reply) => (
                   <div key={reply.id} className="bg-white p-2">
-                    <p><span className="font-medium">{reply.user.name || reply.user.email}:</span> {reply.body}</p>
+                    <p><span className="font-medium">{reply.user.name || "Участник"}:</span> {reply.body}</p>
                     {session?.user && (
                       <form action={likeCommentAction} className="mt-1">
                         <input type="hidden" name="commentId" value={reply.id} />

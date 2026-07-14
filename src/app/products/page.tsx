@@ -1,3 +1,4 @@
+import { safeJsonLd } from "@/lib/json-ld";
 import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { AdBlock } from "@/components/ad-block";
@@ -78,10 +79,6 @@ export default async function ProductsPage({ searchParams }: { searchParams?: { 
     return cityMatches && categoryMatches;
   });
 
-  if (products.length > 0) {
-    await prisma.product.updateMany({ where: { id: { in: products.map((product) => product.id) } }, data: { viewCount: { increment: 1 } } });
-  }
-
   const grouped = new Map<string, typeof products>();
   for (const product of products) {
     grouped.set(product.category, [...(grouped.get(product.category) || []), product]);
@@ -95,7 +92,7 @@ export default async function ProductsPage({ searchParams }: { searchParams?: { 
 
   return (
     <div className="space-y-4">
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "CollectionPage",
         "name": "Товары",
@@ -103,7 +100,7 @@ export default async function ProductsPage({ searchParams }: { searchParams?: { 
         "url": siteUrl("/products").toString(),
         "isPartOf": { "@type": "WebSite", "name": "MyCamDesk", "url": siteUrl("/").toString() }
       }) }} />
-      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: JSON.stringify({
+      <script type="application/ld+json" suppressHydrationWarning dangerouslySetInnerHTML={{ __html: safeJsonLd({
         "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         "itemListElement": [

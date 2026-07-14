@@ -4,7 +4,6 @@ import { saveListingAction, saveResumeAction } from "@/app/actions";
 import { ContactReveal } from "@/components/contact-reveal";
 import { ReportButton } from "@/components/report-button";
 import { listingSeoPath, resumeSeoPath } from "@/lib/seo-url";
-import { maskContact } from "@/lib/validation";
 
 function isModelResume(roleGoal: string) {
   const lower = roleGoal.toLowerCase();
@@ -25,7 +24,6 @@ type DirectoryListing = {
   description: string;
   city: string | null;
   employmentType: string | null;
-  contact: string;
   viewCount: number;
   responseCount: number;
   createdAt: Date;
@@ -53,7 +51,7 @@ type DirectoryResume = {
 };
 
 function authorName(author: DirectoryUser) {
-  return author.name || author.email || "Профиль автора";
+  return author.name || "Профиль автора";
 }
 
 function AuthorFooter({ author }: { author: DirectoryUser }) {
@@ -193,21 +191,13 @@ export function ListingDirectoryCard({
       <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500">
         <span>{listing.city || "Город не указан"}</span>
         <span>{formatLabel}</span>
-        <span>Просмотры: {listing.viewCount + 1}</span>
+        <span>Просмотры: {listing.viewCount}</span>
         <span>Отклики: {listing.responseCount}</span>
         {kind === "SERVICE" && ratings.length > 0 && <span>Рейтинг: {averageRating.toFixed(1)} ({ratings.length})</span>}
       </div>
 
-      {!compactListing && (
-        <div className="mt-3 text-sm text-zinc-700">
-          <span className="font-medium text-zinc-900">Контакт: </span>
-          {isSignedIn ? listing.contact : maskContact(listing.contact)}
-          {!isSignedIn && <p className="mt-1 text-xs text-zinc-500">Войдите, чтобы видеть контакт полностью и отправить отклик.</p>}
-        </div>
-      )}
-
       <DirectoryActionRow columns={compactListing ? 3 : undefined}>
-        {compactListing && <ContactReveal contact={listing.contact} signedIn={isSignedIn} compact targetType="LISTING" targetId={listing.id} />}
+        {compactListing && <ContactReveal signedIn={isSignedIn} compact targetType="LISTING" targetId={listing.id} />}
         <form action={saveListingAction}>
           <HiddenListingInputs listingId={listing.id} />
           <input type="hidden" name="next" value={currentPath} />
@@ -261,7 +251,7 @@ export function ResumeDirectoryCard({
       <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-500">
         <span>{resume.city || "Город не указан"}</span>
         <span>Опыт: {resume.experienceMonths} мес</span>
-        <span>Просмотры: {resume.viewCount + 1}</span>
+        <span>Просмотры: {resume.viewCount}</span>
         <span>Отклики: {resume.responseCount}</span>
       </div>
 
