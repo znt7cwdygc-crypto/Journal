@@ -22,12 +22,18 @@ export const dynamic = "force-dynamic";
 
 async function findPublishedArticle(slug: string, commentSort = "new") {
   const resolved = idFromSeoParam(slug);
+  // Article URLs are always {shortId}-{translit-slug} (shortId as prefix). idFromSeoParam
+  // checks the suffix pattern first (used by listings/products/resumes), so when a slug's
+  // last word happens to be exactly 8 chars (e.g. "...-ozhidala"), it wins over the real
+  // prefix id and the lookup 404s. Explicitly try the prefix too, independent of that result.
+  const prefixShortId = slug.match(/^([a-z0-9]{8})-/i)?.[1]?.toLowerCase();
   return prisma.article.findFirst({
     where: {
       OR: [
         { slug },
         ...(resolved.id ? [{ id: resolved.id }] : []),
         ...(resolved.shortId ? [{ id: { endsWith: resolved.shortId } }] : []),
+        ...(prefixShortId ? [{ id: { endsWith: prefixShortId } }] : []),
         { id: slug }
       ],
       status: "PUBLISHED"
