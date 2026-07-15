@@ -11,6 +11,16 @@ import { relatedLinkLabel } from "@/lib/related-link-label";
 
 export const revalidate = 60;
 
+// Guides whose CTA fits better embedded inside a specific section than bumped
+// to the page bottom. Keyed by slug -> the section.title to attach after.
+const INLINE_CTA_SECTION: Record<string, string> = {
+  "kak-vybrat-webcam-studiyu": "Сделайте проверку до решения",
+  "kak-stat-webcam-modelyu-s-nulya": "Шаг 8. Ведите расчёты",
+  "kalkulyator-zarabotka-webcam-modeli-2026": "Почему эти данные объективны",
+  "webcam-model-zakonno-ili-net": "Когда обращаться к юристу",
+  "webcam-rabota-udalenno-na-domu": "Порядок теста"
+};
+
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const guide = await prisma.guide.findFirst({ where: { slug: params.slug, kind: "guide", isPublished: true } });
   if (!guide) return { title: "Гайд не найден", robots: { index: false, follow: false } };
@@ -179,6 +189,13 @@ export default async function GuidePage({ params }: { params: { slug: string } }
                 </Link>
               </div>
             )}
+          {INLINE_CTA_SECTION[raw.slug] === section.title && guide.ctaLabel && guide.ctaHref && (
+            <div className="pt-2">
+              <Link href={guide.ctaHref} className="btn btn-primary inline-block">
+                {guide.ctaLabel}
+              </Link>
+            </div>
+          )}
         </Fragment>
       ))}
 
@@ -249,6 +266,7 @@ export default async function GuidePage({ params }: { params: { slug: string } }
       {raw.slug !== "fansly-v-rossii-registraciya-oplata-start" &&
         raw.slug !== "administrator-webcam-studii-obyazannosti-zarplata" &&
         raw.slug !== "chto-delat-esli-sliv-kontenta-s-webcam-sayta" &&
+        !INLINE_CTA_SECTION[raw.slug] &&
         guide.ctaLabel &&
         guide.ctaHref && (
         <div className="pt-2">
